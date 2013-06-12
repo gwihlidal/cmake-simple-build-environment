@@ -22,7 +22,24 @@ One property is `DEPENDENCIES`. It contains description of each dependency used 
 
 === How it works ===
 
-In your package CMakeLists.txt you have to include [https://code.google.com/p/cmake-simple-build-environment/source/browse/trunk/scripts/DeployDependencies.cmake DeployDependencies.cmake](e.g. [https://code.google.com/p/sbe-documentlibrary/source/browse/trunk/CMakeLists.txt CMakeLists.txt for DocumentLibrary])
+In your package CMakeLists.txt you have to include [https://code.google.com/p/cmake-simple-build-environment/source/browse/trunk/scripts/DeployDependencies.cmake DeployDependencies.cmake] (e.g. [https://code.google.com/p/sbe-documentlibrary/source/browse/trunk/CMakeLists.txt CMakeLists.txt for DocumentLibrary])
+
+The script performs two steps
+  * Exports sources (it uses [https://code.google.com/p/cmake-simple-build-environment/source/browse/trunk/scripts/ExportDependencies.cmake ExportDependencies.cmake])
+  * Install sources (it uses [https://code.google.com/p/cmake-simple-build-environment/source/browse/trunk/scripts/InstallDependencies.cmake InstallDependencies.cmake])
+
+==== Export Sources ====
+
+The script [https://code.google.com/p/cmake-simple-build-environment/source/browse/trunk/scripts/ExportDependencies.cmake ExportDependencies.cmake] uses `DEPENDENCIES` property defined in CMakeLists.txt to get all dependencies URL in repository.
+
+It exports Properties.cmake recursively for each dependency and generates file dependencies/info/info.cmake in package. The file contains all properties from all dependencies.
+
+Once all properties from all dependencies are exported, scripts performs
+  # make dependency picture - it uses [http://plantuml.sourceforge.net/ plantuml]
+  # check dependencies versions and report error if any - now exact version has to be used
+  # check dependencies installation order and report error if any
+  # remove unused dependencies
+  # exports dependencies sources
 
 == Build ==
 
