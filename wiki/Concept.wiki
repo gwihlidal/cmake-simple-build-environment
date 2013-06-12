@@ -3,9 +3,9 @@
 The project provides CMake scripts usable in CMakeLists.txt of CPP package.
 
 CPP package can be
-  * Library (e.g [https://code.google.com/p/sbe-documentlibrary/source/browse/trunk/#trunk DucumentLibrary])
+  * Library (e.g [https://code.google.com/p/sbe-documentlibrary/source/browse/trunk/#trunk DocumentLibrary])
   * Executable
-  * Project - group of Libraries/Executable (e.g [https://code.google.com/p/sbe-documentationsystem/source/browse/#svn%2Ftrunk DucumentationSystem])
+  * Project - group of Libraries/Executable (e.g [https://code.google.com/p/sbe-documentationsystem/source/browse/#svn%2Ftrunk DocumentationSystem])
 
 The scripts implement
   * Dependency management
