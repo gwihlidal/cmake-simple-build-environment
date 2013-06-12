@@ -1,0 +1,47 @@
+if (NOT EXISTS "@CMAKE_CURRENT_BINARY_DIR@/install_manifest.txt")
+    return()
+endif()
+
+file(READ "@CMAKE_CURRENT_BINARY_DIR@/install_manifest.txt" files)
+string(REGEX REPLACE "\n" ";" files "${files}")
+set(paths "")
+foreach (file IN LISTS files)
+	if(NOT "${file}" STREQUAL "")
+		message(STATUS "Uninstalling \"${file}\"")
+		file(REMOVE "${file}")
+
+		get_filename_component(path "${file}" PATH)
+		string(REPLACE "@CMAKE_INSTALL_PREFIX@/" "" path "${path}")
+		if(NOT "" STREQUAL "${path}")
+			list(APPEND paths ${path})
+			list(REMOVE_DUPLICATES paths)
+		endif()
+	endif()
+endforeach()
+
+set(allPaths "")
+foreach(path ${paths})
+	string(REPLACE "/" ";" pathDirs ${path})
+	set(dirs "")
+	foreach(dir IN LISTS pathDirs)
+		set(dirs "${dirs}/${dir}")
+		list(APPEND allPaths ${dirs})
+		list(REMOVE_DUPLICATES allPaths)
+	endforeach()
+endforeach()	
+
+list(SORT allPaths)
+list(REVERSE allPaths)
+foreach(path ${allPaths})	
+	file(GLOB items "@CMAKE_INSTALL_PREFIX@/${path}/*")
+	if("" STREQUAL "${items}")
+		message(STATUS "Removing empty directory \"@CMAKE_INSTALL_PREFIX@/${path}\"")
+		execute_process(
+            	COMMAND @CMAKE_COMMAND@ -E remove_directory "@CMAKE_INSTALL_PREFIX@/${path}"
+            	OUTPUT_VARIABLE rm_out
+            	RESULT_VARIABLE rm_retval
+        	)		
+		file(REMOVE "@CMAKE_INSTALL_PREFIX@/${path}")
+	endif()
+endforeach()
+
