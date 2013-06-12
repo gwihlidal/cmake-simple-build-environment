@@ -7,7 +7,7 @@ CPP package can be
   * Executable
   * Project - group of Libraries/Executable (e.g [https://code.google.com/p/sbe-documentationsystem/source/browse/#svn%2Ftrunk DocumentationSystem])
 
-The scripts implement
+The scripts supports
   * Dependency management
   * Build 
   * Unit testing
@@ -16,7 +16,13 @@ The scripts implement
 
 == Dependency management ==
 
-Each package has file Properties.cmake. The file contains package description
+Each package has file Properties.cmake. The file contains package description(e.g. [https://code.google.com/p/sbe-documentlibrary/source/browse/trunk/Properties.cmake Properties.cmake for DocumentLibrary]).
+
+One property is 'DEPENDENCIES'. It contains description of each dependency used by package.
+
+=== How it works ===
+
+In your package CMakeLists.txt you have to include (e.g. [https://code.google.com/p/sbe-documentlibrary/source/browse/trunk/Properties.cmake Properties.cmake for DocumentLibrary])
 
 == Build ==
 
