@@ -1,0 +1,11 @@
+cmake_minimum_required(VERSION 2.8)
+
+add_custom_target(tag
+    COMMAND ${CMAKE_COMMAND}
+        -DVERSION_PATCH=${VERSION_PATCH}
+        -DVERSION_MINOR=${VERSION_MINOR} 
+        -DVERSION_MAJOR=${VERSION_MAJOR}
+        -DVERSION_BUILD_NUMBER="\${VERSION_BUILD_NUMBER}"
+        -DPROJECT_NAME=${PROJECT_NAME}
+        -DPROJECT_SOURCE_DIR=${PROJECT_SOURCE_DIR}
+        -P ${CMAKE_ROOT}/Modules/SBE/helpers/TagSources.cmake)
