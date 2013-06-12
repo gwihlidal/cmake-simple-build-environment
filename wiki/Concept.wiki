@@ -1,16 +1,22 @@
 = Simple build environment concept =
 
-The project provides CMake scripts usable in CMakeLists.txt of CPP project.
+The project provides CMake scripts usable in CMakeLists.txt of CPP package.
 
+CPP package can be
+  * Library
+  * Executable
+  * Project - group of Libraries/Executables
 
 The scripts implement
-* Dependency management
-* Build 
-* Unit testing
-* Continues Integration
-* Coverity
+  * Dependency management
+  * Build 
+  * Unit testing
+  * Continues Integration
+  * Coverity
 
 == Dependency management ==
+
+Each package has file Properties.cmake. The file contains package description
 
 == Build ==
 
