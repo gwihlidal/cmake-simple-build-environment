@@ -38,7 +38,7 @@ Once all properties from all dependencies are exported, scripts performs
   # make dependency picture - it uses [http://plantuml.sourceforge.net/ plantuml]
   # check dependencies versions and report error if any - now exact version has to be used
   # check dependencies installation order and report error if any
-   DependencyGraph.png
+   https://code.google.com/p/cmake-simple-build-environment/source/browse/wiki/DependencyGraph.png
   # remove unused dependencies
   # exports dependencies sources
 
