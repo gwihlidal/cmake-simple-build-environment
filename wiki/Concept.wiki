@@ -22,7 +22,7 @@ One property is 'DEPENDENCIES'. It contains description of each dependency used 
 
 === How it works ===
 
-In your package CMakeLists.txt you have to include (e.g. [https://code.google.com/p/sbe-documentlibrary/source/browse/trunk/Properties.cmake Properties.cmake for DocumentLibrary])
+In your package CMakeLists.txt you have to include (e.g. https://code.google.com/p/sbe-documentlibrary/source/browse/trunk/CMakeLists.txt CMakeLists.txt for DocumentLibrary])
 
 == Build ==
 
