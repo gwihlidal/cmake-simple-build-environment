@@ -5,7 +5,7 @@ The project provides CMake scripts usable in CMakeLists.txt of CPP package.
 CPP package can be
   * Library (e.g [https://code.google.com/p/sbe-documentlibrary DocumentLibrary])
   * Executable
-  * Project - group of Libraries/Executable (e.g [https://code.google.com/p/sbe-documentationsystem DocumentationSystem])
+  * Project - group of Libraries/Executables (e.g [https://code.google.com/p/sbe-documentationsystem DocumentationSystem])
 
 The scripts supports
   * Dependency management
