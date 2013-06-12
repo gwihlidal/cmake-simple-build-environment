@@ -18,11 +18,11 @@ The scripts supports
 
 Each package has file Properties.cmake. The file contains package description(e.g. [https://code.google.com/p/sbe-documentlibrary/source/browse/trunk/Properties.cmake Properties.cmake for DocumentLibrary]).
 
-One property is 'DEPENDENCIES'. It contains description of each dependency used by package.
+One property is `DEPENDENCIES`. It contains description of each dependency used by package.
 
 === How it works ===
 
-In your package CMakeLists.txt you have to include (e.g. [https://code.google.com/p/sbe-documentlibrary/source/browse/trunk/CMakeLists.txt CMakeLists.txt for DocumentLibrary])
+In your package CMakeLists.txt you have to include [https://code.google.com/p/cmake-simple-build-environment/source/browse/trunk/scripts/DeployDependencies.cmake DeployDependencies.cmake](e.g. [https://code.google.com/p/sbe-documentlibrary/source/browse/trunk/CMakeLists.txt CMakeLists.txt for DocumentLibrary])
 
 == Build ==
 
