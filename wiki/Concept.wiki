@@ -1,13 +1,21 @@
-#Simple build environment concept
+= Simple build environment concept =
 
-= Introduction =
-
-Add your content here.
+The project provides CMake scripts usable in CMakeLists.txt of CPP project.
 
 
-= Details =
+The scripts implement
+* Dependency management
+* Build 
+* Unit testing
+* Continues Integration
+* Coverity
 
-Add your content here.  Format your content with:
-  * Text in *bold* or _italic_
-  * Headings, paragraphs, and lists
-  * Automatic links to other wiki pages
+== Dependency management ==
+
+== Build ==
+
+== Unit testing ==
+
+== Continues Integration ==
+
+== Coverity ==
