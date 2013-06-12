@@ -3,9 +3,9 @@
 The project provides CMake scripts usable in CMakeLists.txt of CPP package.
 
 CPP package can be
-  * Library (e.g [http://sbe-documentlibrary.googlecode.com/svn/trunk DocumentLibrary])
+  * Library (e.g [https://code.google.com/p/sbe-documentlibrary DocumentLibrary])
   * Executable
-  * Project - group of Libraries/Executable (e.g [https://code.google.com/sbe-documentationsystem/svn/trunk DocumentationSystem])
+  * Project - group of Libraries/Executable (e.g [https://code.google.com/p/sbe-documentationsystem DocumentationSystem])
 
 The scripts supports
   * Dependency management
@@ -22,15 +22,15 @@ One property is `DEPENDENCIES`. It contains description of each dependency used 
 
 === How it works ===
 
-In your package CMakeLists.txt you have to include [http://code.google.com/cmake-simple-build-environment/svn/trunk/scripts/DeployDependencies.cmake DeployDependencies.cmake] (e.g. [http://code.google.com/sbe-documentlibrary/svn/trunk/CMakeLists.txt CMakeLists.txt for DocumentLibrary])
+In your package CMakeLists.txt you have to include [https://code.google.com/p/cmake-simple-build-environment/source/browse/trunk/scripts/DeployDependencies.cmake DeployDependencies.cmake] (e.g. [https://code.google.com/p/sbe-documentlibrary/source/browse/trunk/CMakeLists.txt CMakeLists.txt for DocumentLibrary])
 
 The script performs two steps
-  * Exports sources (it uses [http://code.google.com/cmake-simple-build-environment/svn/trunk/scripts/ExportDependencies.cmake ExportDependencies.cmake])
-  * Install sources (it uses [http://code.google.com/cmake-simple-build-environment/svn/trunk/scripts/InstallDependencies.cmake InstallDependencies.cmake])
+  * Exports sources (it uses [https://code.google.com/p/cmake-simple-build-environment/source/browse/trunk/scripts/ExportDependencies.cmake ExportDependencies.cmake])
+  * Install sources (it uses [https://code.google.com/p/cmake-simple-build-environment/source/browse/trunk/scripts/InstallDependencies.cmake InstallDependencies.cmake])
 
 ==== Export Sources ====
 
-The script [http://code.google.com/cmake-simple-build-environment/svn/trunk/scripts/ExportDependencies.cmake ExportDependencies.cmake] uses `DEPENDENCIES` property defined in CMakeLists.txt to get all dependencies URL in repository.
+The script [https://code.google.com/p/cmake-simple-build-environment/source/browse/trunk/scripts/ExportDependencies.cmake ExportDependencies.cmake] uses `DEPENDENCIES` property defined in CMakeLists.txt to get all dependencies URL in repository.
 
 It exports Properties.cmake recursively for each dependency and generates file `dependencies/info/info.cmake` in package. The file contains all properties from all dependencies.
 
