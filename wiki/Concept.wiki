@@ -5,7 +5,7 @@ The project provides CMake scripts usable in CMakeLists.txt of CPP package.
 CPP package can be
   * Library (e.g [https://code.google.com/p/sbe-documentlibrary/source/browse/trunk/#trunk DocumentLibrary])
   * Executable
-  * Project - group of Libraries/Executable (e.g [https://code.google.com/p/sbe-documentationsystem/source/browse/#svn%2Ftrunk DocumentationSystem])
+  * Project - group of Libraries/Executable (e.g [https://code.google.com/sbe-documentationsystem/svn/trunk DocumentationSystem])
 
 The scripts supports
   * Dependency management
@@ -41,7 +41,7 @@ Once all properties from all dependencies are exported, scripts performs
   # remove unused dependencies
   # exports dependencies sources
 
-http://code.google.com/p/cmake-simple-build-environment/wiki/DependencyGraph.png
+https://cmake-simple-build-environment.googlecode.com/svn/wiki/images/DependencyGraph.png
 
 == Build ==
 
