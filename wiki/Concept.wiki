@@ -3,15 +3,15 @@
 The project provides CMake scripts usable in CMakeLists.txt of CPP package.
 
 CPP package can be
-  * Library
+  * Library (e.g [https://code.google.com/p/sbe-documentlibrary/source/browse/trunk/#trunk DucumentLibrary])
   * Executable
-  * Project - group of Libraries/Executables
+  * Project - group of Libraries/Executable (e.g [https://code.google.com/p/sbe-documentationsystem/source/browse/#svn%2Ftrunk DucumentationSystem])
 
 The scripts implement
   * Dependency management
   * Build 
   * Unit testing
-  * Continues Integration
+  * Continuous Integration
   * Coverity
 
 == Dependency management ==
