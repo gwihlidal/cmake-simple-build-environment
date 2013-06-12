@@ -3,7 +3,7 @@
 The project provides CMake scripts usable in CMakeLists.txt of CPP package.
 
 CPP package can be
-  * Library (e.g [https://code.google.com/sbe-documentlibrary/svn/trunk DocumentLibrary])
+  * Library (e.g [http://sbe-documentlibrary.googlecode.com/svn/trunk DocumentLibrary])
   * Executable
   * Project - group of Libraries/Executable (e.g [https://code.google.com/sbe-documentationsystem/svn/trunk DocumentationSystem])
 
