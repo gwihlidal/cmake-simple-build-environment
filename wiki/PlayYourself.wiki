@@ -21,7 +21,7 @@ I use linux Debian, but is should work on any other system.
     * `make test`
 
 You will see 
-  * how dependencies are exported and installed for HelloWorld.
+  * how dependencies are exported and installed for HelloWorld
   * How test are build and executed
 
 You can find DependencyGraph in `dependencies/info/DependecyGraph.png`
