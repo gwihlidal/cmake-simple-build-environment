@@ -3,10 +3,10 @@
 The project provides CMake scripts usable in CMakeLists.txt of CPP package.
 
 CPP package can be
-  * Library (e.g [https://code.google.com/p/sbe-documentlibrary DocumentLibrary])
-  * Executable
-  * Unit Test Framework
-  * Project - group of Libraries/Executables (e.g [https://code.google.com/p/sbe-documentationsystem DocumentationSystem])
+  * Library (e.g. [https://code.google.com/p/sbe-documentlibrary DocumentLibrary])
+  * Executable (e.g. [https://code.google.com/p/sbe-helloworld HelloWorld])
+  * Unit Test Framework (e.g. [https://code.google.com/p/sbe-cpputestlibrary CppUTest])
+  * Project - group of Libraries/Executables (e.g. [https://code.google.com/p/sbe-documentationsystem DocumentationSystem])
 
 The scripts supports
   * Dependency management
