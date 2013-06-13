@@ -19,7 +19,7 @@ The scripts supports
 
 Each package has file Properties.cmake. The file contains package description (e.g. [https://code.google.com/p/sbe-documentlibrary/source/browse/trunk/Properties.cmake Properties.cmake for DocumentLibrary]).
   * `NAME` - package name
-  * `TYPE` - one of Library/Executable/Unit Test Framework/Project
+  * `TYPE` - one of _Library/Executable/Unit Test Framework/Project_
   * `VERSION_MAJOR`, `VERSION_MINOR`, `VERSION_PATCH` - should be [http://semver.org semantic version] if applicable. 
   * `DESCRIPTION` - brief description
   * `MAINTAINER` - maintainer email address
