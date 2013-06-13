@@ -8,7 +8,7 @@ CPP package can be
   * Unit Test Framework (e.g. [https://code.google.com/p/sbe-cpputestlibrary CppUTest])
   * Project - group of Libraries/Executables (e.g. [https://code.google.com/p/sbe-documentationsystem DocumentationSystem])
 
-The scripts supports
+The scripts support
   * Dependency management
   * Build 
   * Unit testing
