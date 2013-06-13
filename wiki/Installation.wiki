@@ -1,1 +1,25 @@
-To be done
+=== Prerequisites ===
+
+  # install [http://www.cmake.org/cmake/resources/software.html CMake] at least version 2.8.10. If you want to use Texas Instruments compiler then version 2.8.11 is needed. Even if you use version 2.8.11, coverity for Texas Instruments compiler will not work correctly because at least coverity client in version 4.5.0 doesn't understand compiler long name switches (e.g. `--cpp_file`). The switches are defined in CMake in file `CMAKE_INSTALLATION_DIRECTORY/Modules/Compiler/TI-*.cmake`. In CMake version that I use, I manually change long name switches to its short names.
+  # svn command line client has to be installed
+  # sed utility has to installed
+  # java has to be installed
+
+=== Installation ===
+
+  # checkout Simple Build Enviroment
+    * `svn checkout http://cmake-simple-build-environment.googlecode.com
+/svn/trunk/ cmake-simple-build-environment-read-only`
+
+Simple Build system is installed into CMake installation. (e.g on linux default path can be `/usr/local/share/cmake-2.8/Modules/SBE/`).
+
+  # run install script on linux use sudo
+    * `cd cmake-simple-build-environment-read-only`
+    * `mkdir build`
+    * `cd build`
+    * `cmake ..`
+    * use make to install
+      * On linux
+        * `sudo make install`
+      * On windows
+        * `make install`
