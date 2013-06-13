@@ -1,0 +1,20 @@
+=== Prerequisites ===
+
+  # install [http://www.cmake.org/cmake/resources/software.html CMake] at least version 2.8.10
+  # install [Install Simple Build Environment]
+  # svn command line client has to be installed
+  # sed utility has to installed
+
+=== Try ===
+
+I use linux Debian, but is should work on any other system.
+
+  # checkout [http://code.google.com/p/sbe-helloworld HelloWorld]
+    `svn checkout http://sbe-helloworld.googlecode.com/svn/tags/rel_1_0_0 sbe-helloworld-read-only`
+  # create build directory and configure
+    `cd sbe-helloworld-read-only`
+    `mkdir build`
+    `cd build`
+    `cmake ..`
+  # run tests
+    `make test`
