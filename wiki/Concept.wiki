@@ -31,6 +31,8 @@ The script performs two steps
   * Exports sources (it uses [https://code.google.com/p/cmake-simple-build-environment/source/browse/trunk/scripts/ExportDependencies.cmake ExportDependencies.cmake])
   * Install sources (it uses [https://code.google.com/p/cmake-simple-build-environment/source/browse/trunk/scripts/InstallDependencies.cmake InstallDependencies.cmake])
 
+During package configuration all dependencies are exported recursively and they are installed. Installation is necessary during package configuration, because include paths and libraries created by dependency are discovered by `FIND_PACKAGE`.
+
 When dependencies are change their sources are deleted and dependency is uninstalled.
 
 ==== Export Sources ====
