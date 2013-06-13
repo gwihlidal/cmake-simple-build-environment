@@ -1,11 +1,7 @@
 === Prerequisites ===
 
-  # install [http://www.cmake.org/cmake/resources/software.html CMake] at least version 2.8.10
-  # install [Installation Simple Build Environment]
-  # svn command line client has to be installed
-  # sed utility has to installed
-  # java has to be installed
-
+Install Simple Build Environment. [Installation See Installation].
+  
 === Try ===
 
 I use linux Debian, but it should work on any other system.
