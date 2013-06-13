@@ -60,7 +60,7 @@ The script [https://code.google.com/p/cmake-simple-build-environment/source/brow
 
 The scripts performs:
   # creates build directory `current_project_build_directory/dependencies/build/dependency_name` 
-  # configure dependency in created build directory. `CMAKE_TOOLCHAIN_FILE` and `CMAKE_BUILD_TYPE` are propagated to dependency. If coverity is requested, it is performed.
+  # configure dependency in created build directory. `CMAKE_TOOLCHAIN_FILE` and `CMAKE_BUILD_TYPE` are propagated to dependency. If coverity is requested, `cov_build` is performed.
 
 == Build ==
 
