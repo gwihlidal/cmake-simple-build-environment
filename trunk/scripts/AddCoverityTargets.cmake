@@ -5,8 +5,29 @@ if (${DeployDependenciesIncluded})
     message(FATAL_ERROR "AddCoverityTargets scripts has to be included before DeployDependencies to ensure that denepndencies will be installed with coverity data.")
 endif()
 
-# set DeployDependencies script usage flag, for checking dependencies between scripts
+# set AddCoverityTargets script usage flag, for checking dependencies between scripts
 set(AddCoverityTargetsIncluded "yes")
+
+find_program(COV_CONFIGURE_TOOL cov-configure)
+if(NOT COV_CONFIGURE_TOOL)
+    message(STATUS "Could not find cov-configure. Skipping coverity.")
+    return()
+endif()
+find_program(COV_BUILD_TOOL cov-build)
+if(NOT COV_BUILD_TOOL)
+    message(STATUS "Could not find cov-build. Skipping coverity.")
+    return()
+endif()
+find_program(COV_ANALYZE_TOOL cov-analyze)
+if(NOT COV_ANALYZE_TOOL)
+    message(STATUS "Could not find cov-analyze. Skipping coverity.")
+    return()
+endif()
+find_program(COV_FORMAT_ERRORS_TOOL cov-format-errors)
+if(NOT COV_FORMAT_ERRORS_TOOL)
+    message(STATUS "Could not find cov-format-errors. Skipping coverity.")
+    return()
+endif()
 
 find_program(SED_TOOL sed)
 if(NOT SED_TOOL)
@@ -127,7 +148,7 @@ if("" STREQUAL "${COV_C_COMPTYPE}" AND "" STREQUAL "${COV_CXX_COMPTYPE}")
 endif()
      
 # coverity build command
-set(coverityBuildStarter cov-build --verbose 0 --config ${COV_FILE_CONFIG} --dir ${COV_DIR_DATA})
+set(coverityBuildStarter ${COV_BUILD_TOOL} --verbose 0 --config ${COV_FILE_CONFIG} --dir ${COV_DIR_DATA})
 
 # create dirs
 file(MAKE_DIRECTORY ${COV_DIR_CONFIG})
@@ -149,7 +170,7 @@ endif()
 if(NOT "" STREQUAL "${COV_CXX_COMPTYPE}" AND NOT "yes" STREQUAL "${COV_CONFIGURED_FOR_CXX}")
     message(STATUS "Configuring Coverity for CXX compiler...")
     execute_process(     
-        COMMAND cov-configure --verbose 0 --compiler ${CMAKE_CXX_COMPILER} --comptype ${COV_CXX_COMPTYPE} --config ${COV_FILE_CONFIG} ${COV_CXX_COMPILER_FLAGS} 
+        COMMAND ${COV_CONFIGURE_TOOL} --verbose 0 --compiler ${CMAKE_CXX_COMPILER} --comptype ${COV_CXX_COMPTYPE} --config ${COV_FILE_CONFIG} ${COV_CXX_COMPILER_FLAGS} 
         COMMAND ${SED_TOOL} -u -e "s/.*/   &/")
     if(NOT EXISTS "${COV_DIR_CONFIG}/${COV_CXX_COMPTYPE}-config-0")
         message(FATAL_ERROR "Configuring Coverity for CXX compiler fails.")
@@ -165,7 +186,7 @@ add_custom_command(TARGET coverity
     COMMENT "Building coverity")
 
  add_custom_command(TARGET coverity     
-    COMMAND cov-analyze 
+    COMMAND ${COV_ANALYZE_TOOL} 
         --config ${COV_FILE_CONFIG} 
         --dir ${COV_DIR_DATA} 
         ${COV_ANALYZE_OPTIONS}
@@ -173,5 +194,5 @@ add_custom_command(TARGET coverity
     COMMENT "Analyzing coverity..")
 
 add_custom_command(TARGET coverity     
-    COMMAND cov-format-errors --dir ${COV_DIR_DATA}
+    COMMAND ${COV_FORMAT_ERRORS_TOOL} --dir ${COV_DIR_DATA}
     COMMENT "Formating coverity errors")
