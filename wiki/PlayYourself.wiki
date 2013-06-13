@@ -4,6 +4,7 @@
   # install [Install Simple Build Environment]
   # svn command line client has to be installed
   # sed utility has to installed
+  # java has to be installed
 
 === Try ===
 
