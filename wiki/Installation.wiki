@@ -8,11 +8,7 @@
 === Installation ===
 
   # checkout Simple Build Enviroment
-    * `svn checkout http://cmake-simple-build-environment.googlecode.com
-/svn/trunk/ cmake-simple-build-environment-read-only`
-
-Simple Build system is installed into CMake installation. (e.g on linux default path can be `/usr/local/share/cmake-2.8/Modules/SBE/`).
-
+    * `svn checkout http://cmake-simple-build-environment.googlecode.com/svn/trunk/ cmake-simple-build-environment-read-only`
   # run install script on linux use sudo
     * `cd cmake-simple-build-environment-read-only`
     * `mkdir build`
@@ -23,3 +19,5 @@ Simple Build system is installed into CMake installation. (e.g on linux default 
         * `sudo make install`
       * On windows
         * `make install`
+
+Simple Build system is installed into CMake installation. (e.g on linux default path can be `/usr/local/share/cmake-2.8/Modules/SBE/`).
