@@ -42,6 +42,12 @@ Once all properties from all dependencies are exported, scripts performs
   # remove unused dependencies
   # exports dependencies sources
 
+==== Install sources ====
+
+The script [https://code.google.com/p/cmake-simple-build-environment/source/browse/trunk/scripts/InstallDependencies.cmake InstallDependencies.cmake] uses `dependencies/info/info.cmake` prepared by [https://code.google.com/p/cmake-simple-build-environment/source/browse/trunk/scripts/ExportDependencies.cmake ExportDependencies.cmake]. 
+
+The script creates build directory `current_project_build_directory/dependencies/build/dependency_name` and calls `make install` on each dependency. 
+
 == Build ==
 
 == Unit testing ==
