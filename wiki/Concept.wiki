@@ -31,7 +31,7 @@ The script performs two steps
   * Exports sources (it uses [https://code.google.com/p/cmake-simple-build-environment/source/browse/trunk/scripts/ExportDependencies.cmake ExportDependencies.cmake])
   * Install sources (it uses [https://code.google.com/p/cmake-simple-build-environment/source/browse/trunk/scripts/InstallDependencies.cmake InstallDependencies.cmake])
 
-When dependencies are change their sources are deleted and dependency i uninstalled.
+When dependencies are change their sources are deleted and dependency is uninstalled.
 
 ==== Export Sources ====
 
