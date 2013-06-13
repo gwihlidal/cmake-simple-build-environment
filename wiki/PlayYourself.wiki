@@ -8,7 +8,7 @@
 
 === Try ===
 
-I use linux Debian, but is should work on any other system.
+I use linux Debian, but it should work on any other system.
 
   # checkout [http://code.google.com/p/sbe-helloworld HelloWorld]
     * `svn checkout http://sbe-helloworld.googlecode.com/svn/tags/rel_1_0_0 sbe-helloworld-read-only`
@@ -21,9 +21,9 @@ I use linux Debian, but is should work on any other system.
     * `make test`
 
 You will see 
-  * how dependencies are exported and installed for HelloWorld
+  * how dependencies are exported and installed for [http://code.google.com/p/sbe-helloworld HelloWorld]
   * How test are build and executed
 
-You can find DependencyGraph in `dependencies/info/DependecyGraph.png`
+You can find Dependency graph in `dependencies/info/DependecyGraph.png`
 
 http://cmake-simple-build-environment.googlecode.com/svn/wiki/images/HelloWorld_1_0_0_DependecyGraph.png
