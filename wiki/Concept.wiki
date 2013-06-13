@@ -18,8 +18,13 @@ The scripts supports
 == Dependency management ==
 
 Each package has file Properties.cmake. The file contains package description (e.g. [https://code.google.com/p/sbe-documentlibrary/source/browse/trunk/Properties.cmake Properties.cmake for DocumentLibrary]).
-
-One property is `DEPENDENCIES`. It contains description of each dependency used by package.
+  * `NAME` - package name
+  * `TYPE` - one of Library/Executable/Unit Test Framework/Project
+  * `VERSION_MAJOR`, `VERSION_MINOR`, `VERSION_PATCH` - should be [http://semver.org semantic version] if applicable. 
+  * `DESCRIPTION` - brief description
+  * `MAINTAINER` - maintainer email address
+  * `DEPENDENCIES` - contains description of each dependency used by package.
+  
 
 Each dependency has to have goals `install` and `uninstall`. During installation, dependency has to export targets. The scripts [https://code.google.com/p/cmake-simple-build-environment/source/browse/trunk/scripts/AddInstallTarget.cmake AddInstallTarget.cmake], [https://code.google.com/p/cmake-simple-build-environment/source/browse/trunk/scripts/AddUninstallTarget.cmake AddUninstallTarget.cmake] do this work. The export file is then used in `FIND_PACKAGE` during configuration of dependent package. 
 
