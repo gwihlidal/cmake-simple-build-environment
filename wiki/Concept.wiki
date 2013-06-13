@@ -1,3 +1,5 @@
+#Simple build environment concept
+
 = Simple build environment concept =
 
 The project provides CMake scripts usable in CMakeLists.txt of CPP package.
