@@ -21,7 +21,7 @@ Each package has file Properties.cmake. The file contains package description(e.
 
 One property is `DEPENDENCIES`. It contains description of each dependency used by package.
 
-Each dependency has to have goals `install` and `uninstall`. During installation, dependency has to export targets. The export file is then used in `FIND_PACKAGE` during configuration of dependent package.
+Each dependency has to have goals `install` and `uninstall`. During installation, dependency has to export targets. The scripts [https://code.google.com/p/cmake-simple-build-environment/source/browse/trunk/scripts/AddInstallTarget.cmake AddInstallTarget.cmake], [https://code.google.com/p/cmake-simple-build-environment/source/browse/trunk/scripts/AddUninstallTarget.cmake AddUninstallTarget.cmake] do this work. The export file is then used in `FIND_PACKAGE` during configuration of dependent package. 
 
 === How it works ===
 
