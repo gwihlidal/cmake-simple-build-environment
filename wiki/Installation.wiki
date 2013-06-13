@@ -9,7 +9,7 @@
 
   # checkout Simple Build Enviroment
     * `svn checkout http://cmake-simple-build-environment.googlecode.com/svn/trunk/ cmake-simple-build-environment-read-only`
-  # run install script on linux use sudo
+  # install checkouted sources
     * `cd cmake-simple-build-environment-read-only`
     * `mkdir build`
     * `cd build`
