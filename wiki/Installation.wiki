@@ -1,8 +1,8 @@
 === Prerequisites ===
 
   # install [http://www.cmake.org/cmake/resources/software.html CMake] at least version 2.8.10. 
-    If you want to use Texas Instruments compiler then version 2.8.11 is needed. 
-    Even if you use version 2.8.11, coverity for Texas Instruments compiler will not work correctly because at least coverity client in version 4.5.0 doesn't understand compiler long name switches (e.g. `--cpp_file`). The switches are defined in CMake in file `CMAKE_INSTALLATION_DIRECTORY/Modules/Compiler/TI-*.cmake`. In CMake version that I use, I manually change long name switches to its short names.
+    * If you want to use Texas Instruments compiler then version 2.8.11 is needed. 
+    * Even if you use version 2.8.11, coverity for Texas Instruments compiler will not work correctly because at least coverity client in version 4.5.0 doesn't understand compiler long name switches (e.g. `--cpp_file`). The switches are defined in CMake in file `CMAKE_INSTALLATION_DIRECTORY/Modules/Compiler/TI-*.cmake`. In CMake version that I use, I manually change long name switches to its short names.
   # svn command line client has to be installed
   # sed utility has to installed
   # java has to be installed
