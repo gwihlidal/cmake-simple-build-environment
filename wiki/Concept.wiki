@@ -17,7 +17,7 @@ The scripts supports
 
 == Dependency management ==
 
-Each package has file Properties.cmake. The file contains package description(e.g. [https://code.google.com/p/sbe-documentlibrary/source/browse/trunk/Properties.cmake Properties.cmake for DocumentLibrary]).
+Each package has file Properties.cmake. The file contains package description (e.g. [https://code.google.com/p/sbe-documentlibrary/source/browse/trunk/Properties.cmake Properties.cmake for DocumentLibrary]).
 
 One property is `DEPENDENCIES`. It contains description of each dependency used by package.
 
@@ -31,9 +31,9 @@ The script performs two steps
   * Exports sources (it uses [https://code.google.com/p/cmake-simple-build-environment/source/browse/trunk/scripts/ExportDependencies.cmake ExportDependencies.cmake])
   * Install sources (it uses [https://code.google.com/p/cmake-simple-build-environment/source/browse/trunk/scripts/InstallDependencies.cmake InstallDependencies.cmake])
 
-During package configuration all dependencies are exported recursively and they are installed. Installation is necessary during package configuration, because include paths and libraries created by dependency are discovered by `FIND_PACKAGE`.
+During package configuration all dependencies are exported recursively and installed. Installation is necessary during package configuration, because include paths and libraries created by dependency are discovered by `FIND_PACKAGE`.
 
-When dependencies are change their sources are deleted and dependency is uninstalled.
+When dependencies are changed, their sources are deleted and uninstalled.
 
 ==== Export Sources ====
 
