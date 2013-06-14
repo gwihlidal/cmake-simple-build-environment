@@ -69,6 +69,6 @@ The scripts performs:
 
 == Unit testing ==
 
-== Continues Integration ==
+== Continuous Integration ==
 
 == Coverity ==
