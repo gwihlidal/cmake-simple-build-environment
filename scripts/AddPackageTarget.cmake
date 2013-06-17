@@ -27,7 +27,7 @@ if(NOT "${OverallDependencies}" STREQUAL "")
         set(depName ${${dep}_Name})
         
         if(("${${dep}_Type}" STREQUAL "Library") OR ("${${dep}_Type}" STREQUAL "Executable"))
-            if(${${dep}_isExternal})
+            if(${${dep}_IsExternal})
                 add_custom_command(TARGET package
                     COMMENT "Skipping external dependecy ${depName}...")
             else()
