@@ -71,7 +71,7 @@ macro(_parseDependency dependencyProperties id)
     set(${dep_ID}_ScmType ${parsedDependecy_SCM} PARENT_SCOPE)
     set(${dep_ID}_ScmPath ${parsedDependecy_URL} PARENT_SCOPE)
     set(${dep_ID}_LibrariesToLink ${parsedDependecy_LIBRARIES_TO_LINK} PARENT_SCOPE)
-    set(${dep_ID}_isExternal ${parsedDependecy_EXTERNAL} PARENT_SCOPE)
+    set(${dep_ID}_IsExternal ${parsedDependecy_EXTERNAL} PARENT_SCOPE)
     
     # export dep id
     set(${id} ${dep_ID})
