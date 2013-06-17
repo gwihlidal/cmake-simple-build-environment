@@ -1,0 +1,16 @@
+/*
+ * Automatically generated main file for CppUTest Framework in project @PROJECT_NAME@.
+ */
+ 
+#include <CppUTest/CommandLineTestRunner.h>
+#include <CppUTest/TestRegistry.h>
+#include <CppUTestExt/MockSupportPlugin.h>
+#include <CppUTestExt/MockSupport.h>
+
+int main(int argumentCount, const char** arguments)
+	{
+	MockSupportPlugin mockPlugin;
+	TestRegistry::getCurrentRegistry()->installPlugin(&mockPlugin);
+	CommandLineTestRunner::RunAllTests(argumentCount, arguments);
+	return 0;
+	}
