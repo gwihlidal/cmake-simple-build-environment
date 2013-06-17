@@ -47,16 +47,18 @@ function(ExportProperties dependencies)
     
     _getDependenciesInfo(${NAME} "${dependencies}")
 
-    _calculateExternalDependenciesAndStoreInInfoFile("${dependencies}")
+    _recreateInfoAboutExternalFlag("${dependencies}" areExternalDependenciesChanged)
         
     _areDependenciesChanged(areChanged)
-    
+
+    if(areChanged OR areExternalDependenciesChanged)     
+        _printDependencies(${NAME} "${dependencies}")
+    endif()
+        
     if(NOT areChanged)
         _cleanup()
         return()
     endif()
-    
-    _printDependencies(${NAME} "${dependencies}")
     
     _checkDependenciesVersionsAndStopOnError()
 
@@ -258,17 +260,23 @@ function(_printDependencies projectName dependencies)
     
     list(APPEND plantumlContent "skinparam component {\n")
     list(APPEND plantumlContent "BackgroundColor<<Project>> LightGreen\n")
+    list(APPEND plantumlContent "BackgroundColor<<External Project>> LightGreen\n")
+    list(APPEND plantumlContent "BorderColor<<External Project>> Black\n")
     list(APPEND plantumlContent "BackgroundColor<<Executable>> LightBlue\n")
+    list(APPEND plantumlContent "BackgroundColor<<External Executable>> LightBlue\n")
+    list(APPEND plantumlContent "BorderColor<<External Executable>> Black\n")
+    list(APPEND plantumlContent "BorderColor<<External>> Black\n")
     list(APPEND plantumlContent "}\n")
     
     set(stereotypedPackages "")
     foreach(dependency ${New_OverallDependencies})
         if ("Project" STREQUAL "${New_${dependency}_Type}")
             list(APPEND stereotypedPackages ${dependency})
-        endif()
-        if ("Executable" STREQUAL "${New_${dependency}_Type}")
+        elseif ("Executable" STREQUAL "${New_${dependency}_Type}")
             list(APPEND stereotypedPackages ${dependency})
-        endif()
+        elseif (${New_${dependency}_isExternal})
+            list(APPEND stereotypedPackages ${dependency})
+        endif()        
     endforeach()
     
     # create packages with version mismatch
@@ -278,11 +286,29 @@ function(_printDependencies projectName dependencies)
             list(APPEND plantumlContent "package \"${name}\" {\n")
             list(APPEND plantumlContent "note \"<img:${CMAKE_ROOT}/Modules/SBE/tools/stop.png> <b><color:Red><size:16>Version mismatch</size></color></b>\" as N${name}\n")
             foreach(package ${New_${name}_Packages})
+                # calculate stereotypes
+                set(stereotype "")
+                
+                if (${New_${package}_isExternal})
+                    set(stereotype "External")
+                endif()
+                
                 if ("Project" STREQUAL "${New_${package}_Type}")
-                    list(APPEND plantumlContent "[${New_${package}_Name}\\n${New_${package}_Version}] <<Project>> .. N${name}\n")
-                    list(REMOVE_ITEM stereotypedPackages ${package})
+                    if("" STREQUAL "${stereotype}")
+                        set(stereotype "Project")
+                    else()
+                        set(stereotype "${stereotype} Project")
+                    endif()
                 elseif ("Executable" STREQUAL "${New_${package}_Type}")
-                    list(APPEND plantumlContent "[${New_${package}_Name}\\n${New_${package}_Version}] <<Executable>> .. N${name}\n")
+                    if("" STREQUAL "${stereotype}")
+                        set(stereotype "Executable")
+                    else()
+                        set(stereotype "${stereotype} Executable")
+                    endif()
+                endif()
+                
+                if("" STREQUAL "${stereotype}")
+                    list(APPEND plantumlContent "[${New_${package}_Name}\\n${New_${package}_Version}] <<${stereotype}>> .. N${name}\n")
                     list(REMOVE_ITEM stereotypedPackages ${package})
                 else()
                     list(APPEND plantumlContent "[${New_${package}_Name}\\n${New_${package}_Version}] .. N${name}\n")
@@ -293,14 +319,29 @@ function(_printDependencies projectName dependencies)
         endif()
     endforeach()
     
-    # create packages with stereotypes that hav no version mismatch
+    # create packages with stereotypes that have no version mismatch
     foreach(dependency ${stereotypedPackages})
+        # calculate stereotypes
+        set(stereotype "")
+        if (${New_${dependency}_isExternal})
+            set(stereotype "External")
+        endif()
+        
         if ("Project" STREQUAL "${New_${dependency}_Type}")
-            list(APPEND plantumlContent "[${New_${dependency}_Name}\\n${New_${dependency}_Version}] <<Project>>\n")
+            if("" STREQUAL "${stereotype}")
+                set(stereotype "Project")
+            else()
+                set(stereotype "${stereotype} Project")
+            endif()
+        elseif ("Executable" STREQUAL "${New_${dependency}_Type}")
+            if("" STREQUAL "${stereotype}")
+                set(stereotype "Executable")
+            else()
+                set(stereotype "${stereotype} Executable")
+            endif()
         endif()
-        if ("Executable" STREQUAL "${New_${dependency}_Type}")
-            list(APPEND plantumlContent "[${New_${dependency}_Name}\\n${New_${dependency}_Version}] <<Executable>>\n")
-        endif()
+
+        list(APPEND plantumlContent "[${New_${dependency}_Name}\\n${New_${dependency}_Version}] <<${stereotype}>>\n")
     endforeach()
     
     ParseDependencies("${dependencies}" ownDependencies)
@@ -448,12 +489,12 @@ endfunction (_updateDependeciesInstallationOrderInInfoFile)
 
 #
 #
-#    _calculateExternalDependenciesAndStoreInInfoFile
+#    _recreateInfoAboutExternalFlag
 #        claculates external dependencies
 #            * dependency is external if is flaged as external in own dependencies
 #
 #
-function (_calculateExternalDependenciesAndStoreInInfoFile dependenciesDescription)
+function (_recreateInfoAboutExternalFlag dependenciesDescription areExternalDependenciesChanged)
     set(externalDependencies "")
     
     _getAllExternalDependenciesRecursivellyFor("${dependenciesDescription}" externalDependencies)
@@ -471,6 +512,7 @@ function (_calculateExternalDependenciesAndStoreInInfoFile dependenciesDescripti
     endif()
     
     if ("${oldDep}" STREQUAL "${newDep}")
+        set(${areExternalDependenciesChanged} "no" PARENT_SCOPE)
         return()
     endif()
 
@@ -494,11 +536,15 @@ function (_calculateExternalDependenciesAndStoreInInfoFile dependenciesDescripti
     endforeach()
     foreach(dependency ${externalDependencies})
         list(APPEND info "set(${dependency}_isExternal \"yes\")\n")
+        set(New_${dependency}_isExternal "yes" CACHE INTERNAL "" FORCE)
     endforeach()
     list(APPEND info "# End of external dependencies section\n")
     
     file(WRITE ${DEP_INFO_FILE} ${info})
-endfunction (_calculateExternalDependenciesAndStoreInInfoFile)
+    
+    set(New_ExternalDependencies ${externalDependencies} CACHE INTERNAL "" FORCE)
+    set(${areExternalDependenciesChanged} "yes" PARENT_SCOPE) 
+endfunction (_recreateInfoAboutExternalFlag)
 
 function(_getAllExternalDependenciesRecursivellyFor depsDescription externalDeps)
     ParseDependencies("${depsDescription}" dependencies)
@@ -647,6 +693,11 @@ function(_clearTempCache)
         unset(New_${dependecy}_IsExported CACHE)
     endforeach()
     unset(New_OverallDependencies CACHE)
+    
+    foreach(dependecy ${New_ExternalDependencies})
+        unset(New_${dependecy}_isExternal CACHE)
+    endforeach()
+    unset(New_ExternalDependencies CACHE)
    
     unset(NEW_DEP_INSTALLATION_ORDER CACHE)
 endfunction(_clearTempCache)
