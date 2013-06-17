@@ -14,14 +14,18 @@ if(NOT DEFINED DEP_INSTALL_PATH)
     message(FATAL_ERROR "DEP_INSTALL_PATH has to be defined")
 endif()
 
+include(SBE/helpers/DependenciesParser)
+
+ParseDependencies("${DEPENDENCIES}" ownDependenciesIds)
+
 # link all dependend libraries
-if(NOT "${DEPENDENCIES}" STREQUAL "")
+if(NOT "${ownDependenciesIds}" STREQUAL "")
     include(${DEP_INFO_FILE})
 
     include_directories(${DEP_INSTALL_PATH}/include)
     link_directories(${DEP_INSTALL_PATH}/lib) 
 
-    foreach(dep ${DEPENDENCIES})
+    foreach(dep ${ownDependenciesIds})
         set(depName ${${dep}_Name})
         
         list(FIND DEP_TYPES_TO_ADD "${${dep}_Type}" typeToAdd)
@@ -37,8 +41,12 @@ if(NOT "${DEPENDENCIES}" STREQUAL "")
             if(DEFINED ${depName}_INCLUDE_DIRS)
                 include_directories(${${depName}_INCLUDE_DIRS})
             endif()                
-            
-            if(DEFINED ${depName}_LIBRARIES)
+
+            if(DEFINED ${dep}_LibrariesToLink)
+                # link only requested
+                target_link_libraries(${DEP_TARGET} ${${dep}_LibrariesToLink})
+            elseif(DEFINED ${depName}_LIBRARIES)
+                # link all exported
                 target_link_libraries(${DEP_TARGET} ${${depName}_LIBRARIES})
             endif()                
         endif()

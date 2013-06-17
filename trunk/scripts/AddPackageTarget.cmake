@@ -1,3 +1,4 @@
+include(SBE/helpers/DependenciesParser)
 
 add_custom_target(package)
 
@@ -14,18 +15,26 @@ if(DEFINED INSTALL_TEST_EXECUTABLE)
 endif()
  
 add_custom_command(TARGET package
+    COMMAND cmake -E remove_directory ${PROJECT_BINARY_DIR}/package
     COMMAND cmake -DCMAKE_INSTALL_COMPONENT=Binaries -DBUILD_TYPE=${CMAKE_BUILD_TYPE} -DCMAKE_INSTALL_PREFIX=${PROJECT_BINARY_DIR}/package${PACKAGE_INSTALL_PREFIX} -P cmake_install.cmake 
     COMMENT "Preinstalling...")
     
 # reinstall
-if(NOT "${DEPENDENCIES}" STREQUAL "")
+if(NOT "${OverallDependencies}" STREQUAL "")
+    ParseDependencies("${DEPENDENCIES}" ownDependenciesIds)
+    
     foreach(dep ${OverallDependencies})
         set(depName ${${dep}_Name})
         
         if(("${${dep}_Type}" STREQUAL "Library") OR ("${${dep}_Type}" STREQUAL "Executable"))
-            add_custom_command(TARGET package
-                COMMAND cmake -DCMAKE_INSTALL_COMPONENT=Binaries -DBUILD_TYPE=${CMAKE_BUILD_TYPE} -DCMAKE_INSTALL_PREFIX=${PROJECT_BINARY_DIR}/package${PACKAGE_INSTALL_PREFIX} -P ${${dep}_BuildPath}/build/cmake_install.cmake
-                COMMENT "Adding dependecy ${depName} to package...")
+            if(${${dep}_isExternal})
+                add_custom_command(TARGET package
+                    COMMENT "Skipping external dependecy ${depName}...")
+            else()
+                add_custom_command(TARGET package
+                    COMMAND cmake -DCMAKE_INSTALL_COMPONENT=Binaries -DBUILD_TYPE=${CMAKE_BUILD_TYPE} -DCMAKE_INSTALL_PREFIX=${PROJECT_BINARY_DIR}/package${PACKAGE_INSTALL_PREFIX} -P ${${dep}_BuildPath}/build/cmake_install.cmake
+                    COMMENT "Adding dependecy ${depName} to package...")
+            endif()
         endif()
         
     endforeach()

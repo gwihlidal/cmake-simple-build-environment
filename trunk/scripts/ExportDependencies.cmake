@@ -12,12 +12,13 @@ set(DEP_SRC_INFO_PATH "${DEP_SRC_DEPLOYMENT_PATH}/info")
 set(DEP_INFO_FILE "${DEP_SRC_INFO_PATH}/info.cmake")
 set(DEP_SRC_LOCK_FILE "${DEP_SRC_INFO_PATH}/lock")
 
-
 # find all necessary tools
 find_package(Subversion QUIET)
 if(NOT Subversion_SVN_EXECUTABLE)
     message(FATAL_ERROR "error: could not find svn.")
 endif()
+
+include(SBE/helpers/DependenciesParser)
 
 # create export directories    
 if(NOT EXISTS "${DEP_SRC_INFO_PATH}")
@@ -45,7 +46,9 @@ function(ExportProperties dependencies)
     set(${NAME}_Version "${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}" CACHE INTERNAL "" FORCE)
     
     _getDependenciesInfo(${NAME} "${dependencies}")
-    
+
+    _calculateExternalDependenciesAndStoreInInfoFile("${dependencies}")
+        
     _areDependenciesChanged(areChanged)
     
     if(NOT areChanged)
@@ -75,9 +78,11 @@ endfunction(ExportProperties)
 #
 #
 function(_getDependenciesInfo dependant dependencies)
-    foreach(dependecy ${dependencies})
+    ParseDependencies("${dependencies}" dependenciesIndentifiers)
+
+    foreach(dependecyIdentifier ${dependenciesIndentifiers})
         # export dependecy property
-        _getDependencyInfo(${dependant} ${dependecy})
+        _getDependencyInfo(${dependant} ${dependecyIdentifier})
     endforeach()
 endfunction(_getDependenciesInfo)
 
@@ -94,7 +99,7 @@ function(_getDependencyInfo dependant dependency)
         # depenedency already processed in previous turn, fill all stored data
         _fillNewDependecyFromStoredOne(${dependency})
     else()
-        _fillNewDependecyFromSvn(${dependency})
+        _fillNewDependecyFromScm(${dependency})
         _storeDependencyInInfoFile(${dependency})
     endif()
 
@@ -110,15 +115,17 @@ function(_getDependencyInfo dependant dependency)
     _addToChachedList(New_OverallDependencies ${dependency})
 
     # export dependencies of dependency via recursion    
-    _getDependenciesInfo("${dependency}" "${New_${dependency}_Dependencies}")
+    _getDependenciesInfo("${dependency}" "${New_${dependency}_DependenciesDescription}")
 endfunction(_getDependencyInfo)
 
 function(_fillNewDependecyFromStoredOne dependency)
     set(New_${dependency}_Name ${${dependency}_Name} CACHE INTERNAL "" FORCE)
     set(New_${dependency}_Type ${${dependency}_Type} CACHE INTERNAL "" FORCE)
     set(New_${dependency}_Version ${${dependency}_Version} CACHE INTERNAL "" FORCE)
-    set(New_${dependency}_SvnPath ${${dependency}_SvnPath} CACHE INTERNAL "" FORCE)
+    set(New_${dependency}_ScmPath ${${dependency}_ScmPath} CACHE INTERNAL "" FORCE)
+    set(New_${dependency}_ScmType ${${dependency}_ScmType} CACHE INTERNAL "" FORCE)
     set(New_${dependency}_Dependencies ${${dependency}_Dependencies} CACHE INTERNAL "" FORCE)
+    set(New_${dependency}_DependenciesDescription ${${dependency}_DependenciesDescription} CACHE INTERNAL "" FORCE)
     if(DEFINED ${dependency}_IsExported)
         set(New_${dependency}_IsExported ${${dependency}_IsExported} CACHE INTERNAL "" FORCE)
     else()
@@ -126,14 +133,14 @@ function(_fillNewDependecyFromStoredOne dependency)
     endif()
 endfunction(_fillNewDependecyFromStoredOne)
 
-function(_fillNewDependecyFromSvn dependency)
+function(_fillNewDependecyFromScm dependency)
     # log
     message(STATUS "Exporting Properties for dependency ${dependency}")
     # export dependecy property file
     set(localFile "${DEP_SRC_INFO_PATH}/properties.cmake")
-    set(svnFile "${dependency}/Properties.cmake")
+    set(scmFile "${${dependency}_ScmPath}/Properties.cmake")
     file(REMOVE ${localFile})
-    _exportFromSvn(${svnFile} ${localFile})
+    _exportFromScm(${${dependency}_ScmType} ${scmFile} ${localFile})
     # include properties file of dependecy
     set(DEPENDENCIES "")
     set(NAME "")
@@ -141,16 +148,28 @@ function(_fillNewDependecyFromSvn dependency)
     set(VERSION_MINOR "")
     set(VERSION_PATCH "")
     include(${localFile})
-    
+
+    ParseDependencies("${DEPENDENCIES}" dependencyDependenciesIds)
+        
     # store exported info
     set(New_${dependency}_Name "${NAME}" CACHE INTERNAL "" FORCE)
     set(New_${dependency}_Type "${TYPE}" CACHE INTERNAL "" FORCE)
     set(New_${dependency}_Version "${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}" CACHE INTERNAL "" FORCE)
-    set(New_${dependency}_SvnPath "${dependency}" CACHE INTERNAL "" FORCE)
-    set(New_${dependency}_Dependencies ${DEPENDENCIES} CACHE INTERNAL "" FORCE)
+    set(New_${dependency}_ScmPath "${${dependency}_ScmPath}" CACHE INTERNAL "" FORCE)
+    set(New_${dependency}_ScmType "${${dependency}_ScmType}" CACHE INTERNAL "" FORCE)
+    set(New_${dependency}_DependenciesDescription ${DEPENDENCIES} CACHE INTERNAL "" FORCE)
+    set(New_${dependency}_Dependencies ${dependencyDependenciesIds} CACHE INTERNAL "" FORCE)
     set(New_${dependency}_IsExported "no" CACHE INTERNAL "" FORCE)
     file(REMOVE ${localFile})
-endfunction(_fillNewDependecyFromSvn)
+endfunction(_fillNewDependecyFromScm)
+
+function(_exportFromScm scmType scmFile localFile)
+    if("svn" STREQUAL "${scmType}")
+        _exportFromSvn(${scmFile} ${localFile})
+    else()
+        _exit("Scm \"${scmType}\" is not supported")
+    endif()
+endfunction()
 
 function(_exportFromSvn svnFile localFile)
     # export
@@ -177,10 +196,15 @@ function(_storeDependencyInInfoFile dependency)
     list(APPEND info "set(${dependency}_Name \"${New_${dependency}_Name}\")\n")
     list(APPEND info "set(${dependency}_Type \"${New_${dependency}_Type}\")\n")
     list(APPEND info "set(${dependency}_Version \"${New_${dependency}_Version}\")\n")
-    list(APPEND info "set(${dependency}_SvnPath \"${New_${dependency}_SvnPath}\")\n")
-    foreach(dep ${New_${dependency}_Dependencies})
-        list(APPEND info "list(APPEND ${dependency}_Dependencies \"${dep}\")\n")
-        list(APPEND info "list(REMOVE_DUPLICATES ${dependency}_Dependencies)\n")
+    list(APPEND info "set(${dependency}_ScmPath \"${New_${dependency}_ScmPath}\")\n")
+    list(APPEND info "set(${dependency}_ScmType \"${New_${dependency}_ScmType}\")\n")
+    list(APPEND info "set(${dependency}_DependenciesDescription \"\")\n")
+    foreach(dependencyDescriptionItem ${New_${dependency}_DependenciesDescription})
+        list(APPEND info "list(APPEND ${dependency}_DependenciesDescription \"${dependencyDescriptionItem}\")\n")
+    endforeach()
+    list(APPEND info "set(${dependency}_Dependencies \"\")\n")
+    foreach(dependencyId ${New_${dependency}_Dependencies})
+        list(APPEND info "list(APPEND ${dependency}_Dependencies \"${dependencyId}\")\n")
     endforeach()
     list(APPEND info "# End of info for dependecy ${dependency}\n")
     
@@ -279,7 +303,9 @@ function(_printDependencies projectName dependencies)
         endif()
     endforeach()
     
-    foreach(dependency ${dependencies})
+    ParseDependencies("${dependencies}" ownDependencies)
+    
+    foreach(dependency ${ownDependencies})
         list(APPEND plantumlContent "[${projectName}]-->[${New_${dependency}_Name}\\n${New_${dependency}_Version}]\n")
     endforeach()
     
@@ -419,6 +445,100 @@ function (_updateDependeciesInstallationOrderInInfoFile)
     file(WRITE ${DEP_INFO_FILE} ${info})
 endfunction (_updateDependeciesInstallationOrderInInfoFile)
 
+
+#
+#
+#    _calculateExternalDependenciesAndStoreInInfoFile
+#        claculates external dependencies
+#            * dependency is external if is flaged as external in own dependencies
+#
+#
+function (_calculateExternalDependenciesAndStoreInInfoFile dependenciesDescription)
+    set(externalDependencies "")
+    
+    _getAllExternalDependenciesRecursivellyFor("${dependenciesDescription}" externalDependencies)
+    
+    # check if external flags are changed
+    set(oldDep "")
+    if(DEFINED EXTERNAL_DEPENDENCIES)
+        set(oldDep ${EXTERNAL_DEPENDENCIES})
+        list(SORT oldDep)
+    endif()
+
+    set(newDep ${externalDependencies})
+    if(NOT "" STREQUAL "${newDep}")
+        list(SORT newDep)
+    endif()
+    
+    if ("${oldDep}" STREQUAL "${newDep}")
+        return()
+    endif()
+
+    # write change in info file   
+    file(READ ${DEP_INFO_FILE} info)
+    string(REPLACE "\n" "\n;" info "${info}")
+    list(FIND info "# Begin of external dependencies section\n" beginIndex)
+    list(FIND info "# End of external dependencies section\n" endIndex)
+    
+    if(NOT ${beginIndex} EQUAL -1 AND NOT ${endIndex} EQUAL -1)
+        # remove old values
+        foreach(index RANGE ${beginIndex} ${endIndex})
+            list(REMOVE_AT info ${beginIndex})
+        endforeach()
+    endif()
+    
+    # add new values
+    list(APPEND info "# Begin of external dependencies section\n")
+    foreach(dependency ${externalDependencies})
+        list(APPEND info "list(APPEND EXTERNAL_DEPENDENCIES \"${dependency}\")\n")
+    endforeach()
+    foreach(dependency ${externalDependencies})
+        list(APPEND info "set(${dependency}_isExternal \"yes\")\n")
+    endforeach()
+    list(APPEND info "# End of external dependencies section\n")
+    
+    file(WRITE ${DEP_INFO_FILE} ${info})
+endfunction (_calculateExternalDependenciesAndStoreInInfoFile)
+
+function(_getAllExternalDependenciesRecursivellyFor depsDescription externalDeps)
+    ParseDependencies("${depsDescription}" dependencies)
+    
+    set(depOverallDependencies "")
+    
+    foreach(dependency ${dependencies})
+        set(externalDependencies "")
+            
+        if(${${dependency}_isExternal})
+            list(APPEND depOverallDependencies ${dependency})
+            _getAllDependenciesRecursivellyFor("${New_${dependency}_DependenciesDescription}" externalDependencies)
+        else()
+            _getAllExternalDependenciesRecursivellyFor("${New_${dependency}_DependenciesDescription}" externalDependencies)
+        endif()
+        
+        if(NOT "" STREQUAL "${externalDependencies}")
+            list(APPEND depOverallDependencies ${externalDependencies})
+        endif()
+    endforeach()
+    
+    list(REMOVE_DUPLICATES depOverallDependencies)
+    set(${externalDeps} ${depOverallDependencies} PARENT_SCOPE)
+endfunction()
+
+function(_getAllDependenciesRecursivellyFor depsDescription deps)
+    ParseDependencies("${depsDescription}" dependencies)
+    
+    set(depOverallDependencies "")
+    
+    foreach(dependency ${dependencies})
+        _getAllDependenciesRecursivellyFor("${New_${dependency}_DependenciesDescription}" depDeps)
+         list(APPEND depOverallDependencies ${dependency})
+         list(APPEND depOverallDependencies ${depDeps})
+    endforeach()
+    
+    list(REMOVE_DUPLICATES depOverallDependencies)
+    set(${deps} ${depOverallDependencies} PARENT_SCOPE)
+endfunction()
+
 #
 #
 #    _removeUnusedDependencies
@@ -469,7 +589,7 @@ function(_exportRequiredDependencies)
         if(NOT ${New_${dependecy}_IsExported})
             # export dependecy from svn 
             message(STATUS "Exporting Sources for dependency ${dependecy}")
-            _exportFromSvn(${dependecy} ${DEP_SOURCES_PATH}/${New_${dependecy}_Name})
+            _exportFromScm(${New_${dependecy}_ScmType} ${New_${dependecy}_ScmPath} ${DEP_SOURCES_PATH}/${New_${dependecy}_Name})
             _setExported(${dependecy})
         endif()
     endforeach()
@@ -519,9 +639,11 @@ function(_clearTempCache)
         unset(New_${dependecy}_Name CACHE)
         unset(New_${dependecy}_Type CACHE)
         unset(New_${dependecy}_Version CACHE)
-        unset(New_${dependecy}_SvnPath CACHE)
+        unset(New_${dependecy}_ScmPath CACHE)
+        unset(New_${dependecy}_ScmType CACHE)
         unset(New_${dependecy}_Dependants CACHE)
         unset(New_${dependecy}_Dependencies CACHE)
+        unset(New_${dependecy}_DependenciesDescription CACHE)
         unset(New_${dependecy}_IsExported CACHE)
     endforeach()
     unset(New_OverallDependencies CACHE)
@@ -552,10 +674,13 @@ foreach(dependecy ${OverallDependencies})
     unset(${dependecy}_Name)
     unset(${dependecy}_Type)
     unset(${dependecy}_Version)
-    unset(${dependecy}_SvnPath)
+    unset(${dependecy}_ScmPath)
     unset(${dependecy}_Dependencies)
+    unset(${dependecy}_DependenciesDescription)
     unset(${dependecy}_IsExported)
+    unset(${dependecy}_isExternal)
 endforeach()
 unset(OverallDependencies)
 unset(DEP_INSTALLATION_ORDER)
+unset(EXTERNAL_DEPENDENCIES)
   
