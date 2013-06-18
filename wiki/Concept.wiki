@@ -26,7 +26,21 @@ Each package has file Properties.cmake. The file contains package description (e
   * `DEPENDENCIES` - contains description of each dependency used by package.
   
 
-Each dependency has to have goals `install` and `uninstall`. During installation, dependency has to export targets. The scripts [https://code.google.com/p/cmake-simple-build-environment/source/browse/trunk/scripts/AddInstallTarget.cmake AddInstallTarget.cmake], [https://code.google.com/p/cmake-simple-build-environment/source/browse/trunk/scripts/AddUninstallTarget.cmake AddUninstallTarget.cmake] do this work. The export file is then used in `FIND_PACKAGE` during configuration of dependent package. 
+Each dependency has to have goals `install` and `uninstall`. During installation, dependency has to export targets. The scripts [https://code.google.com/p/cmake-simple-build-environment/source/browse/trunk/scripts/AddInstallTarget.cmake AddInstallTarget.cmake], [https://code.google.com/p/cmake-simple-build-environment/source/browse/trunk/scripts/AddUninstallTarget.cmake AddUninstallTarget.cmake] do this work. The export file is then used in `FIND_PACKAGE` during configuration of dependent package.
+
+Package dependencies are described in variable `DEPENDENCIES`. Each dependency has to start with keyword `DEPENDENCY`. Each dependency can be described with:
+  * `URL` - It is mandatory. Repository location of dependency release.
+  * `SCM` - It is optional. It is repository type. If no `SCM` keyword is given then default repository `svn` is used. Available types are:
+    * svn
+  * `EXTERNAL` - It is optional. Meaning of the flag is that dependency marked as external is not included in package goal and will be not automatically updated to its latest releases.
+  * `LIBRARIES_TO_LINK` - It is optional. Because some packages doesn't honor [http://www.objectmentor.com/resources/articles/Principles_and_Patterns.pdf the common reuse principle] user can choose via this keyword libraries from package that has to be used in his package.
+
+Example:
+<code language="cmake">
+set(DEPENDENCIES 
+DEPENDENCY URL http://sbe-printerlibrary.googlecode.com/svn/tags/rel_1_0_0 SCM svn LIBRARIES_TO_LINK PrinterLibrary EXTERNAL
+)
+</code>
 
 === How it works ===
 
