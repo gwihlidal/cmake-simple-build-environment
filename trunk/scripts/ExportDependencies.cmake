@@ -308,10 +308,10 @@ function(_printDependencies projectName dependencies)
                 endif()
                 
                 if("" STREQUAL "${stereotype}")
-                    list(APPEND plantumlContent "[${New_${package}_Name}\\n${New_${package}_Version}] <<${stereotype}>> .. N${name}\n")
-                    list(REMOVE_ITEM stereotypedPackages ${package})
-                else()
                     list(APPEND plantumlContent "[${New_${package}_Name}\\n${New_${package}_Version}] .. N${name}\n")
+                else()
+                    list(APPEND plantumlContent "[${New_${package}_Name}\\n${New_${package}_Version}] <<${stereotype}>> .. N${name}\n")
+                    list(REMOVE_ITEM stereotypedPackages ${package})                    
                 endif()
             endforeach()
 
