@@ -43,6 +43,8 @@ DEPENDENCY
     EXTERNAL 
     SCM svn
     URL http://sbe-printerlibrary.googlecode.com/svn/tags/rel_1_0_0 
+DEPENDENCY 
+    URL http://sbe-documentlibrary.googlecode.com/svn/tags/rel_1_0_0 
 )
 </code>
 
