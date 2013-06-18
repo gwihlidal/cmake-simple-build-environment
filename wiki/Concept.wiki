@@ -70,7 +70,7 @@ It exports Properties.cmake recursively for each dependency and generates file `
 Once all properties from all dependencies are exported, scripts performs
   # make dependency picture - it uses [http://plantuml.sourceforge.net/ plantuml]
   # check dependencies versions and report error if any - now exact version has to be used
-    http://cmake-simple-build-environment.googlecode.com/svn/wiki/images/DependencyGraph.png
+    [http://cmake-simple-build-environment.googlecode.com/svn/wiki/images/DependecyGraphSmall.png http://cmake-simple-build-environment.googlecode.com/svn/wiki/images/DependecyGraph.png]
   # check dependencies installation order and report error if any
   # remove unused dependencies
   # exports dependencies sources
