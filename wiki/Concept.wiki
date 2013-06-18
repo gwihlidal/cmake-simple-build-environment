@@ -33,7 +33,7 @@ Package dependencies are described in variable `DEPENDENCIES`. Each dependency h
   * `SCM` - It is optional. It is repository type. If no `SCM` keyword is given then default repository `svn` is used. Available types are:
     * svn
   * `EXTERNAL` - It is optional. Meaning of the flag is that dependency marked as external is not included in package goal and will be not automatically updated to its latest releases. When dependency is marked as `EXTERNAL` then all its dependencies are external too. External dependencies have black border and External Stereotype in dependency graph.
-
+    [http://cmake-simple-build-environment.googlecode.com/svn/wiki/images/DependecyGraphExternal.png http://cmake-simple-build-environment.googlecode.com/svn/wiki/images/DependecyGraphExternalSmall.png]
   * `LIBRARIES_TO_LINK` - It is optional. Because some packages doesn't honor [http://www.objectmentor.com/resources/articles/Principles_and_Patterns.pdf the common reuse principle] user can choose via this keyword libraries from package that has to be used in his package.
 
 Example:
