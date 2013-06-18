@@ -478,6 +478,7 @@ function (_updateDependeciesInstallationOrderInInfoFile)
     
     # add new values
     list(APPEND info "# Begin of installation order section\n")
+    list(APPEND info "set(DEP_INSTALLATION_ORDER \"\")\n")
     foreach(dependency ${NEW_DEP_INSTALLATION_ORDER})
         list(APPEND info "list(APPEND DEP_INSTALLATION_ORDER \"${dependency}\")\n")
     endforeach(dependency ${NEW_DEP_INSTALLATION_ORDER})
