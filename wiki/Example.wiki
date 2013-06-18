@@ -22,4 +22,4 @@ You will see
 
 You can find Dependency graph in `dependencies/info/DependecyGraph.png`
 
-http://cmake-simple-build-environment.googlecode.com/svn/wiki/images/HelloWorld_1_0_0_DependecyGraph.png
+http://cmake-simple-build-environment.googlecode.com/svn/wiki/images/DependecyGraphHelloWorld.png
