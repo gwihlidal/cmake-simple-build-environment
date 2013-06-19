@@ -104,7 +104,11 @@ The scripts performs:
   # configure dependency in created build directory. `CMAKE_TOOLCHAIN_FILE` and `CMAKE_BUILD_TYPE` are propagated to dependency. 
   # install dependency via command `make install`. If coverity is requested, `cov_build` is performed. When dependency is installed, dependent package can use `FIND_PACKAGE` to get information about dependency.
 
+Once sources are installed following variables are set by script [https://code.google.com/p/cmake-simple-build-environment/source/browse/trunk/scripts/InstallDependencies.cmake InstallDependencies.cmake]:
+  * `DEP_INSTALL_PATH` - path where all dependencies are installed
+
 == Targets ==
+
 
 
 == Unit testing ==
