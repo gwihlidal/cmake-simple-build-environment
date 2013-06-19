@@ -132,14 +132,19 @@ Or do it "low level" with `FIND_PACKAGE`
 <code language="cmake">
 include(SBE/helpers/DependenciesParser)
 ParseDependencies("${DEPENDENCIES}" ownDependenciesIds)
+
 include(${DEP_INFO_FILE})
+
 # link all dependend libraries
 foreach(dep ${ownDependenciesIds})
     set(depName ${${dep}_Name})
+
     find_package(${depName} REQUIRED CONFIG PATHS ${DEP_INSTALL_PATH}/config NO_DEFAULT_PATH)
+
     if(DEFINED ${depName}_INCLUDE_DIRS)
         include_directories(${${depName}_INCLUDE_DIRS})
-    endif()                
+    endif()
+    
     if(DEFINED ${depName}_LIBRARIES)
         # link all exported
         target_link_libraries(${PROJECT_NAME} ${${depName}_LIBRARIES})
