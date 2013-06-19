@@ -84,7 +84,15 @@ There are information about each dependency used by package in `DEP_INFO_FILE`. 
   * `DEP_INSTALLATION_ORDER` - it is list of dependencies identifiers in order to be installed. It is used by script [https://code.google.com/p/cmake-simple-build-environment/source/browse/trunk/scripts/InstallDependencies.cmake InstallDependencies.cmake]
   * `EXTERNAL_DEPENDENCIES` -  - it is list of dependencies identifiers that are marked as `EXTERNAL` in package
   * For each _dependency_ in `OverallDependencies` list following properties are defined
-    * `${`_`dependency `_`}_Name - name of dependency
+    * `${`_`dependency`_`}_Name` - name of dependency
+    * `${`_`dependency`_`}_Type` - type of dependency
+    * `${`_`dependency`_`}_Version` - string version in format major.minor.patch
+    * `${`_`dependency`_`}_ScmPath` - URL to repository location
+    * `${`_`dependency`_`}_ScmType` - repository type
+    * `${`_`dependency`_`}_DependenciesDescription` - it is list same as `DEPENDENCIES` in dependency Properties.cmake file
+    * `${`_`dependency`_`}_Dependencies` - it is list of dependencies identifiers
+
+All this variables are later used in next configuration steps.
 
 ==== Install sources ====
 
