@@ -113,7 +113,7 @@ Once dependencies are deployed, dependencies properties can be used to defined o
 
 Simple Build Environment contains script that do it in following way. 
 
-
+_ToDo_
 
 If it is not suitable for you can write your own targets and use variables defined during dependencies deployment and Properties.cmake file of your package.
 
