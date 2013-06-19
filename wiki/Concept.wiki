@@ -75,7 +75,7 @@ Once all properties from all dependencies are exported, scripts performs
   # remove unused dependencies
   # exports dependencies sources
 
-Once sources are exported file `dependencies/info/info.cmake` is created and following variables are set by script [https://code.google.com/p/cmake-simple-build-environment/source/browse/trunk/scripts/ExportDependencies.cmake ExportDependencies.cmake]:
+Once sources are exported file `[http://cmake-simple-build-environment.googlecode.com/svn/wiki/snippets/info.cmake dependencies/info/info.cmake]` is created and following variables are set by script [https://code.google.com/p/cmake-simple-build-environment/source/browse/trunk/scripts/ExportDependencies.cmake ExportDependencies.cmake]:
   * `DEP_SOURCES_PATH` - path where all dependencies are exported
   * `DEP_INFO_FILE` - full name of info.cmake file
 
@@ -91,6 +91,7 @@ There are information about each dependency used by package in `DEP_INFO_FILE`. 
     * `${`_`dependency`_`}_ScmType` - repository type
     * `${`_`dependency`_`}_DependenciesDescription` - it is list same as `DEPENDENCIES` in dependency Properties.cmake file
     * `${`_`dependency`_`}_Dependencies` - it is list of dependencies identifiers
+    * `${`_`dependency`_`}_IsExternal` - set to "yes" if dependency is marked as `EXTERNAL`, otherwise it is unset.
 
 All this variables are later used in next configuration steps.
 
