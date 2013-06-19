@@ -148,7 +148,7 @@ foreach(dep ${ownDependenciesIds})
 
     if(DEFINED ${depName}_LIBRARIES)
         # link all exported
-        target_link_libraries(${DEP_TARGET} ${${depName}_LIBRARIES})
+        target_link_libraries(${PROJECT_NAME} ${${depName}_LIBRARIES})
     endif()                
 endforeach()
 </code>
