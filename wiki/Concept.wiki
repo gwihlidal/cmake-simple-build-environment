@@ -107,9 +107,51 @@ The scripts performs:
 Once sources are installed following variables are set by script [https://code.google.com/p/cmake-simple-build-environment/source/browse/trunk/scripts/InstallDependencies.cmake InstallDependencies.cmake]:
   * `DEP_INSTALL_PATH` - path where all dependencies are installed
 
-== Targets ==
+== Binary Targets ==
+
+Once dependencies are deployed, dependencies properties can be used to defined own package targets.
+
+Simple Build Environment contains script that do it in following way. 
 
 
+
+If it is not suitable for you can write your own targets and use variables defined during dependencies deployment and Properties.cmake file of your package.
+
+==== Adding Libraries to target ===
+
+It is possible to use script [https://code.google.com/p/cmake-simple-build-environment/source/browse/trunk/scripts/helpers/AddDependenciesToTarget.cmake AddDependenciesToTarget.cmake]
+
+<code language="cmake">
+set(DEP_TARGET ${PROJECT_NAME})
+set(DEP_TYPES_TO_ADD "Library" "Project")
+include(SBE/helpers/AddDependenciesToTarget)
+</code>
+
+Or do it "low level" with `FIND_PACKAGE`
+
+<code language="cmake">
+include(SBE/helpers/DependenciesParser)
+
+ParseDependencies("${DEPENDENCIES}" ownDependenciesIds)
+
+include(${DEP_INFO_FILE})
+
+# link all dependend libraries
+foreach(dep ${ownDependenciesIds})
+    set(depName ${${dep}_Name})
+
+    find_package(${depName} REQUIRED CONFIG PATHS ${DEP_INSTALL_PATH}/config NO_DEFAULT_PATH)
+                 
+    if(DEFINED ${depName}_INCLUDE_DIRS)
+        include_directories(${${depName}_INCLUDE_DIRS})
+    endif()                
+
+    if(DEFINED ${depName}_LIBRARIES)
+        # link all exported
+        target_link_libraries(${DEP_TARGET} ${${depName}_LIBRARIES})
+    endif()                
+endforeach()
+</code>
 
 == Unit testing ==
 
