@@ -117,7 +117,7 @@ _ToDo_
 
 If it is not suitable for you can write your own targets and use variables defined during dependencies deployment and Properties.cmake file of your package.
 
-==== Adding Libraries to target ===
+For example:
 
 It is possible to use script [https://code.google.com/p/cmake-simple-build-environment/source/browse/trunk/scripts/helpers/AddDependenciesToTarget.cmake AddDependenciesToTarget.cmake]
 
