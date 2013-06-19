@@ -532,6 +532,7 @@ function (_recreateInfoAboutExternalFlag dependenciesDescription areExternalDepe
     
     # add new values
     list(APPEND info "# Begin of external dependencies section\n")
+    list(APPEND info "set(EXTERNAL_DEPENDENCIES \"\")\n")
     foreach(dependency ${externalDependencies})
         list(APPEND info "list(APPEND EXTERNAL_DEPENDENCIES \"${dependency}\")\n")
     endforeach()
