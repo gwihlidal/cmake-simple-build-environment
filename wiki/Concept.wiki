@@ -75,6 +75,17 @@ Once all properties from all dependencies are exported, scripts performs
   # remove unused dependencies
   # exports dependencies sources
 
+Once sources are exported file `dependencies/info/info.cmake` is created and following variables are set by script [https://code.google.com/p/cmake-simple-build-environment/source/browse/trunk/scripts/ExportDependencies.cmake ExportDependencies.cmake]:
+  * `DEP_SOURCES_PATH` - path where all dependencies are exported
+  * `DEP_INFO_FILE` - full name of info.cmake file
+
+There are information about each dependency used by package in `DEP_INFO_FILE`. The file can be included into CMakeLists.txt to access dependencies properties. Following variables are available:
+  * `OverallDependencies` - it is list of all dependencies identifiers used by package
+  * `DEP_INSTALLATION_ORDER` - it is list of dependencies identifiers in order to be installed. It is used by script [https://code.google.com/p/cmake-simple-build-environment/source/browse/trunk/scripts/InstallDependencies.cmake InstallDependencies.cmake]
+  * `EXTERNAL_DEPENDENCIES` -  - it is list of dependencies identifiers that are marked as `EXTERNAL` in package
+  * For each _dependency_ in `OverallDependencies` list following properties are defined
+    * `${`_`dependency `_`}_Name - name of dependency
+
 ==== Install sources ====
 
 The script [https://code.google.com/p/cmake-simple-build-environment/source/browse/trunk/scripts/InstallDependencies.cmake InstallDependencies.cmake] uses `dependencies/info/info.cmake` prepared by [https://code.google.com/p/cmake-simple-build-environment/source/browse/trunk/scripts/ExportDependencies.cmake ExportDependencies.cmake]. 
@@ -84,8 +95,7 @@ The scripts performs:
   # configure dependency in created build directory. `CMAKE_TOOLCHAIN_FILE` and `CMAKE_BUILD_TYPE` are propagated to dependency. 
   # install dependency via command `make install`. If coverity is requested, `cov_build` is performed. When dependency is installed, dependent package can use `FIND_PACKAGE` to get information about dependency.
 
-== Build ==
-
+== Targets ==
 
 
 == Unit testing ==
