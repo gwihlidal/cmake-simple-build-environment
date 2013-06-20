@@ -111,9 +111,10 @@ Once sources are installed following variables are set by script [https://code.g
 
 Once dependencies are deployed, dependencies properties can be used to defined own package targets.
 
-Simple Build Environment contains script that do it in following way. 
+Simple Build Environment contains script [http://code.google.com/p/cmake-simple-build-environment/source/browse/trunk/scripts/AddBinaryTargets.cmake AddBinaryTargets.cmake] that do it in following way. 
 
-_ToDo_
+Based on package `TYPE` it adds executable or library target with name `NAME`. When target platform supports shared libraries it prefers shared libraries. It adds all libraries from package `DEPENDENCIES` to added target. For shared library it sets so-name to `VERSION_MAJOR.VERSION_MINOR`.
+Before including the script variables `SOURCE_FILES` and/or `SOURCE_FILES_OUTOF_TEST` have to be set. Both are linked into added target. See [http://code.google.com/p/sbe-documentlibrary/source/browse/trunk/CMakeLists.txt DocumentLibrary CMakeLists.txt].
 
 If it is not suitable for you can write your own targets and use variables defined during dependencies deployment and Properties.cmake file of your package.
 
