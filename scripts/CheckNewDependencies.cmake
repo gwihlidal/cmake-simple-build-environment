@@ -1,12 +1,15 @@
 cmake_minimum_required(VERSION 2.8)
 
 if(NOT PROPERTIES_PATH)
-    message(FATAL_ERROR "Path to Properties.txt has to be defined as PROPERTIES_PATH=path.")
+    message(FATAL_ERROR "URL Path to Properties.cmake has to be defined as PROPERTIES_PATH=path.")
 endif()
 
 include(SBE/helpers/DependenciesParser)
+include(SBE/helpers/SvnHelpers)
 
 # get Properties from scm
+message(STATUS "Exporting dependency properties ${PROPERTIES_PATH}")
+
 execute_process(COMMAND svn export ${PROPERTIES_PATH}/Properties.cmake Properties.cmake
     RESULT_VARIABLE svnResult
     OUTPUT_VARIABLE out
@@ -18,16 +21,36 @@ endif()
 # include properties    
 include(Properties.cmake)
 
-ParseDependencies("${DEPENDENCIES}" dependenciesIndentifiers)
+# remove file, after include it is needed any more
+execute_process(COMMAND cmake -E remove -f Properties.cmake)
 
 function(_checkDependency dependency isChanged)
-    message(STATUS "Checking dependency ${dependency}")
+    message(STATUS "Processing ${dependency}")
+    
     # get tags directory of dependency
-    # get actual revision of tags directory
-    # get actual revision of actual released directory
-    # if not equal return changed
-    set(${isChanged} "no" PARENT_SCOPE)    
+    string(REGEX MATCH "^(.*)/.*$" dependencyTagsDirectory "${${dependency}_ScmPath}")
+    set(dependencyTagsDirectory ${CMAKE_MATCH_1})
+    
+    svnGetNewestSubdirectory(${dependencyTagsDirectory} newestSubDirectory error)
+    
+    if(NOT DEFINED newestSubDirectory)
+        message(FATAL_ERROR "${error}")
+    endif()
+    
+    # get actual tag
+    string(REGEX MATCH "^.*/(.*)$" dependencyTag "${${dependency}_ScmPath}")
+    set(dependencyTag ${CMAKE_MATCH_1})
+
+    if(NOT "${dependencyTag}" STREQUAL "${newestSubDirectory}")
+        set(${isChanged} "yes" PARENT_SCOPE)
+        message(STATUS "Processing ${dependency} -- is not latest")
+    else()
+            set(${isChanged} "no" PARENT_SCOPE)
+        message(STATUS "Processing ${dependency} -- is latest")
+    endif()
 endfunction()  
+
+ParseDependencies("${DEPENDENCIES}" dependenciesIndentifiers)
 
 set(isChanged "no")
 
@@ -36,8 +59,6 @@ foreach(dependency ${dependenciesIndentifiers})
         _checkDependency(${dependency} isChanged)
     endif()
 endforeach()
-
-execute_process(COMMAND cmake -E remove -f Properties.cmake)
 
 if(isChanged)
     message(STATUS "Some new releases")
