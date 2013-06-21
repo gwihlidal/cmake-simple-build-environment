@@ -1,8 +1,8 @@
-= Simple build environment concept =
+= Simple Build Environment concept =
 
 The project provides CMake scripts usable in CMakeLists.txt of CPP package.
 
-CPP package can be
+Simple Build Environment works with following CPP packages:
   * Library (e.g. [https://code.google.com/p/sbe-documentlibrary DocumentLibrary])
   * Executable (e.g. [https://code.google.com/p/sbe-helloworld HelloWorld])
   * Unit Test Framework (e.g. [https://code.google.com/p/sbe-cpputestlibrary CppUTest])
@@ -17,22 +17,25 @@ The scripts support
 
 == Dependency management ==
 
-Each package has file Properties.cmake. The file contains package description (e.g. [https://code.google.com/p/sbe-documentlibrary/source/browse/trunk/Properties.cmake Properties.cmake for DocumentLibrary]).
+Each package has file `Properties.cmake` in same directory as `CMakeLists.txt`. The file contains package description (e.g. [https://code.google.com/p/sbe-documentlibrary/source/browse/trunk/Properties.cmake Properties.cmake for DocumentLibrary]).
   * `NAME` - package name
   * `TYPE` - one of _Library, Executable, Unit Test Framework, Project_
-  * `VERSION_MAJOR`, `VERSION_MINOR`, `VERSION_PATCH` - should be [http://semver.org semantic version] if applicable. 
+  * `VERSION_MAJOR`, `VERSION_MINOR`, `VERSION_PATCH` - should be [http://semver.org semantic version]. 
   * `DESCRIPTION` - brief description
   * `MAINTAINER` - maintainer email address
   * `DEPENDENCIES` - contains description of each dependency used by package.
   
 
-Each dependency has to have goals `install` and `uninstall`. During installation, dependency has to export targets. The scripts [https://code.google.com/p/cmake-simple-build-environment/source/browse/trunk/scripts/AddInstallTarget.cmake AddInstallTarget.cmake], [https://code.google.com/p/cmake-simple-build-environment/source/browse/trunk/scripts/AddUninstallTarget.cmake AddUninstallTarget.cmake] do this work. The export file is then used in `FIND_PACKAGE` during configuration of dependent package.
+Each dependency has to have goals `install` and `uninstall`. During installation, dependency has to export its targets. The scripts [https://code.google.com/p/cmake-simple-build-environment/source/browse/trunk/scripts/AddInstallTarget.cmake AddInstallTarget.cmake], [https://code.google.com/p/cmake-simple-build-environment/source/browse/trunk/scripts/AddUninstallTarget.cmake AddUninstallTarget.cmake] do this work. It is enough to include them into CMakeLists.txt file (See [https://code.google.com/p/sbe-documentlibrary/source/browse/trunk/Properties.cmake DocumentLibrary Properties.cmake]) The export file is then used in `FIND_PACKAGE` during configuration of dependent package.
 
 Package dependencies are described in variable `DEPENDENCIES`. Each dependency has to start with keyword `DEPENDENCY`. Each dependency can be described with:
   * `URL` - It is mandatory. Repository location of dependency release.
   * `SCM` - It is optional. It is repository type. If no `SCM` keyword is given then default repository `svn` is used. Available types are:
     * svn
-  * `EXTERNAL` - It is optional. Meaning of the flag is that dependency marked as external is not included in package goal and will be not automatically updated to its latest releases. When dependency is marked as `EXTERNAL` then all its dependencies are external too. External dependencies have black border and External Stereotype in dependency graph.
+  * `EXTERNAL` - It is optional. Meaning of the flag is that dependency marked as external 
+    * is not included in `package` target (see [http://code.google.com/p/cmake-simple-build-environment/source/browse/trunk/scripts/AddPackageTarget.cmake AddPackageTarget.cmake])
+    * is not automatically updated to its latest releases 
+    When dependency is marked as `EXTERNAL` then all its dependencies are external too. External dependencies have black border and External Stereotype in dependency graph.
     [http://cmake-simple-build-environment.googlecode.com/svn/wiki/images/DependecyGraphExternal.png http://cmake-simple-build-environment.googlecode.com/svn/wiki/images/DependecyGraphExternalSmall.png]
   * `LIBRARIES_TO_LINK` - It is optional. Because some packages doesn't honor [http://www.objectmentor.com/resources/articles/Principles_and_Patterns.pdf the common reuse principle] user can choose via this keyword libraries from package that has to be used in his package.
 
@@ -57,7 +60,8 @@ The script performs two steps
   * Exports sources (it uses [https://code.google.com/p/cmake-simple-build-environment/source/browse/trunk/scripts/ExportDependencies.cmake ExportDependencies.cmake])
   * Install sources (it uses [https://code.google.com/p/cmake-simple-build-environment/source/browse/trunk/scripts/InstallDependencies.cmake InstallDependencies.cmake])
 
-During package configuration all dependencies are exported recursively and installed. Installation is necessary during package configuration, because include paths and libraries created by dependency are discovered by `FIND_PACKAGE`.
+During package configuration all dependencies are exported recursively and installed. 
+Installation is necessary during package configuration, because include paths and libraries created by dependency are discovered by `FIND_PACKAGE`.
 
 When dependencies are changed, their sources are deleted and uninstalled.
 
@@ -114,7 +118,8 @@ Once dependencies are installed, dependencies properties can be used to defined 
 Simple Build Environment contains script [http://code.google.com/p/cmake-simple-build-environment/source/browse/trunk/scripts/AddBinaryTargets.cmake AddBinaryTargets.cmake] that do it in following way. 
 
 Based on package `TYPE` it adds executable or library target with name `NAME`. When target platform supports shared libraries it prefers shared libraries. It adds all libraries from package `DEPENDENCIES` to added target. For shared library it sets so-name to `VERSION_MAJOR.VERSION_MINOR`.
-Before including the script variables `SOURCE_FILES` and/or `SOURCE_FILES_OUTOF_TEST` have to be set. Both are linked into added target. 
+Before including the script variables `SOURCE_FILES` and/or `SOURCE_FILES_OUTOF_TEST` have to be set. Both are linked into added target.
+It sets variable `INSTALL_LIBRARIES` or `INSTALL_EXECUTABLE` depends on package `TYPE` that is lately used in [http://code.google.com/p/cmake-simple-build-environment/source/browse/trunk/scripts/AddInstallTarget.cmake AddInstallTarget.cmake].
 From `SOURCE_FILES` it creates OBJECT Library. It can be used by other targets. It is used in test target in Simple Build Environment.
 
 <code language="cmake">
@@ -174,6 +179,7 @@ The script has to be included after [http://code.google.com/p/cmake-simple-build
   # It creates executable target with name `${PROJECT_NAME}Test` from object library, generated main file and test files.
   # It adds all libraries and unit test framework from package `DEPENDENCIES` to `${PROJECT_NAME}Test` target.
   # It adds `test` target that makes test executable and it runs tests (`make test`). In case of cross-compiling it doesn't run test executable but it prints message _Not possible to run test because of cross-compiling_.
+  # It sets variable `INSTALL_TEST_EXECUTABLE` that is lately used in [http://code.google.com/p/cmake-simple-build-environment/source/browse/trunk/scripts/AddInstallTarget.cmake AddInstallTarget.cmake].
 
 See [http://code.google.com/p/sbe-helloworld/source/browse/trunk/CMakeLists.txt HelloWorld CMakeLists.txt].
 
