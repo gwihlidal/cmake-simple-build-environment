@@ -502,7 +502,7 @@ function (_recreateInfoAboutExternalFlag dependenciesDescription areExternalDepe
     
     # check if external flags are changed
     set(oldDep "")
-    if(DEFINED EXTERNAL_DEPENDENCIES)
+    if(NOT "" STREQUAL "${EXTERNAL_DEPENDENCIES}")
         set(oldDep ${EXTERNAL_DEPENDENCIES})
         list(SORT oldDep)
     endif()
