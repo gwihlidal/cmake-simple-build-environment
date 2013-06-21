@@ -114,7 +114,15 @@ Once dependencies are installed, dependencies properties can be used to defined 
 Simple Build Environment contains script [http://code.google.com/p/cmake-simple-build-environment/source/browse/trunk/scripts/AddBinaryTargets.cmake AddBinaryTargets.cmake] that do it in following way. 
 
 Based on package `TYPE` it adds executable or library target with name `NAME`. When target platform supports shared libraries it prefers shared libraries. It adds all libraries from package `DEPENDENCIES` to added target. For shared library it sets so-name to `VERSION_MAJOR.VERSION_MINOR`.
-Before including the script variables `SOURCE_FILES` and/or `SOURCE_FILES_OUTOF_TEST` have to be set. Both are linked into added target. See [http://code.google.com/p/sbe-documentlibrary/source/browse/trunk/CMakeLists.txt DocumentLibrary CMakeLists.txt].
+Before including the script variables `SOURCE_FILES` and/or `SOURCE_FILES_OUTOF_TEST` have to be set. Both are linked into added target. 
+From `SOURCE_FILES` it creates OBJECT Library. It can be used by other targets. It is used in test target in Simple Build Environment.
+
+<code language="cmake">
+add_library(${PROJECT_NAME}SourceObjects OBJECT ${SOURCE_FILES})
+)
+</code>
+
+See [http://code.google.com/p/sbe-documentlibrary/source/browse/trunk/CMakeLists.txt DocumentLibrary CMakeLists.txt].
 
 If it is not suitable for you, you can write your own targets and use variables defined during dependencies deployment and Properties.cmake file of your package.
 
@@ -156,10 +164,16 @@ endforeach()
 
 == Unit testing ==
 
-In this example [http://cpputest.github.io CppUTest] is used as unit test framework. It is simply, easy to use and cross-compilable.
+Simple Build Environment uses [http://cpputest.github.io CppUTest]  as unit test framework. It is simply, easy to use and cross-compilable. See repository of project [http://code.google.com/p/sbe-cpputestlibrary/ CppUTestLibrary] how I integrate CppUTest into Simple Build Environment.
 
-Simple Build Environment contains script [http://code.google.com/p/cmake-simple-build-environment/source/browse/trunk/scripts/AddTestTargets.cmake AddTestTargets.cmake] that creates test executable for package.
- #  
+Simple Build Environment contains script [http://code.google.com/p/cmake-simple-build-environment/source/browse/trunk/scripts/AddTestTargets.cmake AddTestTargets.cmake] that creates test executable for package. It uses CppUTest as test framework.
+
+The script has to be included after [http://code.google.com/p/cmake-simple-build-environment/source/browse/trunk/scripts/AddBinaryTargets.cmake AddBinaryTargets.cmake], because it links object library created by [http://code.google.com/p/cmake-simple-build-environment/source/browse/trunk/scripts/AddBinaryTargets.cmake AddBinaryTargets.cmake].
+
+  # It creates main file for CppUTest framework from [http://code.google.com/p/cmake-simple-build-environment/source/browse/trunk/templates/CppUTestRunAllTests.cpp.in template]
+  # Creates executable target with name `${PROJECT_NAME}Test`
+  # It adds all libraries and unit test framework from package `DEPENDENCIES` to added target.
+  # Add `test` target that makes test executable and it runs tests (`make test`). In case of cross-compiling it makes test executable and print message _Not possible to run test because of cross-compiling._.
 
 == Continuous Integration ==
 
