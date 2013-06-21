@@ -501,9 +501,8 @@ function (_recreateInfoAboutExternalFlag dependenciesDescription areExternalDepe
     _getAllExternalDependenciesRecursivellyFor("${dependenciesDescription}" externalDependencies)
     
     # check if external flags are changed
-    set(oldDep "")
-    if(NOT "" STREQUAL "${EXTERNAL_DEPENDENCIES}")
-        set(oldDep ${EXTERNAL_DEPENDENCIES})
+    set(oldDep "${EXTERNAL_DEPENDENCIES}")
+    if(NOT "" STREQUAL "${oldDep}")
         list(SORT oldDep)
     endif()
 
