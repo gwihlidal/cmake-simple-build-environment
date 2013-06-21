@@ -102,21 +102,21 @@ The script [https://code.google.com/p/cmake-simple-build-environment/source/brow
 The scripts performs:
   # creates build directory `current_project_build_directory/dependencies/build/dependency_name` 
   # configure dependency in created build directory. `CMAKE_TOOLCHAIN_FILE` and `CMAKE_BUILD_TYPE` are propagated to dependency. 
-  # install dependency via command `make install`. If coverity is requested, `cov_build` is performed. When dependency is installed, dependent package can use `FIND_PACKAGE` to get information about dependency.
+  # install dependency via command `make install`. If coverity is requested, `cov_build` is performed. Once dependency is installed, dependent package can use `FIND_PACKAGE` to get information about dependency.
 
 Once sources are installed following variables are set by script [https://code.google.com/p/cmake-simple-build-environment/source/browse/trunk/scripts/InstallDependencies.cmake InstallDependencies.cmake]:
   * `DEP_INSTALL_PATH` - path where all dependencies are installed
 
 == Binary Targets ==
 
-Once dependencies are deployed, dependencies properties can be used to defined own package targets.
+Once dependencies are installed, dependencies properties can be used to defined own package targets.
 
 Simple Build Environment contains script [http://code.google.com/p/cmake-simple-build-environment/source/browse/trunk/scripts/AddBinaryTargets.cmake AddBinaryTargets.cmake] that do it in following way. 
 
 Based on package `TYPE` it adds executable or library target with name `NAME`. When target platform supports shared libraries it prefers shared libraries. It adds all libraries from package `DEPENDENCIES` to added target. For shared library it sets so-name to `VERSION_MAJOR.VERSION_MINOR`.
 Before including the script variables `SOURCE_FILES` and/or `SOURCE_FILES_OUTOF_TEST` have to be set. Both are linked into added target. See [http://code.google.com/p/sbe-documentlibrary/source/browse/trunk/CMakeLists.txt DocumentLibrary CMakeLists.txt].
 
-If it is not suitable for you can write your own targets and use variables defined during dependencies deployment and Properties.cmake file of your package.
+If it is not suitable for you, you can write your own targets and use variables defined during dependencies deployment and Properties.cmake file of your package.
 
 For example:
 
@@ -155,6 +155,11 @@ endforeach()
 </code>
 
 == Unit testing ==
+
+In this example [http://cpputest.github.io CppUTest] is used as unit test framework. It is simply, easy to use and cross-compilable.
+
+Simple Build Environment contains script [http://code.google.com/p/cmake-simple-build-environment/source/browse/trunk/scripts/AddTestTargets.cmake AddTestTargets.cmake] that creates test executable for package.
+ #  
 
 == Continuous Integration ==
 
