@@ -1,6 +1,6 @@
 #!/bin/bash
 # sbeUpdateToLatestDependencies 
-#     script updates to latest dependecies tags in svn for given Properties.cmake
+#     script updates to latest dependencies tags in svn for given Properties.cmake
 #
 #     usage:
 #         sbeUpdateToLatestDependencies path_to_properties_file
