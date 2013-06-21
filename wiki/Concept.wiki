@@ -179,7 +179,7 @@ See [http://code.google.com/p/sbe-helloworld/source/browse/trunk/CMakeLists.txt 
 
 == Coverity ==
 
-Simple Build Environment supports Coverity. Simply include script [http://code.google.com/p/cmake-simple-build-environment/source/browse/trunk/scripts/AddCoverityTargets.cmake AddCoverityTargets.cmake] *before* script [http://code.google.com/p/cmake-simple-build-environment/source/browse/trunk/scripts/DeployDependencies.cmake DeployDependencies.cmake] to get coverity results.
+Simple Build Environment supports [http://www.coverity.com Coverity]. Simply include script [http://code.google.com/p/cmake-simple-build-environment/source/browse/trunk/scripts/AddCoverityTargets.cmake AddCoverityTargets.cmake] *before* script [http://code.google.com/p/cmake-simple-build-environment/source/browse/trunk/scripts/DeployDependencies.cmake DeployDependencies.cmake] to get coverity results.
 
   * It configures coverity in directory `${CMAKE_CURRENT_BINARY_DIR}/coverity`. Following compilers are supported:
     * GNU
