@@ -171,12 +171,23 @@ Simple Build Environment contains script [http://code.google.com/p/cmake-simple-
 The script has to be included after [http://code.google.com/p/cmake-simple-build-environment/source/browse/trunk/scripts/AddBinaryTargets.cmake AddBinaryTargets.cmake], because it links object library created by [http://code.google.com/p/cmake-simple-build-environment/source/browse/trunk/scripts/AddBinaryTargets.cmake AddBinaryTargets.cmake].
 
   # It creates main file for CppUTest framework from [http://code.google.com/p/cmake-simple-build-environment/source/browse/trunk/templates/CppUTestRunAllTests.cpp.in template]
-  # Creates executable target with name `${PROJECT_NAME}Test` from object library, generated main file and test files.
+  # It creates executable target with name `${PROJECT_NAME}Test` from object library, generated main file and test files.
   # It adds all libraries and unit test framework from package `DEPENDENCIES` to `${PROJECT_NAME}Test` target.
-  # Adds `test` target that makes test executable and it runs tests (`make test`). In case of cross-compiling it doesn't run test executable but it prints message _Not possible to run test because of cross-compiling_.
+  # It adds `test` target that makes test executable and it runs tests (`make test`). In case of cross-compiling it doesn't run test executable but it prints message _Not possible to run test because of cross-compiling_.
 
 See [http://code.google.com/p/sbe-helloworld/source/browse/trunk/CMakeLists.txt HelloWorld CMakeLists.txt].
 
 == Continuous Integration ==
 
 == Coverity ==
+
+Simple Build Environment supports Coverity. Simply in include script [http://code.google.com/p/cmake-simple-build-environment/source/browse/trunk/scripts/AddCoverityTargets.cmake AddCoverityTargets.cmake] *before* script [http://code.google.com/p/cmake-simple-build-environment/source/browse/trunk/scripts/DeployDependencies.cmake DeployDependencies.cmake] to get coverity results.
+
+  * It configures coverity in directory `${CMAKE_CURRENT_BINARY_DIR}/coverity`. Following compilers are supported:
+    * GNU
+    * Texas instruments
+  * Once Coverity is configured dependencies are build under `cov_build` command.
+  * It creates target `coverity` that performs steps:
+    * `cov-build make` this creates coverity data to analyze for package (data for dependencies are already created during dependencies installation)
+    * `cov-analyze`
+    * `cov-format-errors`
