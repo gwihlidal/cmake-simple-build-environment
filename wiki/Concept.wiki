@@ -162,7 +162,7 @@ foreach(dep ${ownDependenciesIds})
 endforeach()
 </code>
 
-== Unit testing ==
+== Unit Tests ==
 
 Simple Build Environment uses [http://cpputest.github.io CppUTest]  as unit test framework. It is simply, easy to use and cross-compilable. See repository of project [http://code.google.com/p/sbe-cpputestlibrary/ CppUTestLibrary] how I integrate CppUTest into Simple Build Environment.
 
@@ -176,8 +176,6 @@ The script has to be included after [http://code.google.com/p/cmake-simple-build
   # It adds `test` target that makes test executable and it runs tests (`make test`). In case of cross-compiling it doesn't run test executable but it prints message _Not possible to run test because of cross-compiling_.
 
 See [http://code.google.com/p/sbe-helloworld/source/browse/trunk/CMakeLists.txt HelloWorld CMakeLists.txt].
-
-== Continuous Integration ==
 
 == Coverity ==
 
@@ -194,3 +192,6 @@ Simple Build Environment supports Coverity. Simply include script [http://code.g
     * `cov-format-errors`
 
 See [http://code.google.com/p/sbe-helloworld/source/browse/trunk/CMakeLists.txt HelloWorld CMakeLists.txt].
+
+
+== Continuous Integration ==
