@@ -172,8 +172,8 @@ The script has to be included after [http://code.google.com/p/cmake-simple-build
 
   # It creates main file for CppUTest framework from [http://code.google.com/p/cmake-simple-build-environment/source/browse/trunk/templates/CppUTestRunAllTests.cpp.in template]
   # Creates executable target with name `${PROJECT_NAME}Test`
-  # It adds all libraries and unit test framework from package `DEPENDENCIES` to added target.
-  # Add `test` target that makes test executable and it runs tests (`make test`). In case of cross-compiling it makes test executable and print message _Not possible to run test because of cross-compiling._.
+  # It adds all libraries and unit test framework from package `DEPENDENCIES` to `${PROJECT_NAME}Test` target.
+  # Adda `test` target that makes test executable and it runs tests (`make test`). In case of cross-compiling it doesn't run test executable but it prints message _Not possible to run test because of cross-compiling._.
 
 == Continuous Integration ==
 
