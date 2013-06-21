@@ -186,7 +186,7 @@ Simple Build Environment supports Coverity. Simply include script [http://code.g
   * It configures coverity in directory `${CMAKE_CURRENT_BINARY_DIR}/coverity`. Following compilers are supported:
     * GNU
     * Texas instruments
-      * Even if you use CMake version 2.8.11 where TI compilers are suported, coverity for Texas Instruments compiler will not work correctly because at least coverity client in version 4.5.0 doesn't understand compiler's long name switches (e.g. --cpp_file). The switches are defined in CMake in file `CMAKE_INSTALLATION_DIRECTORY/Modules/Compiler/TI-\*.cmake`. In CMake version that I use, I manually change long name switches to its short names. 
+      * Even if you use CMake version 2.8.11 where TI compilers are suported, coverity for TI compiler will not work correctly, because at least coverity client in version 4.5.0 doesn't understand compiler's long name switches (e.g. --cpp_file). The switches are defined in CMake in file `CMAKE_INSTALLATION_DIRECTORY/Modules/Compiler/TI-\*.cmake`. In CMake version that I use, I manually change long name switches to its short names. 
   * Once Coverity is configured dependencies are build under `cov-build` command.
   * It creates target `coverity` that performs steps:
     * `cov-build make` this creates coverity data to analyze for package (data for dependencies are already created during dependencies installation)
