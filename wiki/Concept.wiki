@@ -205,3 +205,15 @@ See [http://code.google.com/p/sbe-helloworld/source/browse/trunk/CMakeLists.txt 
 
 
 == Continuous Integration ==
+
+I use Jenkins as CI server.
+
+=== The simple scenario ===
+
+Use free style project. 
+Set scm to package trunk.
+In build step create make file as usual in CMake. Execute make targets.
+
+To get unit tests result in format acceptable by unit test publisher plugin in Jenkins use
+
+`make test TEST_EXECUTE_OPTION=-ojunit`
