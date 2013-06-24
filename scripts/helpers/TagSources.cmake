@@ -98,7 +98,7 @@ message(STATUS "Checking tag ${TAG_NAME} in repository...")
 
 svnIsDirectoryContains("${TAG_NAME}/" "${PROJECT_SVN_ROOT}/tags" isThere errorReason)
 
-if(NOT "" STREQUAL ${errorReason})
+if(NOT "" STREQUAL "${errorReason}")
     message(STATUS "Error accessing svn, when checking tag in repository:\n${errorReason}")
     message(SEND_ERROR "exit")
 endif()
