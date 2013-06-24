@@ -23,6 +23,7 @@ if(NOT Subversion_SVN_EXECUTABLE)
     message(SEND_ERROR "error: could not find svn.")
 endif()
 
+include(SBE/helpers/SvnHelpers)
 
 # get working copy info
 message(STATUS "Checking working copy for trunk...")
@@ -94,17 +95,18 @@ endif()
 
 # check if sources are already tagged
 message(STATUS "Checking tag ${TAG_NAME} in repository...")
-execute_process(
-    COMMAND ${Subversion_SVN_EXECUTABLE} info "${PROJECT_SVN_ROOT}/tags/${TAG_NAME}"
-    RESULT_VARIABLE svnResult
-    OUTPUT_VARIABLE out
-    ERROR_VARIABLE out)
-    
-if(NOT ${svnResult} GREATER 0)
+
+svnIsDirectoryContains("${TAG_NAME}/" "${PROJECT_SVN_ROOT}/tags" isThere errorReason)
+
+if(NOT "" STREQUAL ${errorReason})
+    message(STATUS "Error accessing svn, when checking tag in repository:\n${errorReason}")
+    message(SEND_ERROR "exit")
+endif()
+
+if(isThere)
     message(STATUS "Tag ${TAG_NAME} already exists in repository")
     message(SEND_ERROR "exit")
 endif()
- 
 
 # when sources are not tagged and working copy is on trunk
 # 1. Generate documentation for sources

@@ -38,4 +38,34 @@ function(svnGetNewestSubdirectory directoryToCheck newestSubDirectory errorReaso
     set(${newestSubDirectory} ${newestSubdir} PARENT_SCOPE)
 endfunction()  
 
+function(svnIsDirectoryContains item directory isThere errorReason)
+    # get directory info 
+    execute_process(
+        COMMAND ${Subversion_SVN_EXECUTABLE} list --verbose "${directory}"
+        RESULT_VARIABLE svnResult
+        ERROR_VARIABLE err
+        OUTPUT_VARIABLE out)
+        
+    if(${svnResult} GREATER 0)
+        set(${errorReason} "Could not get list for ${directory} due to:\n${err}" PARENT_SCOPE)
+        return()
+    endif()
+    
+    # create array from lines
+    string(REPLACE "\n" ";" out "${out}")
+    
+    # get check if output contains give item 
+    foreach(line ${out})
+        # get item from line  
+        string(REGEX MATCH "^[^0-9]*[0-9]+ .* [A-Z][a-z]+ [0-9]+ [0-9][0-9]:[0-9][0-9] (.+)/$" tmp "${line}")
+        set(currentItem "${CMAKE_MATCH_1}")
+        
+        if("${currentItem]" STREQUAL "${item}")
+            set(isThere "yes" PARENT_SCOPE)
+            return() 
+        endif() 
+    endforeach()
+    
+    set(isThere "no" PARENT_SCOPE)
+endfunction()  
        
