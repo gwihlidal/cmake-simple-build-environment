@@ -7,7 +7,7 @@ Install Simple Build Environment. [Installation See Installation].
 I use linux Debian, but it should work on any other system.
 
   # checkout [http://code.google.com/p/sbe-helloworld HelloWorld]
-    * `svn checkout http://sbe-helloworld.googlecode.com/svn/tags/rel_1_0_0 sbe-helloworld-read-only`
+    * `svn checkout http://sbe-helloworld.googlecode.com/svn/trunk sbe-helloworld-read-only`
   # create build directory and configure
     * `cd sbe-helloworld-read-only`
     * `mkdir build`
