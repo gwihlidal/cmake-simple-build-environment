@@ -31,7 +31,8 @@ function(svnGetNewestSubdirectory directoryToCheck newestSubDirectory errorReaso
         set(subDirectory "${CMAKE_MATCH_2}")
         
         if(NOT "" STREQUAL "${subDirectory}" AND NOT "." STREQUAL "{subDirectory}" AND ${revision} GREATER ${highestRevision})
-            set(newestSubdir ${subDirectory}) 
+            set(newestSubdir ${subDirectory})
+            set(highestRevision ${revision})
         endif() 
     endforeach()
     
