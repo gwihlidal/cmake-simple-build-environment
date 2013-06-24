@@ -29,10 +29,14 @@ function(svnGetNewestSubdirectory directoryToCheck newestSubDirectory errorReaso
         string(REGEX MATCH "^[^0-9]*([0-9]+) .* [A-Z][a-z]+ [0-9]+ [0-9][0-9]:[0-9][0-9] (.+)/$" tmp "${line}")
         set(revision ${CMAKE_MATCH_1})
         set(subDirectory "${CMAKE_MATCH_2}")
-        
-        if(NOT "" STREQUAL "${subDirectory}" AND NOT "." STREQUAL "{subDirectory}" AND ${revision} GREATER ${highestRevision})
-            set(newestSubdir ${subDirectory})
-            set(highestRevision ${revision})
+
+        if(
+            (NOT "" STREQUAL "${subDirectory}") AND  
+            (NOT "." STREQUAL "${subDirectory}") AND
+            (${revision} GREATER ${highestRevision})
+          )
+              set(newestSubdir ${subDirectory})
+              set(highestRevision ${revision})
         endif() 
     endforeach()
     
