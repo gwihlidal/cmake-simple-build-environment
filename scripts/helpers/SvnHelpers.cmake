@@ -60,7 +60,7 @@ function(svnIsDirectoryContains item directory isThere errorReason)
         string(REGEX MATCH "^[^0-9]*[0-9]+ .* [A-Z][a-z]+ [0-9]+ [0-9][0-9]:[0-9][0-9] (.+)$" tmp "${line}")
         set(currentItem "${CMAKE_MATCH_1}")
         
-        if("${currentItem]" STREQUAL "${item}")
+        if("${currentItem}" STREQUAL "${item}")
             set(isThere "yes" PARENT_SCOPE)
             return() 
         endif() 
