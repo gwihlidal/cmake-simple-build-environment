@@ -203,21 +203,19 @@ Simple Build Environment supports [http://www.coverity.com Coverity]. Simply inc
 
 See [http://code.google.com/p/sbe-helloworld/source/browse/trunk/CMakeLists.txt HelloWorld CMakeLists.txt].
 
+== Tagging sources ==
+
+Will be added soon.
+
+See [http://code.google.com/p/cmake-simple-build-environment/source/browse/trunk/scripts/AddTagTarget.cmake AddTagTarget.cmake].
+
+== Packaging Sources ==
+
+Will be added soon.
+
+See [http://code.google.com/p/cmake-simple-build-environment/source/browse/trunk/scripts/AddPackageTarget.cmake AddPackageTarget.cmake].
+
 
 == Continuous Integration ==
 
-I use Jenkins as CI server.
-
-=== The simple scenario ===
-
-Use free style project. 
-Set scm to package trunk.
-In build step create make file as usual in CMake. Execute make targets.
-
-To get unit tests result in format acceptable by unit test publisher plugin in Jenkins use
-
-`make test CPPUTEST_FLAGS=-ojunit`
-
-=== Dependencies Scenario ===
-
-It is necessary to release more dependent projects at once in bigger projects.
+Will be added soon.
