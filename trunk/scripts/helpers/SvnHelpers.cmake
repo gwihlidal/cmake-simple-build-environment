@@ -57,7 +57,7 @@ function(svnIsDirectoryContains item directory isThere errorReason)
     # get check if output contains give item 
     foreach(line ${out})
         # get item from line  
-        string(REGEX MATCH "^[^0-9]*[0-9]+ .* [A-Z][a-z]+ [0-9]+ [0-9][0-9]:[0-9][0-9] (.+)/$" tmp "${line}")
+        string(REGEX MATCH "^[^0-9]*[0-9]+ .* [A-Z][a-z]+ [0-9]+ [0-9][0-9]:[0-9][0-9] (.+)$" tmp "${line}")
         set(currentItem "${CMAKE_MATCH_1}")
         
         if("${currentItem]" STREQUAL "${item}")
