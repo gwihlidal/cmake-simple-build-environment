@@ -231,5 +231,12 @@ See [http://cmake-simple-build-environment.googlecode.com/svn/wiki/images/Jenkin
 
 ==== Multiple Configuration Package integration ====
 
-Sometime it is necessary to build package for various architectures. I use multi-configuration project for that.
-There are names of toolchain files in row. There names of build types in column. There is one special combination [all,export]. This combination is executed first and it export package sources. Script `sbeExportDependencies` is used for that. Script is installed during Simple Build Environment installation from [http://code.google.com/p/cmake-simple-build-environment/source/browse/trunk/shellScripts/sbeExportDependencies.in template]. Once sources are exported, given combinations can be executed in parallel. When combination is configured, CMake doesn't exports sources due to given variable `-DDEP_SRC_DEPLOYMENT_PATH=`.
+It is sometime necessary to build package for various architectures. I use multi-configuration project for that.
+
+There are names of toolchain files in row. 
+There names of build types in column. 
+
+There is one special combination [all,export]. This combination is executed first and it export package sources. Script `sbeExportDependencies` is used for that. Script is installed during Simple Build Environment installation from [http://code.google.com/p/cmake-simple-build-environment/source/browse/trunk/shellScripts/sbeExportDependencies.in template]. 
+Once sources are exported, given combinations can be executed in parallel. When combination is configured, CMake doesn't exports sources due to given variable `-DDEP_SRC_DEPLOYMENT_PATH=`.
+
+See [http://cmake-simple-build-environment.googlecode.com/svn/wiki/images/JenkinsMultiConfiguration.png Jenkins HelloWorld Multi-configuration Job Configuration]
