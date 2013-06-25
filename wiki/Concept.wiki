@@ -241,6 +241,6 @@ Once sources are exported, given combinations can be executed in parallel. When 
 
 See [http://cmake-simple-build-environment.googlecode.com/svn/wiki/images/JenkinsMultiConfiguration.png Jenkins HelloWorld Multi-configuration Job Configuration].
 
-==== Package integration with all its dependents ====
+==== Package integration with all its latest dependencies ====
 
 Will be added soon.
