@@ -227,7 +227,7 @@ It is simple, basic scenario. It is necessary to check if package is compilable 
     * [https://wiki.jenkins-ci.org/display/JENKINS/Cobertura+Plugin Cobertura] - visualize test coverage. I use [https://software.sandia.gov/trac/fast/wiki/gcovr gcovr] To get coverage report compatible with Cobertura from GNU tools. Sources has to be compiled and linked with options `-fprofile-arcs -ftest-coverage -pg` (see [http://code.google.com/p/sbe-toolchains/source/browse/trunk/toolchains/GnuFlags.cmake GnuFlags.cmake])  
   * [https://wiki.jenkins-ci.org/display/JENKINS/Warnings+Plugin Warnings plugin] - get have information about warnings trend
 
-See [http://cmake-simple-build-environment.googlecode.com/svn/wiki/images/JenkinsBasic.png Jenkins HelloWorld Job Configuration]
+See [http://cmake-simple-build-environment.googlecode.com/svn/wiki/images/JenkinsBasic.png Jenkins HelloWorld Job Configuration].
 
 ==== Multiple Configuration Package integration ====
 
@@ -239,4 +239,8 @@ There names of build types in column.
 There is one special combination [all,export]. This combination is executed first and it export package sources. Script `sbeExportDependencies` is used for that. Script is installed during Simple Build Environment installation from [http://code.google.com/p/cmake-simple-build-environment/source/browse/trunk/shellScripts/sbeExportDependencies.in template]. 
 Once sources are exported, given combinations can be executed in parallel. When combination is configured, CMake doesn't exports sources due to given variable `-DDEP_SRC_DEPLOYMENT_PATH=`.
 
-See [http://cmake-simple-build-environment.googlecode.com/svn/wiki/images/JenkinsMultiConfiguration.png Jenkins HelloWorld Multi-configuration Job Configuration]
+See [http://cmake-simple-build-environment.googlecode.com/svn/wiki/images/JenkinsMultiConfiguration.png Jenkins HelloWorld Multi-configuration Job Configuration].
+
+==== Package integration with all its dependents ====
+
+Will be added soon.
