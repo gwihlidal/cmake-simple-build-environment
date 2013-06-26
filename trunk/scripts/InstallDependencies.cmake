@@ -10,7 +10,7 @@ endif()
 
 if("${CMAKE_SYSTEM_NAME}" STREQUAL "Linux")
     set(MAKE_COMMAND make -s --no-print-directory)
-elseif("Visual Studio .*" MATCHES "${CMAKE_GENERATOR}")
+elseif("${CMAKE_GENERATOR}" MATCHES "Visual Studio .*" OR "${CMAKE_GENERATOR}" MATCHES "NMake Makefiles.*")
     set(MAKE_COMMAND nmake /C /S)
 else()
     message(FATAL_ERROR "Don't know which command to use to make and install dependencies for \"${CMAKE_SYSTEM_NAME}\" and \"${CMAKE_GENERATOR}\".")
