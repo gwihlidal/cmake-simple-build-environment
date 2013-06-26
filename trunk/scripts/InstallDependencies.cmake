@@ -9,9 +9,10 @@ if(NOT DEFINED DEP_INFO_FILE)
 endif()
 
 if("${CMAKE_SYSTEM_NAME}" STREQUAL "Linux")
-    set(MAKE_COMMAND make -s --no-print-directory)
+    set(DEP_MAKE_COMMAND make -s --no-print-directory)
 elseif("${CMAKE_GENERATOR}" MATCHES "Visual Studio .*" OR "${CMAKE_GENERATOR}" MATCHES "NMake Makefiles.*")
-    set(MAKE_COMMAND nmake /C /S)
+    set(DEP_MAKE_COMMAND nmake /C /S)
+    set(DEP_CMAKE_GENERATOR -G "NMake Makefiles")
 else()
     message(FATAL_ERROR "Don't know which command to use to make and install dependencies for \"${CMAKE_SYSTEM_NAME}\" and \"${CMAKE_GENERATOR}\".")
 endif()
@@ -165,7 +166,7 @@ function(_installDependency dependency)
     # configure dependency
     execute_process(
         COMMAND cmake -E chdir ${DependencyBuildDirectory} 
-            cmake
+            cmake ${DEP_CMAKE_GENERATOR}
             ${DEP_SOURCES_PATH}/${${dependency}_Name} 
             ${configurationArgs}
         COMMAND ${SED_TOOL} -u -e "s/.*/    &/"            
@@ -183,7 +184,7 @@ function(_installDependency dependency)
     
     # install dependency
     execute_process(
-        COMMAND cmake -E chdir ${DependencyBuildDirectory} ${startCoverityBuild} ${MAKE_COMMAND} install
+        COMMAND cmake -E chdir ${DependencyBuildDirectory} ${startCoverityBuild} ${DEP_MAKE_COMMAND} install
         COMMAND ${SED_TOOL} -u -e "s/.*/    &/"
         RESULT_VARIABLE installResult)
     # handle install result    
