@@ -8,6 +8,8 @@
 #ifndef ImportExportSpecifier_@PROJECT_NAME@_H_
 #define ImportExportSpecifier_@PROJECT_NAME@_H_
 
-#define IES @IES@
+#ifndef IES
+	#define IES @IES@
+#endif	
 
 #endif
