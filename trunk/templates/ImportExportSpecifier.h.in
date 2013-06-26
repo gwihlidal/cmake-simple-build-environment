@@ -1,0 +1,13 @@
+/*
+ * Automatically generated header file in project @PROJECT_NAME@.
+ * It is used on Windows to generate 
+ *     - export specifier when dll is build
+ *     - import specifier when dll is is used
+ */
+ 
+#ifndef ImportExportSpecifier_@PROJECT_NAME@_H_
+#define ImportExportSpecifier_@PROJECT_NAME@_H_
+
+#define IES @IES@
+
+#endif

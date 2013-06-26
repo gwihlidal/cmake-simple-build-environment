@@ -18,6 +18,17 @@ if(DEFINED PUBLIC_MOCK_HEADER_FILES)
     install(FILES ${PUBLIC_MOCK_HEADER_FILES} DESTINATION include/${PROJECT_NAME}/mock COMPONENT Headers)
 endif()
     
+if("${TYPE}" STREQUAL "Library")
+    if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC" OR "${CMAKE_C_COMPILER_ID}" STREQUAL "MSVC")
+        set(IES "__declspec(dllimport)")
+    else()
+        set(IES "")
+    endif()
+    
+    configure_file(${CMAKE_ROOT}/Modules/SBE/templates/ImportExportSpecifier.h.in "${PROJECT_BINARY_DIR}/GeneratedInstallationFiles/ImportExportSpecifier.h" @ONLY)
+    install(FILES "${PROJECT_BINARY_DIR}/GeneratedInstallationFiles/ImportExportSpecifier.h" DESTINATION include/${PROJECT_NAME} COMPONENT Headers)                
+endif()
+            
 # Create the Config.cmake and ConfigVersion files
 if(DEFINED INSTALL_LIBRARIES)
     configure_file(${CMAKE_ROOT}/Modules/SBE/templates/LibraryPackageConfig.cmake.in "${PROJECT_BINARY_DIR}/${PROJECT_NAME}Config.cmake" @ONLY)
