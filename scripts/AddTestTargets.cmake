@@ -5,9 +5,9 @@ if (NOT ${AddBinaryTargetsIncluded})
     message(FATAL_ERROR "AddTestTargets scripts has to be included after AddBinaryTargets.")
 endif()
 
-configure_file(${CMAKE_ROOT}/Modules/SBE/templates/CppUTestRunAllTests.cpp.in "RunAllTests.cpp" @ONLY)
+configure_file(${CMAKE_ROOT}/Modules/SBE/templates/CppUTestRunAllTests.cpp.in "${PROJECT_BINARY_DIR}/GeneratedSources/RunAllTests.cpp" @ONLY)
 
-add_executable(${PROJECT_NAME}Test ${PROJECT_BINARY_DIR}/RunAllTests.cpp ${TEST_FILES} $<TARGET_OBJECTS:${PROJECT_NAME}SourceObjects>)
+add_executable(${PROJECT_NAME}Test ${PROJECT_BINARY_DIR}/GeneratedSources/RunAllTests.cpp ${TEST_FILES} $<TARGET_OBJECTS:${PROJECT_NAME}SourceObjects>)
 
 if(${isSharedLibSupported})
     set_target_properties(${PROJECT_NAME}Test

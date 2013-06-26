@@ -8,6 +8,14 @@ if(NOT DEFINED DEP_INFO_FILE)
     message(FATAL_ERROR "DEP_INFO_FILE has to be defined to know dependecies to install.")
 endif()
 
+if("${CMAKE_SYSTEM_NAME}" STREQUAL "Linux")
+    set(MAKE_COMMAND make -s --no-print-directory)
+elseif("Visual Studio .*" MATCHES "${CMAKE_GENERATOR}")
+    set(MAKE_COMMAND nmake /C /S)
+else()
+    message(FATAL_ERROR "Don't know which command to use to make and install dependencies for \"${CMAKE_SYSTEM_NAME}\" and \"${CMAKE_GENERATOR}\".")
+endif()
+
 set(DEP_ARCHITECTURE ${CMAKE_SYSTEM_PROCESSOR})
 
 # only to suppress waring "Not used CMAKE_TOOLCHAIN_FILE"
@@ -175,7 +183,7 @@ function(_installDependency dependency)
     
     # install dependency
     execute_process(
-        COMMAND cmake -E chdir ${DependencyBuildDirectory} ${startCoverityBuild} make -s --no-print-directory install
+        COMMAND cmake -E chdir ${DependencyBuildDirectory} ${startCoverityBuild} ${MAKE_COMMAND} install
         COMMAND ${SED_TOOL} -u -e "s/.*/    &/"
         RESULT_VARIABLE installResult)
     # handle install result    
