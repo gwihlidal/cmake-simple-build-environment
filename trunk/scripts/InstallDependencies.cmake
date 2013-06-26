@@ -8,7 +8,7 @@ if(NOT DEFINED DEP_INFO_FILE)
     message(FATAL_ERROR "DEP_INFO_FILE has to be defined to know dependecies to install.")
 endif()
 
-if("${CMAKE_SYSTEM_NAME}" STREQUAL "Linux")
+if("${CMAKE_GENERATOR}" STREQUAL "Unix Makefiles")
     set(DEP_MAKE_COMMAND make -s --no-print-directory)
 elseif("${CMAKE_GENERATOR}" MATCHES "Visual Studio .*" OR "${CMAKE_GENERATOR}" MATCHES "NMake Makefiles.*")
     set(DEP_MAKE_COMMAND nmake /C /S)
