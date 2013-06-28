@@ -9,7 +9,7 @@ function(addTestTarget)
     else()
         add_custom_target(test
             COMMAND cmake -E remove -f cpputest_*.xml 
-            COMMAND bin/${test_EXECUTABLE_NAME} \${CPPUTEST_FLAGS}
+            COMMAND bin/${test_EXECUTABLE_NAME} \$CPPUTEST_FLAGS
             DEPENDS ${test_EXECUTABLE_NAME})
     endif()
 endfunction()        
