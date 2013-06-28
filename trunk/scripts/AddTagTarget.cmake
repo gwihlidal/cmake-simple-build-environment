@@ -1,11 +1,18 @@
 cmake_minimum_required(VERSION 2.8)
 
+set(versionBuildNum "")
+if("Windows" STREQUAL "${CMAKE_SYSTEM_NAME}")
+    set(versionBuildNum "\$(VERSION_BUILD_NUMBER)")
+elseif("Linux" STREQUAL "${CMAKE_SYSTEM_NAME}")
+    set(versionBuildNum "\\\${VERSION_BUILD_NUMBER}")
+endif()
+        
 add_custom_target(tag
     COMMAND ${CMAKE_COMMAND}
         -DVERSION_PATCH=${VERSION_PATCH}
         -DVERSION_MINOR=${VERSION_MINOR} 
         -DVERSION_MAJOR=${VERSION_MAJOR}
-        -DVERSION_BUILD_NUMBER="\${VERSION_BUILD_NUMBER}"
+        -DVERSION_BUILD_NUMBER=${versionBuildNum}
         -DPROJECT_NAME=${PROJECT_NAME}
         -DPROJECT_SOURCE_DIR=${PROJECT_SOURCE_DIR}
         -P ${CMAKE_ROOT}/Modules/SBE/helpers/TagSources.cmake)
