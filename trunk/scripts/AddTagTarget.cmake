@@ -4,7 +4,7 @@ set(versionBuildNum "")
 if("Windows" STREQUAL "${CMAKE_SYSTEM_NAME}")
     set(versionBuildNum "\$(VERSION_BUILD_NUMBER)")
 elseif("Linux" STREQUAL "${CMAKE_SYSTEM_NAME}")
-    set(versionBuildNum "\\\${VERSION_BUILD_NUMBER}")
+    set(versionBuildNum "\${VERSION_BUILD_NUMBER}")
 endif()
         
 add_custom_target(tag
