@@ -1,7 +1,4 @@
-# - Config file for the @PROJECT_NAME@ package
-# It defines the following variables
-#  @PROJECT_NAME@_INCLUDE_DIRS - include directories for @PROJECT_NAME@
-#  @PROJECT_NAME@_LIBRARIES    - libraries to link against
+# Config file for the @PROJECT_NAME@ package
  
 list(FIND OverallFoundPackages @PROJECT_NAME@ isPackageAlreadyFound)
 if(${isPackageAlreadyFound} GREATER -1)
@@ -14,11 +11,10 @@ GET_FILENAME_COMPONENT(_IMPORT_PREFIX "${_IMPORT_PREFIX}" PATH)
 
 # Compute paths
 # These are IMPORTED targets created by @PROJECT_NAME@Targets.cmake
-set(@PROJECT_NAME@_LIBRARIES @INSTALL_LIBRARIES@)
-set(@PROJECT_NAME@_INCLUDE_DIRS "${_IMPORT_PREFIX}/include/@PROJECT_NAME@")
-if(DEFINED INSTALL_TEST_EXECUTABLE)
-	set(@PROJECT_NAME@_TEST_EXECUTABLE ${_IMPORT_PREFIX}/bin/@INSTALL_TEST_EXECUTABLE@)
-endif()	
+@LIBRARIES_PART@
+@DECLSPEC_PART@
+@EXECUTABLES_PART@
+@TEST_EXECUTABLES_PART@
 
 # Our package dependencies (contains definitions for IMPORTED targets)
 include("${_IMPORT_PREFIX}/config/@PROJECT_NAME@Targets.cmake")
