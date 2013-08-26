@@ -8,55 +8,36 @@
 #        * EXTERNAL - external dependency will be not 
 #            * automatically updated
 #            * included into package target
-#        * LIBRARIES_TO_LINK - it is workaround for packages that contains many libraries. Disadvantage is that 
-#            dependant has to know libraries names                 
 #
 #
 
 if(${isDependenciesParserAlreadyIncluded})
     return()
 endif()
+
 set(isDependenciesParserAlreadyIncluded "yes")
 
-include (CMakeParseArguments)
+include (SBE/helpers/ArgumentParser)
 
 function(ParseDependencies dependencies parsedDependencies)
     set(dependenciesIndentifiers "")
     set(dependencyProperties "")
     
-    # split dependencies properties to dependency property and parse it 
-    foreach(dep ${dependencies})
-        if ("DEPENDENCY" STREQUAL "${dep}")
-            if(NOT "" STREQUAL "${dependencyProperties}")
-                _parseDependency("${dependencyProperties}" parsedDependecy_ID)
-                list(APPEND dependenciesIndentifiers ${parsedDependecy_ID})
-                
-                set(dependencyProperties "")
-            endif()
-        else()
-            list(APPEND dependencyProperties "${dep}")
-        endif()
+    sbeParseArguments(depProperties "" "" "" "DEPENDENCY" "${dependencies}")
+    
+    # parse properties for each dependency
+    foreach(depProperties ${depProperties_DEPENDENCY})
+        string(REPLACE "," ";" depProperties "${depProperties}")
+        _parseDependency("${depProperties}" parsedDependecy_ID)
+        list(APPEND dependenciesIndentifiers ${parsedDependecy_ID})
     endforeach()
     
-    if(NOT "" STREQUAL "${dependencyProperties}")
-        _parseDependency("${dependencyProperties}" parsedDependecy_ID)
-        list(APPEND dependenciesIndentifiers ${parsedDependecy_ID})
-    endif()
-            
     # export dependencies identifiers
     set(${parsedDependencies} ${dependenciesIndentifiers} PARENT_SCOPE)
 endfunction()
 
 macro(_parseDependency dependencyProperties id)
-    CMAKE_PARSE_ARGUMENTS(parsedDependecy "EXTERNAL" "URL;SCM" "LIBRARIES_TO_LINK" ${dependencyProperties})
-    
-#    message(STATUS 
-#        "parsing dependency [${dependencyProperties}]"
-#        "   SCM [${parsedDependecy_SCM}]"
-#        "   URL [${parsedDependecy_URL}]"
-#        "   LIBRARIES_TO_LINK [${parsedDependecy_LIBRARIES_TO_LINK}]"
-#        "   EXTERNAL [${parsedDependecy_EXTERNAL}]"
-#        )
+    CMAKE_PARSE_ARGUMENTS(parsedDependecy "EXTERNAL" "URL;SCM" "" ${dependencyProperties})
     
     # set defaults
     if (NOT DEFINED parsedDependecy_SCM)
@@ -70,7 +51,6 @@ macro(_parseDependency dependencyProperties id)
     # export dependency properties to parent scope
     set(${dep_ID}_ScmType ${parsedDependecy_SCM} PARENT_SCOPE)
     set(${dep_ID}_ScmPath ${parsedDependecy_URL} PARENT_SCOPE)
-    set(${dep_ID}_LibrariesToLink ${parsedDependecy_LIBRARIES_TO_LINK} PARENT_SCOPE)
     set(${dep_ID}_IsExternal ${parsedDependecy_EXTERNAL} PARENT_SCOPE)
     
     # export dep id
