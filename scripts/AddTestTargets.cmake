@@ -18,6 +18,7 @@ function(addTestTarget)
                 DEPENDS ${test_Executable})
         elseif("Linux" STREQUAL "${CMAKE_SYSTEM_NAME}")
             set(testOptions "\${CPPUTEST_FLAGS}")
+            
             add_custom_target(test
                 COMMAND cmake -E remove -f cpputest_*.xml 
                 COMMAND bin/${test_Executable} ${testOptions}
