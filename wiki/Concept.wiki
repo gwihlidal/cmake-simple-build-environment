@@ -40,8 +40,6 @@ Package dependencies are described in variable `DEPENDENCIES`. Each dependency h
       * is not automatically updated to its latest releases 
     * When dependency is marked as `EXTERNAL` then all its dependencies are external too. External dependencies have black border and External Stereotype in dependency graph.
     [http://cmake-simple-build-environment.googlecode.com/svn/wiki/images/DependecyGraphExternal.png http://cmake-simple-build-environment.googlecode.com/svn/wiki/images/DependecyGraphExternalSmall.png]
-  * `LIBRARIES_TO_LINK` - It is optional. 
-    * Because some packages doesn't honor [http://www.objectmentor.com/resources/articles/Principles_and_Patterns.pdf the common reuse principle] user can choose via this keyword libraries from package that has to be used in his package.
 
 Example:
 <code language="cmake">
@@ -49,7 +47,6 @@ set(DEPENDENCIES
 DEPENDENCY 
     URL http://sbe-printerlibrary.googlecode.com/svn/tags/rel_1_0_0 
     SCM svn
-    LIBRARIES_TO_LINK PrinterLibrary 
     EXTERNAL 
 DEPENDENCY 
     URL http://sbe-documentlibrary.googlecode.com/svn/tags/rel_1_0_0 
@@ -121,10 +118,11 @@ Once dependencies are installed, dependencies properties can be used to defined 
 
 Simple Build Environment contains script [http://code.google.com/p/cmake-simple-build-environment/source/browse/trunk/scripts/AddBinaryTargets.cmake AddBinaryTargets.cmake] that do it in following way. 
 
-Based on package `TYPE` it adds executable or library target with name `NAME`. When target platform supports shared libraries it prefers shared libraries. It adds all libraries from package `DEPENDENCIES` to added target. For shared library it sets so-name to `VERSION_MAJOR.VERSION_MINOR`.
-Before including the script variables `SOURCE_FILES` and/or `SOURCE_FILES_OUTOF_TEST` have to be set. Both are linked into added target.
-It sets variable `INSTALL_LIBRARIES` or `INSTALL_EXECUTABLE` depends on package `TYPE` that is lately used in [http://code.google.com/p/cmake-simple-build-environment/source/browse/trunk/scripts/AddInstallTarget.cmake AddInstallTarget.cmake].
-From `SOURCE_FILES` it creates OBJECT Library. It can be used by other targets. It is used in test target in Simple Build Environment.
+It provides function
+- sbeAddLibrary
+- sbeAddExecutable
+- sbeAddTestExecutable
+- sbeAddObjects
 
 <code language="cmake">
 add_library(${PROJECT_NAME}SourceObjects OBJECT ${SOURCE_FILES})
