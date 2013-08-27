@@ -6,25 +6,30 @@ if(NOT DEFINED DEP_INSTALL_PATH)
     message(FATAL_ERROR "DEP_INSTALL_PATH has to be defined")
 endif()
 
-include(SBE/helpers/DependenciesParser)
+include(SBE/helpers/ArgumentParser)
 
-function(addDependencies)
-    CMAKE_PARSE_ARGUMENTS(dep "" "TARGET;CONTAIN_DECLSPEC_FLAG" "DEPENDENCY_TYPES" ${ARGN})
+function(sbeAddDependencies)
+    sbeParseArguments(dep "" "Target" "DependencyTypesToAdd" "FromDependency" "${ARGN}")
     
-    if(NOT DEFINED dep_TARGET)
+    if(NOT DEFINED dep_Target)
         return()
     endif()
-    
-    if(NOT DEFINED dep_DEPENDENCY_TYPES)
-        set(dep_DEPENDENCY_TYPES "Library" "Project")
-    endif()  
-    
-    ParseDependencies("${DEPENDENCIES}" ownDependenciesIds)
-    
-    set(depContains "no")
+
+    foreach(fd ${dep_FromDependency})
+        string(REPLACE "," ";" fd "${fd}")
+        CMAKE_PARSE_ARGUMENTS(d "" "FromDependency" "LinkOnly" "${fd}")
+        
+        if(DEFINED d_FromDependency)
+            if(DEFINED ${d_FromDependency}_LibrariesToLink)
+                list(APPEND ${d_FromDependency}_LibrariesToLink ${d_LinkOnly})
+            else()
+                set(${d_FromDependency}_LibrariesToLink ${d_LinkOnly})
+            endif()
+        endif()        
+    endforeach()
     
     # link all dependend libraries
-    if(NOT "${ownDependenciesIds}" STREQUAL "")
+    if(NOT "${OwnDependenciesIds}" STREQUAL "")
         include(${DEP_INFO_FILE})
     
         include_directories(${DEP_INSTALL_PATH}/include)
@@ -33,7 +38,7 @@ function(addDependencies)
         foreach(dep ${ownDependenciesIds})
             set(depName ${${dep}_Name})
             
-            list(FIND dep_DEPENDENCY_TYPES "${${dep}_Type}" typeToAdd)
+            list(FIND dep_DependencyTypesToAdd "${${dep}_Type}" typeToAdd)
             if(${typeToAdd} GREATER -1)
                 
                 if(NOT DEFINED ${depName}_FOUND)
@@ -47,35 +52,25 @@ function(addDependencies)
                     include_directories(${${depName}_INCLUDE_DIRS})
                 endif()             
                 
-                if(${depName}_CONTAINS_DECLSPEC)
-                    set(depContains "yes")
-                endif()
-                
                 if(DEFINED ${dep}_LibrariesToLink)
                     # link only requested
-                    target_link_libraries(${dep_TARGET} ${${dep}_LibrariesToLink})
+                    target_link_libraries(${dep_Target} ${${dep}_LibrariesToLink})
                 elseif(DEFINED ${depName}_LIBRARIES)
                     # link all exported
-                    target_link_libraries(${dep_TARGET} ${${depName}_LIBRARIES})
+                    target_link_libraries(${dep_Target} ${${depName}_LIBRARIES})
                 endif()                
             endif()
         endforeach()
         
         unset(OverallFoundPackages CACHE)
     endif()
-    
-    if(DEFINED dep_CONTAIN_DECLSPEC_FLAG)
-        set(${dep_CONTAIN_DECLSPEC_FLAG} ${depContains} PARENT_SCOPE)
-    endif()
 endfunction()        
 
-function(doesDependenciesContainsDeclSpecs containsDeclspecs)
-    ParseDependencies("${DEPENDENCIES}" ownDependenciesIds)
-    
+function(sbeDoesDependenciesContainsDeclSpecs containsDeclspecs)
     set(depContains "no")
     
-    # link all dependend libraries
-    if(NOT "${ownDependenciesIds}" STREQUAL "")
+    # check dependend packages
+    if(NOT "${OwnDependenciesIds}" STREQUAL "")
         include(${DEP_INFO_FILE})
     
         foreach(dep ${ownDependenciesIds})
