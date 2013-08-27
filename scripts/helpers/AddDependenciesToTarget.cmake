@@ -17,14 +17,10 @@ function(sbeAddDependencies)
 
     foreach(fd ${dep_FromDependency})
         string(REPLACE "," ";" fd "${fd}")
-        CMAKE_PARSE_ARGUMENTS(d "" "FromDependency" "LinkOnly" "${fd}")
-        
+        CMAKE_PARSE_ARGUMENTS(d "" "FromDependency" "LinkOnly" ${fd})
+
         if(DEFINED d_FromDependency)
-            if(DEFINED ${d_FromDependency}_LibrariesToLink)
-                list(APPEND ${d_FromDependency}_LibrariesToLink ${d_LinkOnly})
-            else()
-                set(${d_FromDependency}_LibrariesToLink ${d_LinkOnly})
-            endif()
+            set(${d_FromDependency}_LibrariesToLink ${d_LinkOnly})
         endif()        
     endforeach()
     
@@ -52,9 +48,9 @@ function(sbeAddDependencies)
                     include_directories(${${depName}_INCLUDE_DIRS})
                 endif()             
                 
-                if(DEFINED ${dep}_LibrariesToLink)
+                if(DEFINED ${depName}_LibrariesToLink)
                     # link only requested
-                    target_link_libraries(${dep_Target} ${${dep}_LibrariesToLink})
+                    target_link_libraries(${dep_Target} ${${depName}_LibrariesToLink})
                 elseif(DEFINED ${depName}_LIBRARIES)
                     # link all exported
                     target_link_libraries(${dep_Target} ${${depName}_LIBRARIES})

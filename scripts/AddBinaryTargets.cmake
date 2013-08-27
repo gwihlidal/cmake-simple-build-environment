@@ -42,6 +42,8 @@ function(sbeAddLibrary)
         add_library(${prop_Name} STATIC ${prop_Sources} ${precompilatedObjects})            
     endif()
     
+    string(REPLACE "," ";" prop_FromDependency "${prop_FromDependency}")
+    
     sbeAddDependencies(
         Target ${prop_Name} 
         DependencyTypesToAdd "Library;Project"
@@ -82,6 +84,8 @@ function(sbeAddExecutable)
     		    INSTALL_RPATH "../lib")
     endif()
     
+    string(REPLACE "," ";" prop_FromDependency "${prop_FromDependency}")
+    
     sbeAddDependencies(
         Target ${prop_Name} 
         DependencyTypesToAdd "Library;Project"
@@ -119,6 +123,8 @@ function(sbeAddTestExecutable)
     	    PROPERTIES
     		    INSTALL_RPATH "../lib")
     endif()
+    
+    string(REPLACE "," ";" prop_FromDependency "${prop_FromDependency}")
     
     sbeAddDependencies(
         Target ${prop_Name} 
