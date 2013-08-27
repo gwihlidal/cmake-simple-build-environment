@@ -12,7 +12,7 @@ function(addTestTarget)
             set(testOptions "\$(CPPUTEST_FLAGS)")
             
             add_custom_target(test
-                COMMAND set "PATH=%PATH%;${CMAKE_CURRENT_BINARY_DIR}/dependencies/installation/bin" 
+                COMMAND set "PATH=${CMAKE_CURRENT_BINARY_DIR}/dependencies/installation/bin;%PATH%" 
                 COMMAND cmake -E remove -f cpputest_*.xml 
                 COMMAND bin/${test_Executable} ${testOptions}
                 DEPENDS ${test_Executable})
