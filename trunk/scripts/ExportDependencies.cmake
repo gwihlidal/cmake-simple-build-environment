@@ -66,6 +66,8 @@ function(ExportProperties dependencies)
     
     _updateDependeciesInstallationOrderInInfoFile()
     
+    _updateOwnDependeciesInInfoFile("${dependencies}")
+    
     _removeUnusedDependencies()
     
     _exportRequiredDependencies()
@@ -487,6 +489,37 @@ function (_updateDependeciesInstallationOrderInInfoFile)
     file(WRITE ${DEP_INFO_FILE} ${info})
 endfunction (_updateDependeciesInstallationOrderInInfoFile)
 
+#
+#
+#    _updateOwnDependeciesInInfoFile
+#        write own dependencies in info file
+#
+function(_updateOwnDependeciesInInfoFile dependencies)
+    file(READ ${DEP_INFO_FILE} info)
+    string(REPLACE "\n" "\n;" info "${info}")
+    list(FIND info "# Begin of own dependencies section\n" beginIndex)
+    list(FIND info "# End of own dependencies section\n" endIndex)
+    
+    if(NOT ${beginIndex} EQUAL -1 AND NOT ${endIndex} EQUAL -1)
+        # remove old values
+        foreach(index RANGE ${beginIndex} ${endIndex})
+            list(REMOVE_AT info ${beginIndex})
+        endforeach()
+    endif()
+    
+    # add new values
+    list(APPEND info "# Begin of own dependencies section\n")
+    list(APPEND info "set(OwnDependenciesIds \"\")\n")
+    
+    ParseDependencies("${dependencies}" dependenciesIndentifiers)
+    foreach(dependency ${dependenciesIndentifiers})
+        list(APPEND info "list(APPEND OwnDependenciesIds \"${dependency}\")\n")
+    endforeach()
+    
+    list(APPEND info "# End of own dependencies section\n")
+    
+    file(WRITE ${DEP_INFO_FILE} ${info})
+endfunction()
 
 #
 #
