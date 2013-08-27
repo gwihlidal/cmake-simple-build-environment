@@ -119,10 +119,10 @@ Once dependencies are installed, dependencies properties can be used to defined 
 Simple Build Environment contains script [http://code.google.com/p/cmake-simple-build-environment/source/browse/trunk/scripts/AddBinaryTargets.cmake AddBinaryTargets.cmake] that do it in following way. 
 
 It provides function
-- sbeAddLibrary
-- sbeAddExecutable
-- sbeAddTestExecutable
-- sbeAddObjects
+* sbeAddLibrary
+* sbeAddExecutable
+* sbeAddTestExecutable
+* sbeAddObjects
 
 <code language="cmake">
 add_library(${PROJECT_NAME}SourceObjects OBJECT ${SOURCE_FILES})
