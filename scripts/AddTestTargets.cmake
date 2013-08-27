@@ -13,7 +13,6 @@ function(addTestTarget)
             
             add_custom_target(test
                 COMMAND set "PATH=%PATH%;${CMAKE_CURRENT_BINARY_DIR}/dependencies/installation/bin" 
-                COMMAND echo %PATH%
                 COMMAND cmake -E remove -f cpputest_*.xml 
                 COMMAND bin/${test_Executable} ${testOptions}
                 DEPENDS ${test_Executable})
