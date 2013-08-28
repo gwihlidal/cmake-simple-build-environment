@@ -255,6 +255,7 @@ I use [https://wiki.jenkins-ci.org/display/JENKINS/Build+Flow+Plugin Build Flow 
 
 Simple Build Environment provides script `sbeCheckNewDependencies` to check new release of dependencies for package.
 
+Define build flow using flow DSL:
 <code language="groovy">
 buildWhenChanged("PrinterLibrary Release")
 buildWhenChanged("DocumentLibrary Release")
@@ -348,5 +349,4 @@ def reportSkippedBuildFor(job)
 
      println "Build is not required for job " + jobHyperlinkName  + ". Sources tagged in latest completed build " + latestBuildHyperlinkName + " are used in flow."
 }
-)
 </code>
