@@ -1,5 +1,3 @@
-include(SBE/helpers/DependenciesParser)
-
 add_custom_target(package)
 
 foreach(lib ${INSTALL_LIBRARIES})
@@ -27,7 +25,6 @@ add_custom_command(TARGET package
     
 # reinstall
 if(NOT "${OverallDependencies}" STREQUAL "")
-    ParseDependencies("${DEPENDENCIES}" ownDependenciesIds)
     
     foreach(dep ${OverallDependencies})
         set(depName ${${dep}_Name})
