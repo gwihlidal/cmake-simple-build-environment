@@ -133,7 +133,7 @@ It provides function
      * `Sources` - list of sources to be linked
      * `Objects` - list of Object libraries to be linked 
      * `FromDependency xxx LinkOnly yyy zzz` - where `xxx` is dependency name and `yyy`,`zzz` are libraries names of libraries to be linked
-   * `sbeAddTestExecutable` - it creates test executable target and link this library to libraries described by own dependencies. I creates also main file suitable for CppUTest framework.
+   * `sbeAddTestExecutable` - it creates test executable target and link this library to libraries described by own dependencies. I creates also main file suitable for CppUTest framework from template [http://code.google.com/p/cmake-simple-build-environment/source/browse/trunk/templates/CppUTestRunAllTests.cpp.in template].
      * `Name` - name of target
      * `Sources` - list of sources to be linked
      * `Objects` - list of Object libraries to be linked 
@@ -190,13 +190,9 @@ Simple Build Environment uses [http://cpputest.github.io CppUTest]  as unit test
 
 Simple Build Environment contains script [http://code.google.com/p/cmake-simple-build-environment/source/browse/trunk/scripts/AddTestTargets.cmake AddTestTargets.cmake] that creates test target for package.
 
-The script has to be included after [http://code.google.com/p/cmake-simple-build-environment/source/browse/trunk/scripts/AddBinaryTargets.cmake AddBinaryTargets.cmake], because it links object library created by [http://code.google.com/p/cmake-simple-build-environment/source/browse/trunk/scripts/AddBinaryTargets.cmake AddBinaryTargets.cmake].
-
-  # It creates main file for CppUTest framework from [http://code.google.com/p/cmake-simple-build-environment/source/browse/trunk/templates/CppUTestRunAllTests.cpp.in template]
-  # It creates executable target with name `${PROJECT_NAME}Test` from object library, generated main file and test files.
-  # It adds all libraries and unit test framework from package `DEPENDENCIES` to `${PROJECT_NAME}Test` target.
-  # It adds `test` target that makes test executable and it runs tests (`make test`). In case of cross-compiling it doesn't run test executable but it prints message _Not possible to run test because of cross-compiling_.
-  # It sets variable `INSTALL_TEST_EXECUTABLE` that is lately used in [http://code.google.com/p/cmake-simple-build-environment/source/browse/trunk/scripts/AddInstallTarget.cmake AddInstallTarget.cmake].
+The script provide function `addTestTarget`. it has argument `Executable name`, where `name` is name of test executable previously created by function `sbeAddTestExecutable`. Function `addTestTarget`
+  # adds `test` target that makes test executable and it runs tests (`make test`). In case of cross-compiling it doesn't run test executable but it prints message _Not possible to run test because of cross-compiling_.
+  # options for CppUTest executable can be added by environment variable CPPUTEST_FLAGS (`make test CPPUTEST_FLAGS=-ojunit`)
 
 See [http://code.google.com/p/sbe-helloworld/source/browse/trunk/CMakeLists.txt HelloWorld CMakeLists.txt].
 
