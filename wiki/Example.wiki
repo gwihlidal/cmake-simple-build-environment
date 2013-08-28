@@ -21,7 +21,10 @@ I use linux Debian, but it should work on any other system.
     * On windows
       * `cmake -G "NMake Makefiles" ..`
   # run tests
-    * `make test`
+    * On linux  
+      * `make test`
+    * On windows
+      * `nmake test`
 
 You will see 
   * how dependencies are exported and installed for [http://code.google.com/p/sbe-helloworld HelloWorld]
