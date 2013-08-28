@@ -120,15 +120,28 @@ Once dependencies are installed, dependencies properties can be used to defined 
 Simple Build Environment contains script [http://code.google.com/p/cmake-simple-build-environment/source/browse/trunk/scripts/AddBinaryTargets.cmake AddBinaryTargets.cmake] that do it in following way. 
 
 It provides function
-* sbeAddLibrary
-* sbeAddExecutable
-* sbeAddTestExecutable
-* sbeAddObjects
-
-<code language="cmake">
-add_library(${PROJECT_NAME}SourceObjects OBJECT ${SOURCE_FILES})
-)
-</code>
+   * sbeAddLibrary
+     * `Name` - name of target
+     * `PublicHeaders` - list of public headers of library that has to be installed
+     * `Sources` - list of sources to be linked
+     * `Objects` - list of Object libraries to be linked 
+     * `FromDependency xxx LinkOnly yyy zzz` - where `xxx` is dependency name and `yyy`,`zzz` are libraries names of libraries to be linked
+     * `ContainsDeclspec` - flag if public header files contains declspec.
+     * `Static` - flag to create static library, otherwise shard library is created if target system supports them
+   * sbeAddExecutable
+     * `Name` - name of target
+     * `Sources` - list of sources to be linked
+     * `Objects` - list of Object libraries to be linked 
+     * `FromDependency xxx LinkOnly yyy zzz` - where `xxx` is dependency name and `yyy`,`zzz` are libraries names of libraries to be linked
+   * sbeAddTestExecutable
+     * `Name` - name of target
+     * `Sources` - list of sources to be linked
+     * `Objects` - list of Object libraries to be linked 
+     * `FromDependency xxx LinkOnly yyy zzz` - where `xxx` is dependency name and `yyy`,`zzz` are libraries names of libraries to be linked
+   * sbeAddObjects
+     * `Name` - name of target
+     * `Sources` - list of sources to be linked
+     * `ContainsDeclspec` - flag if public header files contains declspec.
 
 See [http://code.google.com/p/sbe-documentlibrary/source/browse/trunk/CMakeLists.txt DocumentLibrary CMakeLists.txt].
 
