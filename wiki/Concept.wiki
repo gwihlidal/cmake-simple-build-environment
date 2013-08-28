@@ -203,9 +203,9 @@ See [https://code.google.com/p/sbe-documentlibrary/source/browse/trunk/CMakeList
 Function does:
    * installs test targets only in configuration `Debug` and `DebugWithCoverage` to directory `bin`
    * installs executables directory `bin`
-   * installs libraries in directory `lib'. On Windows `dll` are installed in directory 'bin'
+   * installs libraries in directory `lib`. On Windows `dll` are installed in directory `bin`
    * installs headers files listed in `sbeAddLibraryTarget` and change theirs include paths according to `IncludePathReplacement`.
-   * when installed target contains declspec it replace all keyword __EXPORT to __IMPORT during header files installation.
+   * when installed target contains declspec it replace all keyword `__EXPORT` with `__IMPORT` during header files installation.
    * install Config.cmake file for package.
 
 Config.cmake file has following variables:
