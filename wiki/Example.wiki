@@ -8,11 +8,15 @@ I use linux Debian, but it should work on any other system.
 
   # checkout [http://code.google.com/p/sbe-helloworld HelloWorld]
     * `svn checkout http://sbe-helloworld.googlecode.com/svn/trunk sbe-helloworld-read-only`
-  # create build directory and configure
+  # create build directory
     * `cd sbe-helloworld-read-only`
     * `mkdir build`
     * `cd build`
-    * `cmake ..`
+  # configure
+    * On linux  
+      * `cmake ..`
+    * On windows
+      * `cmake -G "NMake Makefiles" ..`
   # run tests
     * `make test`
 
