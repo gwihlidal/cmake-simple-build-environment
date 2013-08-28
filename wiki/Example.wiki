@@ -6,6 +6,9 @@ Install Simple Build Environment. [Installation See Installation].
 
 I use linux Debian, but it should work on any other system.
 
+  # open shell
+    * On Linux use your favorite shell
+    * On windows use `Visual Studio 20xx Command Prompt`
   # checkout [http://code.google.com/p/sbe-helloworld HelloWorld]
     * `svn checkout http://sbe-helloworld.googlecode.com/svn/trunk sbe-helloworld-read-only`
   # create build directory
