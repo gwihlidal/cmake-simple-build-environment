@@ -155,11 +155,10 @@ It is possible to use script [https://code.google.com/p/cmake-simple-build-envir
 include(SBE/helpers/AddDependenciesToTarget)
 
 sbeAddDependencies(
-   Target SomeName
-   DependencyTypesToAdd "Library;Project;Unit Test Framework"
-   FromDependency xxx LinkOnly yyy zzz
-   FromDependency aaa LinkOnly bbb
-   )
+Target SomeName
+DependencyTypesToAdd "Library;Project;Unit Test Framework"
+FromDependency xxx LinkOnly yyy zzz
+FromDependency aaa LinkOnly bbb)
 </code>
 
 Or do it "low level" with `FIND_PACKAGE`
@@ -252,4 +251,102 @@ See [http://cmake-simple-build-environment.googlecode.com/svn/wiki/images/Jenkin
 
 ==== Package integration with all its latest dependencies ====
 
-Will be added soon.
+I use [https://wiki.jenkins-ci.org/display/JENKINS/Build+Flow+Plugin Build Flow plugin].
+
+Simple Build Environment provides script `sbeCheckNewDependencies` to check new release of dependencies for package.
+
+<code language="groovy">
+buildWhenChanged("PrinterLibrary Release")
+buildWhenChanged("DocumentLibrary Release")
+buildWhenChanged("DocumentationSystem Release")
+buildWhenChanged("HelloWorld Release")
+
+import hudson.scm.*
+import hudson.console.HyperlinkNote
+
+def buildWhenChanged(jobName)
+{
+    def hudson = hudson.model.Hudson.instance
+    def job = hudson.getJob(jobName)
+
+    if (isLastBuildStatusWorseAsSuccess(job)) 
+    {
+        build(jobName)
+        return
+    }
+
+    if (hasScmChangesFor(job)) 
+    {
+        build(jobName)
+        return
+    }
+
+    if (areNewSbeDependenciesAvailableFor(job)) 
+    {
+        build(jobName)
+        return
+    }
+
+    reportSkippedBuildFor(job)
+}
+
+def isLastBuildStatusWorseAsSuccess(job)
+{
+     def lastBuild = job.getLastCompletedBuild()
+
+     if(lastBuild == null)
+     {
+          return true
+     }
+
+     if(lastBuild.result != SUCCESS)
+     {
+          return true
+     }
+
+     return false
+}
+
+def hasScmChangesFor(job)
+{
+     ByteArrayOutputStream baos = new ByteArrayOutputStream()
+     def listener = new hudson.model.StreamBuildListener(baos)
+     def launcher = new hudson.Launcher.LocalLauncher(listener)
+     def latestBuild = job.getLastCompletedBuild()
+
+     def scmrev = job.scm.calcRevisionsFromBuild(latestBuild, launcher, listener)
+     def pollingResult = job.scm.compareRemoteRevisionWith(job, launcher, job.workspace, listener, scmrev)
+      
+     return pollingResult.hasChanges() 
+}
+
+def areNewSbeDependenciesAvailableFor(job)
+{
+    if (job.scm.locations.size() > 0) 
+    {
+        remoteLocation = job.scm.locations[0].remote
+        
+        def checkProcess = "sbeCheckNewDependencies $remoteLocation".execute(null, new File("/tmp"))
+        def sout = new StringBuffer()
+        def serr = new StringBuffer()
+        checkProcess .consumeProcessOutput(sout, serr)
+        checkProcess.waitFor()
+
+        // println "out> $sout" 
+        // println "err> $serr"
+        
+       return ! sout.find(/No new releases/)
+    }
+
+    return false
+}
+
+def reportSkippedBuildFor(job)
+{
+     def jobHyperlinkName = HyperlinkNote.encodeTo('/' + job.url, job.fullDisplayName)
+     def latestBuildHyperlinkName =  HyperlinkNote.encodeTo('/' +job.getLastCompletedBuild().url, job.getLastCompletedBuild().fullDisplayName)
+
+     println "Build is not required for job " + jobHyperlinkName  + ". Sources tagged in latest completed build " + latestBuildHyperlinkName + " are used in flow."
+}
+)
+</code>
