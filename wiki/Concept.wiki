@@ -145,6 +145,10 @@ It provides function
 
 See [http://code.google.com/p/sbe-documentlibrary/source/browse/trunk/CMakeLists.txt DocumentLibrary CMakeLists.txt].
 
+When added target or its dependencies contains declspec it adds defines `__EXPORT` and `__IMPORT` in compilation switches. Following compilers are supported:
+   * MSVC - it sets `-D__EXPORT=__declspec(dllexport) -D__IMPORT=__declspec(dllimport)`
+   * other - it sets `-D__EXPORT= -D__IMPORT=`
+
 If it is not suitable for you, you can write your own targets and use variables defined during dependencies deployment and Properties.cmake file of your package.
 
 For example:
@@ -182,6 +186,44 @@ foreach(dep ${OwnDependenciesIds})
     endif()                
 endforeach()
 </code>
+
+== Install Target ==
+
+==== Install Executable or Library package ====
+
+Simple Build Environment provides script [https://code.google.com/p/cmake-simple-build-environment/source/browse/trunk/scripts/AddInstalTarget.cmake AddInstalTarget.cmake] with function `addInstallTarget` to install previously defined targets.
+
+Function `addInstallTarget` arguments:
+  * `Package` - name of package
+  * `Targets` - targets to add
+  * `IncludePathReplacement` - regxep replacements expression to change include paths directories during installations. The syntax is `"regexp to match include path given in sbeAddLibraryTarget" -> "include path in installation"`
+
+See [https://code.google.com/p/sbe-documentlibrary/source/browse/trunk/CMakeLists.txt DocumentLibrary CMakeLists.txt]
+
+Function does:
+   * installs test targets only in configuration `Debug` and `DebugWithCoverage` to directory `bin`
+   * installs executables directory `bin`
+   * installs libraries in directory `lib'. On Windows `dll` are installed in directory 'bin'
+   * installs headers files listed in `sbeAddLibraryTarget` and change theirs include paths according to `IncludePathReplacement`.
+   * when installed target contains declspec it replace all keyword __EXPORT to __IMPORT during header files installation.
+   * install Config.cmake file for package.
+
+Config.cmake file has following variables:
+   * `PackageName_LIBRARIES` - list of libraries
+   * `PackageName_INCLUDE_DIRS` - list of include directories
+   * `PackageName_EXECUTABLES` - list of executables
+   * `PackageName_EXECUTABLES_PATH` - path where executables are located
+   * `PackageName_TEST_EXECUTABLES` - list of test executables
+   * `PackageName_TEST_EXECUTABLES_PATH` - path where test executables are located
+   * `PackageName_CONTAINS_DECLSPEC` - flag if installed headers contains declspec
+
+==== Install Project package ====
+
+Will be added soon.
+
+==== Install external tar.gz file ====
+
+Will be added soon.
 
 == Unit Tests ==
 
