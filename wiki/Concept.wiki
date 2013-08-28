@@ -120,7 +120,7 @@ Once dependencies are installed, dependencies properties can be used to defined 
 Simple Build Environment contains script [http://code.google.com/p/cmake-simple-build-environment/source/browse/trunk/scripts/AddBinaryTargets.cmake AddBinaryTargets.cmake] that do it in following way. 
 
 It provides function
-   * sbeAddLibrary - it creates library target and link this library to libraries described by own dependencies.
+   * `sbeAddLibrary` - it creates library target and link this library to libraries described by own dependencies.
      * `Name` - name of target
      * `PublicHeaders` - list of public headers of library that has to be installed
      * `Sources` - list of sources to be linked
@@ -128,17 +128,17 @@ It provides function
      * `FromDependency xxx LinkOnly yyy zzz` - where `xxx` is dependency name and `yyy`,`zzz` are libraries names of libraries to be linked
      * `ContainsDeclspec` - flag if public header files contains declspec.
      * `Static` - flag to create static library, otherwise shard library is created if target system supports them
-   * sbeAddExecutable - it creates executable target and link this library to libraries described by own dependencies.
+   * `sbeAddExecutable` - it creates executable target and link this library to libraries described by own dependencies.
      * `Name` - name of target
      * `Sources` - list of sources to be linked
      * `Objects` - list of Object libraries to be linked 
      * `FromDependency xxx LinkOnly yyy zzz` - where `xxx` is dependency name and `yyy`,`zzz` are libraries names of libraries to be linked
-   * sbeAddTestExecutable - it creates test executable target and link this library to libraries described by own dependencies. I creates also main file suitable for CppUTest framework.
+   * `sbeAddTestExecutable` - it creates test executable target and link this library to libraries described by own dependencies. I creates also main file suitable for CppUTest framework.
      * `Name` - name of target
      * `Sources` - list of sources to be linked
      * `Objects` - list of Object libraries to be linked 
      * `FromDependency xxx LinkOnly yyy zzz` - where `xxx` is dependency name and `yyy`,`zzz` are libraries names of libraries to be linked
-   * sbeAddObjects - it creates Object library from sources. It is usefull to compile sources only ones and use it for creation of production executable and test executable.
+   * `sbeAddObjects` - it creates Object library from sources. It is usefull to compile sources only ones and use it for creation of production executable and test executable.
      * `Name` - name of target
      * `Sources` - list of sources to be linked
      * `ContainsDeclspec` - flag if public header files contains declspec.
