@@ -155,7 +155,7 @@ It is possible to use script [https://code.google.com/p/cmake-simple-build-envir
 include(SBE/helpers/AddDependenciesToTarget)
 
 sbeAddDependencies(
-Target SomeName
+Target "SomeName"
 DependencyTypesToAdd "Library;Project;Unit Test Framework"
 FromDependency xxx LinkOnly yyy zzz
 FromDependency aaa LinkOnly bbb)
@@ -332,9 +332,6 @@ def areNewSbeDependenciesAvailableFor(job)
         def serr = new StringBuffer()
         checkProcess .consumeProcessOutput(sout, serr)
         checkProcess.waitFor()
-
-        // println "out> $sout" 
-        // println "err> $serr"
         
        return ! sout.find(/No new releases/)
     }
