@@ -26,7 +26,7 @@ Each package has file `Properties.cmake` in same directory as `CMakeLists.txt`. 
   * `DEPENDENCIES` - contains description of each dependency used by package.
   
 
-Each dependency has to have goals `install` and `uninstall`. During installation, dependency has to export its targets. The scripts [https://code.google.com/p/cmake-simple-build-environment/source/browse/trunk/scripts/AddInstallTarget.cmake AddInstallTarget.cmake], [https://code.google.com/p/cmake-simple-build-environment/source/browse/trunk/scripts/AddUninstallTarget.cmake AddUninstallTarget.cmake] do this work. It is enough to include them into CMakeLists.txt file (See [https://code.google.com/p/sbe-documentlibrary/source/browse/trunk/Properties.cmake DocumentLibrary Properties.cmake]) The export file is then used in `FIND_PACKAGE` during configuration of dependent package.
+Each dependency has to have goals `install` and `uninstall`. During installation, dependency has to export its targets. The scripts [https://code.google.com/p/cmake-simple-build-environment/source/browse/trunk/scripts/AddInstallTarget.cmake AddInstallTarget.cmake], [https://code.google.com/p/cmake-simple-build-environment/source/browse/trunk/scripts/AddUninstallTarget.cmake AddUninstallTarget.cmake] do this work. It is enough to include them into CMakeLists.txt file (See [http://code.google.com/p/sbe-documentlibrary/source/browse/trunk/CMakeLists.txt DocumentLibrary CMakeLists.txt]) The export file is then used in `FIND_PACKAGE` during configuration of dependent package.
 
 Package dependencies are described in variable `DEPENDENCIES`. Each dependency has to start with keyword `DEPENDENCY`. Each dependency can be described with:
   * `URL` - It is mandatory. 
