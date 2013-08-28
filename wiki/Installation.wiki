@@ -9,6 +9,9 @@
 
 === Installation ===
 
+  # open shell
+    * On Linux use your favorite shell
+    * On windows use `Visual Studio 20xx Command Prompt`
   # checkout Simple Build Enviroment
     * `svn checkout http://cmake-simple-build-environment.googlecode.com/svn/trunk/ cmake-simple-build-environment-read-only`
   # install checkouted sources
@@ -20,6 +23,6 @@
       * On linux
         * `sudo make install`
       * On windows
-        * `make install`
+        * `nmake install`
 
 Simple Build system is installed into CMake installation. (e.g on linux default path can be `/usr/local/share/cmake-2.8/Modules/SBE/`).
