@@ -121,6 +121,7 @@ Simple Build Environment contains script [http://code.google.com/p/cmake-simple-
 
 It provides function
    * sbeAddLibrary
+     It creates library target and link this library to libraries described by own dependencies.
      * `Name` - name of target
      * `PublicHeaders` - list of public headers of library that has to be installed
      * `Sources` - list of sources to be linked
@@ -129,16 +130,19 @@ It provides function
      * `ContainsDeclspec` - flag if public header files contains declspec.
      * `Static` - flag to create static library, otherwise shard library is created if target system supports them
    * sbeAddExecutable
+     It creates executable target and link this library to libraries described by own dependencies.
      * `Name` - name of target
      * `Sources` - list of sources to be linked
      * `Objects` - list of Object libraries to be linked 
      * `FromDependency xxx LinkOnly yyy zzz` - where `xxx` is dependency name and `yyy`,`zzz` are libraries names of libraries to be linked
    * sbeAddTestExecutable
+     It creates test executable target and link this library to libraries described by own dependencies. I creates also main file suitable for CppUTest framework.
      * `Name` - name of target
      * `Sources` - list of sources to be linked
      * `Objects` - list of Object libraries to be linked 
      * `FromDependency xxx LinkOnly yyy zzz` - where `xxx` is dependency name and `yyy`,`zzz` are libraries names of libraries to be linked
    * sbeAddObjects
+     It creates Object library from sources. It is usefull to compile sources only ones and use it for creation of production executable and test executable.
      * `Name` - name of target
      * `Sources` - list of sources to be linked
      * `ContainsDeclspec` - flag if public header files contains declspec.
@@ -152,30 +156,35 @@ For example:
 It is possible to use script [https://code.google.com/p/cmake-simple-build-environment/source/browse/trunk/scripts/helpers/AddDependenciesToTarget.cmake AddDependenciesToTarget.cmake]
 
 <code language="cmake">
-set(DEP_TARGET ${PROJECT_NAME})
-set(DEP_TYPES_TO_ADD "Library" "Project")
 include(SBE/helpers/AddDependenciesToTarget)
+
+sbeAddDependencies(
+   Target SomeName
+   DependencyTypesToAdd "Library;Project;Unit Test Framework"
+   FromDependency xxx LinkOnly yyy zzz
+   FromDependency aaa LinkOnly bbb
+   )
 </code>
 
 Or do it "low level" with `FIND_PACKAGE`
 
 <code language="cmake">
-# Parse dependencies description from own Properties.cmake.
-# It has to be included before this code
-include(SBE/helpers/DependenciesParser)
-ParseDependencies("${DEPENDENCIES}" ownDependenciesIds)
 # Get information about all dependencies
 include(${DEP_INFO_FILE})
+
 # link all dependent libraries
-foreach(dep ${ownDependenciesIds})
+foreach(dep ${OwnDependenciesIds})
     # Get name of dependency to find package by its name
     set(depName ${${dep}_Name})
+
     # Find dependency as package as usual in CMake
     find_package(${depName} REQUIRED CONFIG PATHS ${DEP_INSTALL_PATH}/config NO_DEFAULT_PATH)
+
     # Once package is found Include directories and package Libraries are defined. We can use them.
     if(DEFINED ${depName}_INCLUDE_DIRS)
         include_directories(${${depName}_INCLUDE_DIRS})
     endif()
+
     if(DEFINED ${depName}_LIBRARIES)
         # link all exported
         target_link_libraries(${PROJECT_NAME} ${${depName}_LIBRARIES})
@@ -187,7 +196,7 @@ endforeach()
 
 Simple Build Environment uses [http://cpputest.github.io CppUTest]  as unit test framework. It is simply, easy to use and cross-compilable. See repository of project [http://code.google.com/p/sbe-cpputestlibrary/ CppUTestLibrary] how I integrate CppUTest into Simple Build Environment.
 
-Simple Build Environment contains script [http://code.google.com/p/cmake-simple-build-environment/source/browse/trunk/scripts/AddTestTargets.cmake AddTestTargets.cmake] that creates test executable for package. It uses CppUTest as test framework.
+Simple Build Environment contains script [http://code.google.com/p/cmake-simple-build-environment/source/browse/trunk/scripts/AddTestTargets.cmake AddTestTargets.cmake] that creates test target for package.
 
 The script has to be included after [http://code.google.com/p/cmake-simple-build-environment/source/browse/trunk/scripts/AddBinaryTargets.cmake AddBinaryTargets.cmake], because it links object library created by [http://code.google.com/p/cmake-simple-build-environment/source/browse/trunk/scripts/AddBinaryTargets.cmake AddBinaryTargets.cmake].
 
