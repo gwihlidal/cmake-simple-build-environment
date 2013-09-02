@@ -7,6 +7,7 @@ if(NOT DEFINED DEP_INSTALL_PATH)
 endif()
 
 include(SBE/helpers/ArgumentParser)
+include(SBE/helpers/DependenciesParser)
 
 function(sbeAddDependencies)
     sbeParseArguments(dep "" "Target" "DependencyTypesToAdd" "FromDependency" "${ARGN}")
@@ -24,8 +25,10 @@ function(sbeAddDependencies)
         endif()        
     endforeach()
     
+    ParseDependencies("${DEPENDENCIES}" ownDependenciesIds)
+    
     # link all dependend libraries
-    if(NOT "${OwnDependenciesIds}" STREQUAL "")
+    if(NOT "${ownDependenciesIds}" STREQUAL "")
         include(${DEP_INFO_FILE})
     
         include_directories(${DEP_INSTALL_PATH}/include)
@@ -65,8 +68,10 @@ endfunction()
 function(sbeDoesDependenciesContainsDeclSpecs containsDeclspecs)
     set(depContains "no")
     
+    ParseDependencies("${DEPENDENCIES}" ownDependenciesIds)
+    
     # check dependend packages
-    if(NOT "${OwnDependenciesIds}" STREQUAL "")
+    if(NOT "${ownDependenciesIds}" STREQUAL "")
         include(${DEP_INFO_FILE})
     
         foreach(dep ${ownDependenciesIds})
