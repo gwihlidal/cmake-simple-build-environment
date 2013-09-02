@@ -86,7 +86,6 @@ Once sources are exported file [http://cmake-simple-build-environment.googlecode
 
 There are information about each dependency used by package in `DEP_INFO_FILE`. The file can be included into CMakeLists.txt to access dependencies properties. Following variables are available:
   * `OverallDependencies` - it is list of *all* dependencies identifiers used by package
-  * `OwnDependenciesIds` - it is list of *own* dependencies identifiers used by package
   * `DEP_INSTALLATION_ORDER` - it is list of dependencies identifiers in order to be installed. It is used by script [https://code.google.com/p/cmake-simple-build-environment/source/browse/trunk/scripts/InstallDependencies.cmake InstallDependencies.cmake]
   * `EXTERNAL_DEPENDENCIES` -  - it is list of dependencies identifiers that are marked as `EXTERNAL` in package
   * For each _dependency_ in `OverallDependencies` list following properties are defined
