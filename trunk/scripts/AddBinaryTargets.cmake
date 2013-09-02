@@ -79,7 +79,7 @@ function(sbeAddExecutable)
     get_property(isSharedLibSupported GLOBAL PROPERTY TARGET_SUPPORTS_SHARED_LIBS)
     
     if(isSharedLibSupported)
-        set_target_properties(${exe_NAME}
+        set_target_properties(${prop_NAME}
     	    PROPERTIES
     		    INSTALL_RPATH "../lib")
     endif()
@@ -119,7 +119,7 @@ function(sbeAddTestExecutable)
     get_property(isSharedLibSupported GLOBAL PROPERTY TARGET_SUPPORTS_SHARED_LIBS)
     
     if(isSharedLibSupported)
-        set_target_properties(${exe_NAME}
+        set_target_properties(${prop_NAME}
     	    PROPERTIES
     		    INSTALL_RPATH "../lib")
     endif()
