@@ -5,6 +5,8 @@ endif()
 set(isAddInstallTargetIncluded yes)
 set(isAddInstallCalled no)
 
+set(InstalledTargets "")
+
 function(addInstallTarget)
     # temporary solution. It will add only last target to project config.
     if(isAddInstallCalled)
@@ -21,6 +23,8 @@ function(addInstallTarget)
         return()
     endif()
     
+    set(InstalledTargets ${inst_Targets} PARENT_SCOPE)
+            
     # get test target
     set(testTargets "")
     foreach(target ${inst_Targets})
@@ -52,7 +56,7 @@ function(_installTestTargets)
         install(
             TARGETS ${tst_Targets} 
             EXPORT ${tst_Name}Targets
-            RUNTIME DESTINATION bin COMPONENT Binaries CONFIGURATIONS Debug | DebugWithCoverage)    
+            RUNTIME DESTINATION bin COMPONENT Binaries CONFIGURATIONS Debug | DebugWithCoverage)
     endif()
 endfunction()
 
@@ -69,7 +73,7 @@ function(_installOrdinaryTargets)
         RUNTIME DESTINATION bin COMPONENT Binaries
         LIBRARY DESTINATION lib NAMELINK_SKIP COMPONENT Binaries
         ARCHIVE DESTINATION lib)
-
+        
     foreach(target ${ord_Targets})
         _installHeaders(
             Package ${ord_Package} 
