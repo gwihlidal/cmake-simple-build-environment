@@ -12,6 +12,11 @@ function(addInstallTarget)
     if(isAddInstallCalled)
         message(FATAL_ERROR "Function addInstallTarget can be called only one time.\nIn current implemntation it will add only latest target to install to package config file.")
     endif()
+    # check install and package targets order
+    if(isAddPackageCalled)
+        message(FATAL_ERROR "Function addPackageTarget has to be called after function addInstallTarget.")
+    endif()
+    
     set(isAddInstallCalled yes PARENT_SCOPE)
     
     CMAKE_PARSE_ARGUMENTS(inst "" "Package" "Targets;IncludePathReplacement" ${ARGN})
