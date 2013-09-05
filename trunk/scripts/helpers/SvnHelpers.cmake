@@ -26,7 +26,7 @@ function(svnGetNewestSubdirectory directoryToCheck newestSubDirectory errorReaso
     set(highestRevision 0)
     foreach(line ${out})
         # get revision and directory from line  
-        string(REGEX MATCH "^[^0-9]*([0-9]+) .* [A-Z][a-z]+ [0-9]+ [0-9][0-9]:[0-9][0-9] (.+)/$" tmp "${line}")
+        string(REGEX MATCH "^[^0-9]*([0-9]+) .* [A-Z][a-z]+[ \t]+[0-9]+[ \t]+[0-9:]+[ \t]+(.+)/$" tmp "${line}")
         set(revision ${CMAKE_MATCH_1})
         set(subDirectory "${CMAKE_MATCH_2}")
 
