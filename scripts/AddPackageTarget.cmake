@@ -23,7 +23,8 @@ function(addPackageTarget)
     add_custom_command(TARGET package
         COMMAND cmake -E remove_directory ${PROJECT_BINARY_DIR}/package
         COMMAND cmake -E make_directory ${PROJECT_BINARY_DIR}/package
-        COMMAND cmake -DCMAKE_INSTALL_COMPONENT=Binaries -DBUILD_TYPE=${CMAKE_BUILD_TYPE} -DCMAKE_INSTALL_PREFIX=${PROJECT_BINARY_DIR}/package ${DO_STRIP} -P cmake_install.cmake 
+        COMMAND cmake -E make_directory ${PROJECT_BINARY_DIR}/package/data
+        COMMAND cmake -DCMAKE_INSTALL_COMPONENT=Binaries -DBUILD_TYPE=${CMAKE_BUILD_TYPE} -DCMAKE_INSTALL_PREFIX=${PROJECT_BINARY_DIR}/package/data ${DO_STRIP} -P cmake_install.cmake 
         COMMENT "Preinstalling...")
         
     # reinstall
@@ -38,7 +39,7 @@ function(addPackageTarget)
                         COMMENT "Skipping external dependecy ${depName}...")
                 else()
                     add_custom_command(TARGET package
-                        COMMAND cmake -DCMAKE_INSTALL_COMPONENT=Binaries -DBUILD_TYPE=${CMAKE_BUILD_TYPE} -DCMAKE_INSTALL_PREFIX=${PROJECT_BINARY_DIR}/package ${DO_STRIP} -P ${${dep}_BuildPath}/build/cmake_install.cmake
+                        COMMAND cmake -DCMAKE_INSTALL_COMPONENT=Binaries -DBUILD_TYPE=${CMAKE_BUILD_TYPE} -DCMAKE_INSTALL_PREFIX=${PROJECT_BINARY_DIR}/package/data ${DO_STRIP} -P ${${dep}_BuildPath}/build/cmake_install.cmake
                         COMMENT "Adding dependecy ${depName} to package...")
                 endif()
             endif()
@@ -49,7 +50,7 @@ function(addPackageTarget)
     set(PACKAGE_FILE_NAME "${PROJECT_NAME}-${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}-${CMAKE_SYSTEM_PROCESSOR}-${CMAKE_BUILD_TYPE}.tar.gz")
     
     add_custom_command(TARGET package
-        COMMAND cmake -E chdir ./package tar --exclude=${PACKAGE_FILE_NAME} -czf ${PACKAGE_FILE_NAME} .
+        COMMAND cmake -E chdir ./package/data tar -czf ../${PACKAGE_FILE_NAME} .
         COMMENT "Tar ${PACKAGE_FILE_NAME}...")
 
 endfunction()                
