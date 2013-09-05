@@ -1,11 +1,14 @@
+if(isAddPackageTargetIncluded)
+    return()
+endif()
+
+set(isAddPackageTargetIncluded yes)
+set(isAddPackageCalled no)
+
 add_custom_target(package)
 
 function(addPackageTarget)
-    if(NOT isAddInstallCalled)
-        add_custom_command(TARGET package
-            COMMENT "No install target, nothing to package.")
-        return()    
-    endif()
+    set(isAddPackageCalled yes PARENT_SCOPE)
     
     foreach(target ${InstalledTargets})
         add_dependencies(package ${target})
