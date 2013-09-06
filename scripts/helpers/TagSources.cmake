@@ -41,13 +41,29 @@ string(REGEX MATCH "URL: ([^ \n]+)/[0-9_a-zA-Z]+" PROJECT_SVN_ROOT "${SOURCES_IN
 set(PROJECT_SVN_ROOT ${CMAKE_MATCH_1})
 string(REGEX MATCH "URL: [^ \n]+/([0-9_a-zA-Z]+)" SOURCES_TAG "${SOURCES_INFO}")
 set(SOURCES_TAG ${CMAKE_MATCH_1})
-string(REGEX MATCH "Revision: ([0-9]+)" SOURCES_REVISION "${SOURCES_INFO}")
-set(SOURCES_REVISION ${CMAKE_MATCH_1})
 
 if (NOT "${SOURCES_TAG}" STREQUAL "trunk")
     message(STATUS "Currently checkouted sources are not trunk version")
     message(SEND_ERROR "exit")
 endif()
+
+# when trunk is already tagged stop, it is not necessary to tag, when not forced
+if(NOT FORCE)
+    message(STATUS "Checking trunk changes against last tag...")
+
+    svnIsTrunkChangedAgainstLastTags("${PROJECT_SVN_ROOT}" isChanged errorReason)
+
+    if (NOT "${errorReason}" STREQUAL "")
+        message(STATUS "Error when getting info about trunk or tags.\n${errorReason}")
+        message(SEND_ERROR "exit")
+    endif()
+
+    if (NOT isChanged)
+        svnGetNewestSubdirectory("${PROJECT_SVN_ROOT}/tags" newestSubDirectory errorReason)
+        message(STATUS "Trunk is tagged in ${newestSubDirectory}")
+        return()
+    endif()
+endif()    
 
 # fire error when working copy has modifications
 message(STATUS "Checking working copy for modifications...")
@@ -85,7 +101,7 @@ if (NOT "${out}" STREQUAL "")
     message(STATUS "New trunk in repository. Update first.\n${out}")
     message(SEND_ERROR "exit")
 endif()
-    
+
 # calculate tag name
 if(VERSION_BUILD_NUMBER)
     set(TAG_NAME "rel_${VERSION_MAJOR}_${VERSION_MINOR}_${VERSION_PATCH}_${VERSION_BUILD_NUMBER}")
@@ -112,7 +128,9 @@ endif()
 # 1. Generate documentation for sources
 # 2. Tag sources
 message(STATUS "Generating Release notes...")
+
 include(SBE/helpers/ReleaseNoteGenerator)
+
 GenerateReleaseNote(${PROJECT_SVN_ROOT} ${PROJECT_NAME} ${TAG_NAME} releaseNote)
 
 message(STATUS "Tagging sources, tag is ${TAG_NAME}...")
@@ -145,12 +163,24 @@ execute_process(
     RESULT_VARIABLE svnResult
     OUTPUT_VARIABLE out)
 
+file(REMOVE "ReleaseNotes")
+    
 if(${svnResult} GREATER 0)
-    file(REMOVE "ReleaseNotes")
     message(ERROR "Adding documentation fails.")
 endif()
 
-file(REMOVE "ReleaseNotes")
+# It is not possible with our SVN, hook script denies it.
+#message(STATUS "Setting lock property for ${TAG_NAME}")
+#execute_process(
+#    COMMAND ${Subversion_SVN_EXECUTABLE} propset --revprop -r HEAD -R svn:needs-lock yes "${PROJECT_SVN_ROOT}/tags/${TAG_NAME}"
+#    RESULT_VARIABLE svnResult
+#    OUTPUT_VARIABLE out)
+#
+#if(${svnResult} GREATER 0)
+#    message(ERROR "Could set needs-lock for files in ${TAG_NAME}.")
+#endif()
+
+message(STATUS "Trunk is tagged in ${TAG_NAME}")
 
 
 
