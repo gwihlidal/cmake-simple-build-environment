@@ -43,6 +43,48 @@ function(svnGetNewestSubdirectory directoryToCheck newestSubDirectory errorReaso
     set(${newestSubDirectory} ${newestSubdir} PARENT_SCOPE)
 endfunction()  
 
+function(svnIsTrunkChangedAgainstLastTags svnProjectRootDirectory isNecessary errorReason)
+    # get trunk directory info 
+    execute_process(
+        COMMAND ${Subversion_SVN_EXECUTABLE} info "${svnProjectRootDirectory}/trunk"
+        RESULT_VARIABLE svnResult
+        ERROR_VARIABLE err
+        OUTPUT_VARIABLE out)
+        
+    if(${svnResult} GREATER 0)
+        set(${errorReason} "Could not get info about ${svnProjectRootDirectory}/trunk due to:\n${err}" PARENT_SCOPE)
+        return()
+    endif()
+    
+    # get trunk revision
+    string(REGEX MATCH "Last Changed Rev: ([0-9]+)" TRUNK_REVISION "${out}")
+    set(TRUNK_REVISION ${CMAKE_MATCH_1})    
+    
+    # get tag directory info 
+    execute_process(
+        COMMAND ${Subversion_SVN_EXECUTABLE} info "${svnProjectRootDirectory}/tags"
+        RESULT_VARIABLE svnResult
+        ERROR_VARIABLE err
+        OUTPUT_VARIABLE out)
+        
+    if(${svnResult} GREATER 0)
+        set(${errorReason} "Could not get info about ${svnProjectRootDirectory}/tags due to:\n${err}" PARENT_SCOPE)
+        return()
+    endif()
+    
+    # get tag revision
+    string(REGEX MATCH "Last Changed Rev: ([0-9]+)" TAGS_REVISION "${out}")
+    set(TAGS_REVISION ${CMAKE_MATCH_1})
+    
+    if(${TRUNK_REVISION} GREATER ${TAGS_REVISION})
+        set(${isNecessary} yes PARENT_SCOPE)
+    else()
+        set(${isNecessary} no PARENT_SCOPE)
+    endif()   
+    
+    set(${errorReason} "" PARENT_SCOPE)
+endfunction()  
+
 function(svnIsDirectoryContains item directory isThere errorReason)
     # get directory info 
     execute_process(
