@@ -110,7 +110,7 @@ function(_uninstallUnusedDependencies)
     list(REMOVE_ITEM dependenciesToRemove ${requiredDependencies})
     
     foreach(dependency ${dependenciesToRemove})
-        message(STATUS "uninstalling unused dependency ${dependency}")
+        message(STATUS "Uninstalling unused dependency ${dependency}")
         
         set(DependencyBuildDirectory "${${dependency}_BuildPath}/build")
         execute_process(
@@ -122,6 +122,13 @@ function(_uninstallUnusedDependencies)
             message(FATAL_ERROR "Error during uninstallation of dependency ${dependency}\n${err}")
         endif()
         
+        if(EXISTS ${COV_DIR_DATA})
+            execute_process(
+                COMMAND cov-manage-emit --verbose 0 --dir ${COV_DIR_DATA} --tu-pattern "file('${${dependency}_SourcePath}/*')" delete
+                COMMAND ${SED_TOOL} -u -e "s/.*/    &/"
+                ERROR_VARIABLE err)
+        endif()
+    
         file(REMOVE_RECURSE ${${dependency}_BuildPath})
     endforeach()
 
@@ -199,8 +206,9 @@ function(_storeInstalledDependencies)
     foreach(installedDependency ${DEP_INSTALLATION_ORDER})
         list(APPEND info "list(APPEND INSTALLED_DEPENDENCIES ${installedDependency})\n")
         list(APPEND info "set(${installedDependency}_BuildPath ${DEP_BUILD_PATH}/${${installedDependency}_Name})\n")
+        list(APPEND info "set(${installedDependency}_SourcePath ${DEP_SOURCES_PATH}/${${installedDependency}_Name})\n")
     endforeach()
-    
+
     list(APPEND info "list(REMOVE_DUPLICATES INSTALLED_DEPENDENCIES)\n")
 
     file(WRITE ${DEP_INST_INFO_FILE} ${info})
