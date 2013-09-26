@@ -7,7 +7,8 @@ string(REGEX REPLACE "\n" ";" files "${files}")
 set(paths "")
 foreach (file IN LISTS files)
 	if(NOT "${file}" STREQUAL "")
-		message(STATUS "Uninstalling \"${file}\"")
+		string(REPLACE "@CMAKE_INSTALL_PREFIX@/" "" fileToPrint "${file}")
+		message(STATUS "Uninstalling \"${fileToPrint}\"")
 		file(REMOVE "${file}")
 
 		get_filename_component(path "${file}" PATH)
@@ -35,7 +36,7 @@ list(REVERSE allPaths)
 foreach(path ${allPaths})	
 	file(GLOB items "@CMAKE_INSTALL_PREFIX@/${path}/*")
 	if("" STREQUAL "${items}")
-		message(STATUS "Removing empty directory \"@CMAKE_INSTALL_PREFIX@/${path}\"")
+		message(STATUS "Removing empty directory \"${path}\"")
 		execute_process(
             	COMMAND @CMAKE_COMMAND@ -E remove_directory "@CMAKE_INSTALL_PREFIX@/${path}"
             	OUTPUT_VARIABLE rm_out
