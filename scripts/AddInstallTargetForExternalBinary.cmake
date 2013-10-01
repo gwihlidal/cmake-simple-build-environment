@@ -237,7 +237,7 @@ if(NOT EXISTS ${PROJECT_BINARY_DIR}/preinstallation)
     install(DIRECTORY ${PROJECT_BINARY_DIR}/preinstallation/include/ DESTINATION include COMPONENT Headers)        
               
     # Install the Libs
-    install(DIRECTORY ${PROJECT_BINARY_DIR}/preinstallation/lib/ DESTINATION lib COMPONENT Binaries)
+    install(DIRECTORY ${PROJECT_BINARY_DIR}/preinstallation/lib/ DESTINATION lib COMPONENT Distribution)
 endif()    
 
 

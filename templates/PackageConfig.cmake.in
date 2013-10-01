@@ -12,11 +12,14 @@ GET_FILENAME_COMPONENT(_IMPORT_PREFIX "${_IMPORT_PREFIX}" PATH)
 # Compute paths
 # These are IMPORTED targets created by @PROJECT_NAME@Targets.cmake
 @LIBRARIES_PART@
+@MOCK_LIBRARIES_PART@
+@INCLUDES_PART@
 @DECLSPEC_PART@
 @EXECUTABLES_PART@
 @TEST_EXECUTABLES_PART@
 
 # Our package dependencies (contains definitions for IMPORTED targets)
 include("${_IMPORT_PREFIX}/config/@PROJECT_NAME@Targets.cmake")
+
  
 
