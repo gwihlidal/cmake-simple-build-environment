@@ -14,7 +14,7 @@ set (CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/lib)
 include_directories(${CMAKE_SOURCE_DIR}/src)
 
 function(sbeAddLibrary)
-    sbeParseArguments(prop "ContainsDeclspec;Static" "Name;Objects" "Sources;PublicHeaders" "FromDependency" "${ARGN}")
+    sbeParseArguments(prop "ContainsDeclspec;Static" "Name" "Objects;Sources;PublicHeaders;ExcludeDependencies" "FromDependency" "${ARGN}")
     
     if(
         (NOT DEFINED prop_Name) OR
@@ -23,14 +23,25 @@ function(sbeAddLibrary)
         return()
     endif()
     
-    if(DEFINED prop_Objects)
-        set(precompilatedObjects "\$<TARGET_OBJECTS:${prop_Objects}>")
+    set(usedObjectLibraries "")
+    set(precompilatedObjects "")
+    if(DEFINED prop_Sources)
+        add_library(${prop_Name}Objects OBJECT ${prop_Sources})
+        list(APPEND precompilatedObjects "\$<TARGET_OBJECTS:${prop_Name}Objects>")
+        list(APPEND usedObjectLibraries ${prop_Name}Objects)
     endif()
-            
+    
+    if(DEFINED prop_Objects)
+        foreach(obj ${prop_Objects})
+            list(APPEND precompilatedObjects "\$<TARGET_OBJECTS:${obj}>")
+            list(APPEND usedObjectLibraries ${obj})
+        endforeach()
+    endif()
+           
     get_property(isSharedLibSupported GLOBAL PROPERTY TARGET_SUPPORTS_SHARED_LIBS)
     
     if(isSharedLibSupported AND NOT prop_Static)
-        add_library(${prop_Name} SHARED ${prop_Sources} ${precompilatedObjects})
+        add_library(${prop_Name} SHARED ${precompilatedObjects})
         
         set_target_properties(${prop_Name}
     	    PROPERTIES
@@ -39,7 +50,7 @@ function(sbeAddLibrary)
     		    SOVERSION ${VERSION_MAJOR}.${VERSION_MINOR}
     		    INSTALL_RPATH ".")
     else()
-        add_library(${prop_Name} STATIC ${prop_Sources} ${precompilatedObjects})            
+        add_library(${prop_Name} STATIC ${precompilatedObjects})            
     endif()
     
     string(REPLACE "," ";" prop_FromDependency "${prop_FromDependency}")
@@ -47,6 +58,60 @@ function(sbeAddLibrary)
     sbeAddDependencies(
         Target ${prop_Name} 
         DependencyTypesToAdd "Library;Project"
+        ExcludeDependencies ${prop_ExcludeDependencies}
+        ${prop_FromDependency}) 
+
+    sbeDoesDependenciesContainsDeclSpecs(dependenciesContainsDeclspecs)
+
+    if(prop_ContainsDeclspec OR dependenciesContainsDeclspecs)
+        _handleDeclSpec(${prop_Name})
+    endif()
+            
+    if(DEFINED prop_PublicHeaders)
+        set_property(TARGET ${prop_Name} PROPERTY PublicHeaders ${prop_PublicHeaders})
+    endif()
+    
+    set_property(TARGET ${prop_Name} PROPERTY UsedObjectLibraries ${usedObjectLibraries})
+endfunction()
+
+function(sbeAddMockLibrary)
+    sbeParseArguments(prop "ContainsDeclspec;Static" "MockedName;Name" "Objects;Sources;PublicHeaders;ExcludeDependencies" "FromDependency" "${ARGN}")
+    
+    if(
+        (NOT DEFINED prop_Name) OR
+        ((NOT DEFINED prop_Objects) AND (NOT DEFINED prop_Sources))
+      )
+        return()
+    endif()
+    
+    if(NOT DEFINED prop_MockedName AND NOT "${prop_Name}" MATCHES "^Mock.*$")
+        message(FATAL_ERROR "You have to set mocked name.")
+    endif()
+    
+    if(NOT DEFINED prop_MockedName)
+        string(REGEX REPLACE "^Mock(.*)$" "\\1" prop_MockedName "${prop_Name}")
+    endif()
+    
+    if(DEFINED prop_Objects)
+        set(precompilatedObjects "")
+        foreach(obj ${prop_Objects})
+            list(APPEND precompilatedObjects "\$<TARGET_OBJECTS:${obj}>")
+        endforeach()
+    endif()
+            
+    get_property(isSharedLibSupported GLOBAL PROPERTY TARGET_SUPPORTS_SHARED_LIBS)
+    
+    add_library(${prop_Name} STATIC ${prop_Sources} ${precompilatedObjects})            
+    
+    set_property(TARGET ${prop_Name} PROPERTY IsMock yes)
+    set_property(TARGET ${prop_Name} PROPERTY MockedName ${prop_MockedName})
+    
+    string(REPLACE "," ";" prop_FromDependency "${prop_FromDependency}")
+    
+    sbeAddDependencies(
+        Target ${prop_Name} 
+        DependencyTypesToAdd "Library;Project"
+        ExcludeDependencies ${prop_ExcludeDependencies}
         ${prop_FromDependency}) 
 
     sbeDoesDependenciesContainsDeclSpecs(dependenciesContainsDeclspecs)
@@ -60,8 +125,9 @@ function(sbeAddLibrary)
     endif()
 endfunction()
 
+
 function(sbeAddExecutable)
-    sbeParseArguments(prop "" "Name;Objects" "Sources" "FromDependency" "${ARGN}")
+    sbeParseArguments(prop "" "Name;Objects" "Sources;ExcludeDependencies" "FromDependency" "${ARGN}")
     
     if(
         (NOT DEFINED prop_Name) OR
@@ -89,6 +155,7 @@ function(sbeAddExecutable)
     sbeAddDependencies(
         Target ${prop_Name} 
         DependencyTypesToAdd "Library;Project"
+        ExcludeDependencies ${prop_ExcludeDependencies}
         ${prop_FromDependency}) 
 
     sbeDoesDependenciesContainsDeclSpecs(dependenciesContainsDeclspecs)
@@ -99,7 +166,7 @@ function(sbeAddExecutable)
 endfunction()
 
 function(sbeAddTestExecutable)
-    sbeParseArguments(prop "" "Name;Objects" "Sources" "FromDependency" "${ARGN}")
+    sbeParseArguments(prop "" "Name;Objects" "Sources;ExcludeDependencies" "FromDependency" "${ARGN}")
     
     if(
         (NOT DEFINED prop_Name) OR
@@ -123,12 +190,15 @@ function(sbeAddTestExecutable)
     	    PROPERTIES
     		    INSTALL_RPATH "../lib")
     endif()
-    
+
+    set_property(TARGET ${prop_Name} PROPERTY TEST "yes")
+        
     string(REPLACE "," ";" prop_FromDependency "${prop_FromDependency}")
     
     sbeAddDependencies(
         Target ${prop_Name} 
         DependencyTypesToAdd "Library;Project;Unit Test Framework"
+        ExcludeDependencies ${prop_ExcludeDependencies}
         ${prop_FromDependency}) 
 
     sbeDoesDependenciesContainsDeclSpecs(dependenciesContainsDeclspecs)
@@ -136,8 +206,6 @@ function(sbeAddTestExecutable)
     if(dependenciesContainsDeclspecs)
         _handleDeclSpec(${prop_Name})
     endif()
-    
-    set_property(TARGET ${prop_Name} PROPERTY TEST "yes")
 endfunction()
 
 function(sbeAddObjects)

@@ -24,7 +24,7 @@ function(addPackageTarget)
         COMMAND cmake -E remove_directory ${PROJECT_BINARY_DIR}/package
         COMMAND cmake -E make_directory ${PROJECT_BINARY_DIR}/package
         COMMAND cmake -E make_directory ${PROJECT_BINARY_DIR}/package/data
-        COMMAND cmake -DCMAKE_INSTALL_COMPONENT=Binaries -DBUILD_TYPE=${CMAKE_BUILD_TYPE} -DCMAKE_INSTALL_PREFIX=${PROJECT_BINARY_DIR}/package/data ${DO_STRIP} -P cmake_install.cmake 
+        COMMAND cmake -DCMAKE_INSTALL_COMPONENT=Distribution -DBUILD_TYPE=${CMAKE_BUILD_TYPE} -DCMAKE_INSTALL_PREFIX=${PROJECT_BINARY_DIR}/package/data ${DO_STRIP} -P cmake_install.cmake 
         COMMENT "Preinstalling...")
         
     # reinstall
@@ -39,7 +39,7 @@ function(addPackageTarget)
                         COMMENT "Skipping external dependecy ${depName}...")
                 else()
                     add_custom_command(TARGET package
-                        COMMAND cmake -DCMAKE_INSTALL_COMPONENT=Binaries -DBUILD_TYPE=${CMAKE_BUILD_TYPE} -DCMAKE_INSTALL_PREFIX=${PROJECT_BINARY_DIR}/package/data ${DO_STRIP} -P ${${dep}_BuildPath}/build/cmake_install.cmake
+                        COMMAND cmake -DCMAKE_INSTALL_COMPONENT=Distribution -DBUILD_TYPE=${CMAKE_BUILD_TYPE} -DCMAKE_INSTALL_PREFIX=${PROJECT_BINARY_DIR}/package/data ${DO_STRIP} -P ${${dep}_BuildPath}/build/cmake_install.cmake
                         COMMENT "Adding dependecy ${depName} to package...")
                 endif()
             endif()

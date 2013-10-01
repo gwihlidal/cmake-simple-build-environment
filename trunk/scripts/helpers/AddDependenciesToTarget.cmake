@@ -1,21 +1,30 @@
-if(NOT DEFINED DEP_INFO_FILE)
-    message(FATAL_ERROR "DEP_INFO_FILE has to be defined")
-endif()
-
-if(NOT DEFINED DEP_INSTALL_PATH)
-    message(FATAL_ERROR "DEP_INSTALL_PATH has to be defined")
+if(DEFINED DEP_INSTALL_PATH)
+    link_directories(${DEP_INSTALL_PATH}/lib)
+    link_directories(${DEP_INSTALL_PATH}/lib/mock)
 endif()
 
 include(SBE/helpers/ArgumentParser)
 include(SBE/helpers/DependenciesParser)
 
 function(sbeAddDependencies)
-    sbeParseArguments(dep "" "Target" "DependencyTypesToAdd" "FromDependency" "${ARGN}")
+    if(NOT DEFINED DEP_INFO_FILE)
+        message(FATAL_ERROR "DEP_INFO_FILE has to be defined")
+    endif()
+
+    sbeParseArguments(dep "" "Target" "DependencyTypesToAdd;ExcludeDependencies" "FromDependency" "${ARGN}")
     
     if(NOT DEFINED dep_Target)
         return()
     endif()
 
+    # check if mock libraries has to be used
+    get_property(isTestTarget TARGET ${dep_Target} PROPERTY TEST)
+    get_property(isMockTarget TARGET ${dep_Target} PROPERTY IsMock)
+    set(useMock no)
+    if(isTestTarget OR isMockTarget)
+        set(useMock yes)
+    endif()
+    
     foreach(fd ${dep_FromDependency})
         string(REPLACE "," ";" fd "${fd}")
         CMAKE_PARSE_ARGUMENTS(d "" "FromDependency" "LinkOnly" ${fd})
@@ -32,14 +41,33 @@ function(sbeAddDependencies)
         include(${DEP_INFO_FILE})
     
         include_directories(${DEP_INSTALL_PATH}/include)
-        link_directories(${DEP_INSTALL_PATH}/lib) 
     
         foreach(dep ${ownDependenciesIds})
             set(depName ${${dep}_Name})
             
-            list(FIND dep_DependencyTypesToAdd "${${dep}_Type}" typeToAdd)
-            if(${typeToAdd} GREATER -1)
-                
+            # check if dependency has to be added
+            if("" STREQUAL "${${dep}_Type}")
+                set(hasToBeAdded yes)
+            else()
+                list(FIND dep_DependencyTypesToAdd "${${dep}_Type}" index)
+                if(index EQUAL -1)
+                    set(hasToBeAdded no)
+                else()
+                    set(hasToBeAdded yes)
+                endif()
+            endif()
+            
+            if(hasToBeAdded AND DEFINED dep_ExcludeDependencies)
+                list(FIND dep_ExcludeDependencies "${depName}" index)
+                if (${index} EQUAL -1)
+                    set(hasToBeAdded yes)
+                else()
+                    set(hasToBeAdded no)
+                endif()
+            endif()
+
+            # add dependency            
+            if(hasToBeAdded)
                 if(NOT DEFINED ${depName}_FOUND)
                     find_package(${depName} REQUIRED CONFIG PATHS ${DEP_INSTALL_PATH}/config NO_DEFAULT_PATH)
                     set(tmp ${OverallFoundPackages})
@@ -54,9 +82,16 @@ function(sbeAddDependencies)
                 if(DEFINED ${depName}_LibrariesToLink)
                     # link only requested
                     target_link_libraries(${dep_Target} ${${depName}_LibrariesToLink})
-                elseif(DEFINED ${depName}_LIBRARIES)
-                    # link all exported
-                    target_link_libraries(${dep_Target} ${${depName}_LIBRARIES})
+                else()
+                    if(useMock)
+                        set(libType "MOCK_LIBRARIES")
+                    else()
+                        set(libType "LIBRARIES")
+                    endif()
+                    if(DEFINED ${depName}_${libType})
+                        # link all exported
+                        target_link_libraries(${dep_Target} ${${depName}_${libType}})
+                    endif()
                 endif()                
             endif()
         endforeach()
