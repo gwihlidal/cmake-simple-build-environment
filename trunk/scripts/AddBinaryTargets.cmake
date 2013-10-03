@@ -127,7 +127,7 @@ endfunction()
 
 
 function(sbeAddExecutable)
-    sbeParseArguments(prop "" "Name;Objects" "Sources;ExcludeDependencies" "FromDependency" "${ARGN}")
+    sbeParseArguments(prop "" "Name;Objects" "Sources;ExcludeDependencies;LinkOwnLibraries" "FromDependency" "${ARGN}")
     
     if(
         (NOT DEFINED prop_Name) OR
@@ -150,6 +150,10 @@ function(sbeAddExecutable)
     		    INSTALL_RPATH "../lib")
     endif()
     
+    if(DEFINED prop_LinkOwnLibraries)
+        target_link_libraries(${prop_Name} ${prop_LinkOwnLibraries})
+    endif()
+    
     string(REPLACE "," ";" prop_FromDependency "${prop_FromDependency}")
     
     sbeAddDependencies(
@@ -166,7 +170,7 @@ function(sbeAddExecutable)
 endfunction()
 
 function(sbeAddTestExecutable)
-    sbeParseArguments(prop "" "Name;Objects" "Sources;ExcludeDependencies" "FromDependency" "${ARGN}")
+    sbeParseArguments(prop "" "Name;Objects" "Sources;ExcludeDependencies;LinkOwnLibraries" "FromDependency" "${ARGN}")
     
     if(
         (NOT DEFINED prop_Name) OR
@@ -191,6 +195,10 @@ function(sbeAddTestExecutable)
     		    INSTALL_RPATH "../lib")
     endif()
 
+    if(DEFINED prop_LinkOwnLibraries)
+        target_link_libraries(${prop_Name} ${prop_LinkOwnLibraries})
+    endif()
+    
     set_property(TARGET ${prop_Name} PROPERTY TEST "yes")
         
     string(REPLACE "," ";" prop_FromDependency "${prop_FromDependency}")
