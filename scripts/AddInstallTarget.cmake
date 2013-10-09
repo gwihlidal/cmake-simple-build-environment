@@ -46,13 +46,15 @@ function(addInstallTarget)
     # install imported tragets
     if (NOT "" STREQUAL "${importedTargets}")
         _installImportedTargets(Package ${inst_Package} Targets ${importedTargets})
+        
+        # mixing installation of imported and own targets is not supported
+        if(NOT "${importedTargets}" STREQUAL "${inst_Targets}")
+            message(FATAL_ERROR "mixing installtion of imported and own targets is not supported")
+        endif()
+        
+        return()
     endif()
     
-    # mixing installtion of imported and own targets is not supported
-    if(NOT "${importedTargets}" STREQUAL "${inst_Targets}")
-        message(FATAL_ERROR "mixing installtion of imported and own targets is not supported")
-    endif()
-         
     # get test target
     set(testTargets "")
     foreach(target ${inst_Targets})
