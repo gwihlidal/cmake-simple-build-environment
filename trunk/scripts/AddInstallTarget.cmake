@@ -31,15 +31,28 @@ function(addInstallTarget)
     
     CMAKE_PARSE_ARGUMENTS(inst "" "Package" "IncludePaths;Headers;Files;Targets;IncludePathReplacement;FilePathReplacement" ${ARGN})
     
-     if(
-        (NOT DEFINED inst_Package) OR
-        ((NOT DEFINED inst_Targets) AND (NOT DEFINED inst_Files) AND (NOT DEFINED inst_Headers))
-      )
-        return()
-    endif()
-    
     set(InstalledTargets ${inst_Targets} PARENT_SCOPE)
             
+    # get imported target
+    set(importedTargets "")
+    foreach(target ${inst_Targets})
+        get_property(isImported TARGET ${target} PROPERTY IMPORTED)
+        
+        if(isImported)
+            list(APPEND importedTargets ${target})
+        endif()
+    endforeach()
+    
+    # install imported tragets
+    if (NOT "" STREQUAL "${importedTargets}")
+        _installImportedTargets(Package ${inst_Package} Targets ${importedTargets})
+    endif()
+    
+    # mixing installtion of imported and own targets is not supported
+    if(NOT "${importedTargets}" STREQUAL "${inst_Targets}")
+        message(FATAL_ERROR "mixing installtion of imported and own targets is not supported")
+    endif()
+         
     # get test target
     set(testTargets "")
     foreach(target ${inst_Targets})
@@ -50,6 +63,7 @@ function(addInstallTarget)
         endif()
     endforeach()
     
+    # install test targets
     _installTestTargets(Package ${inst_Package} Targets ${testTargets})
     
     # get mock target
@@ -65,6 +79,7 @@ function(addInstallTarget)
         endif()
     endforeach()
     
+    # install mock targets
     _installMockTargets(Package ${inst_Package} Targets ${mockTargets} IncludePathReplacement ${inst_IncludePathReplacement})
     
     # get ordinary targets
@@ -76,13 +91,18 @@ function(addInstallTarget)
         list(REMOVE_ITEM ordinaryTargets ${mockTargets})
     endif()
     
+    # to use dependent libraries in test, mock library is automatically generated for production library
+    # It is necessary because cmake automatically adds also dependant libraries of this project dependant library
+    # It rule is not applied for Framework library 
     if(NOT "Unit Test Framework" STREQUAL "${TYPE}")
         # get not mocked libraries and create mock target for them
         set(librariesToMock ${ordinaryTargets})
         foreach(target ${ordinaryTargets})
             get_property(type TARGET ${target} PROPERTY TYPE)
-            
-            if("SHARED_LIBRARY" STREQUAL "${type}" OR "STATIC_LIBRARY" STREQUAL "${type}")
+            get_property(isMockDisabled TARGET ${target} PROPERTY DisableMocking)
+                        
+            if(("SHARED_LIBRARY" STREQUAL "${type}" OR "STATIC_LIBRARY" STREQUAL "${type}") AND (NOT isMockDisabled))
+                
                 list(FIND mockedTargets ${target} found)
                 
                 if(${found} GREATER -1)
@@ -92,11 +112,14 @@ function(addInstallTarget)
                 list(REMOVE_ITEM librariesToMock ${target})
             endif()
         endforeach()
-        # add mock for not mocked libraries
+        # add mock libraries for not mocked libraries
         foreach(target ${librariesToMock})
             get_property(usedObjectLibraries TARGET ${target} PROPERTY UsedObjectLibraries)
+            
             sbeAddMockLibrary(Name Mock${target} Objects ${usedObjectLibraries})
+            
             _installMockTargets(Package ${inst_Package} Targets Mock${target})
+            
             list(APPEND inst_Targets Mock${target})
         endforeach()
      endif()
@@ -140,6 +163,98 @@ function(_installMockTargets)
             Target ${target} 
             IncludePathReplacement ${mock_IncludePathReplacement})
     endforeach()    
+endfunction()
+
+function(_installImportedTargets)
+    CMAKE_PARSE_ARGUMENTS(imp "" "Package" "Targets;IncludePathReplacement" ${ARGN})
+    
+    if(NOT DEFINED imp_Targets)
+        return()
+    endif()
+    
+    set(ALL_IMPORTED_TARGETS ${imp_Targets})
+    set(ALL_IMPORTED_TARGETS_DEFINITION "")
+    set(ALL_IMPORTED_TARGETS_DESCRIPTION "")
+    string(TOUPPER "${CMAKE_BUILD_TYPE}" buildType)
+    foreach(target ${imp_Targets})
+        get_property(type TARGET ${target} PROPERTY TYPE)
+        get_property(location TARGET ${target} PROPERTY IMPORTED_LOCATION)
+        get_filename_component(impotedFile "${location}" NAME)
+                     
+        if("STATIC_LIBRARY" STREQUAL "${type}")
+           list(APPEND ALL_IMPORTED_TARGETS_DEFINITION "add_library(${target} STATIC IMPORTED)")
+            
+            get_property(languages TARGET ${target} PROPERTY IMPORTED_LINK_INTERFACE_LANGUAGES)
+            
+            if ("" STREQUAL "${languages}")
+                 set(ALL_IMPORTED_TARGETS_DESCRIPTION "${ALL_IMPORTED_TARGETS_DESCRIPTION}set_property(TARGET ${target} APPEND PROPERTY IMPORTED_CONFIGURATIONS ${buildType})\n")
+                 set(ALL_IMPORTED_TARGETS_DESCRIPTION "${ALL_IMPORTED_TARGETS_DESCRIPTION}set_target_properties(${target} PROPERTIES\n")
+                 set(ALL_IMPORTED_TARGETS_DESCRIPTION "${ALL_IMPORTED_TARGETS_DESCRIPTION}    IMPORTED_LOCATION_${buildType} \"\${_IMPORT_PREFIX}/lib/${impotedFile}\")\n")
+            else()
+                set(ALL_IMPORTED_TARGETS_DESCRIPTION "${ALL_IMPORTED_TARGETS_DESCRIPTION}set_property(TARGET ${target} APPEND PROPERTY IMPORTED_CONFIGURATIONS ${buildType})\n")
+                set(ALL_IMPORTED_TARGETS_DESCRIPTION "${ALL_IMPORTED_TARGETS_DESCRIPTION}set_target_properties(${target} PROPERTIES\n")
+                set(ALL_IMPORTED_TARGETS_DESCRIPTION "${ALL_IMPORTED_TARGETS_DESCRIPTION}    IMPORTED_LOCATION_${buildType} \"\${_IMPORT_PREFIX}/lib/${impotedFile}\"\n")
+                set(ALL_IMPORTED_TARGETS_DESCRIPTION "${ALL_IMPORTED_TARGETS_DESCRIPTION}    IMPORTED_LINK_INTERFACE_LANGUAGES_${buildType} \"${languages}\")\n")
+            endif()
+        elseif("SHARED_LIBRARY" STREQUAL "${type}")
+            list(APPEND ALL_IMPORTED_TARGETS_DEFINITION "add_library(${target} SHARED IMPORTED)")
+            
+            get_property(soName TARGET ${target} PROPERTY IMPORTED_SONAME)
+            
+            set(ALL_IMPORTED_TARGETS_DESCRIPTION "${ALL_IMPORTED_TARGETS_DESCRIPTION}set_property(TARGET ${target} APPEND PROPERTY IMPORTED_CONFIGURATIONS ${buildType})\n")
+            set(ALL_IMPORTED_TARGETS_DESCRIPTION "${ALL_IMPORTED_TARGETS_DESCRIPTION}set_target_properties(${target} PROPERTIES\n")
+            set(ALL_IMPORTED_TARGETS_DESCRIPTION "${ALL_IMPORTED_TARGETS_DESCRIPTION}    IMPORTED_LOCATION_${buildType} \"\${_IMPORT_PREFIX}/lib/${impotedFile}\"\n")
+            set(ALL_IMPORTED_TARGETS_DESCRIPTION "${ALL_IMPORTED_TARGETS_DESCRIPTION}    IMPORTED_SONAME_${buildType} \"${soName}\")\n")
+        elseif("EXECUTABLE" STREQUAL "${type}")
+            message(FATAL_ERROR "Not implemented")
+        endif()
+        
+        set(ALL_IMPORTED_TARGETS_DESCRIPTION "${ALL_IMPORTED_TARGETS_DESCRIPTION}list(APPEND _IMPORT_CHECK_TARGETS ${target})\n")
+        set(ALL_IMPORTED_TARGETS_DESCRIPTION "${ALL_IMPORTED_TARGETS_DESCRIPTION}list(APPEND _IMPORT_CHECK_FILES_FOR_${target} \"\${_IMPORT_PREFIX}/lib/${impotedFile}\")\n")
+        
+        install(FILES ${location} DESTINATION lib COMPONENT Distribution)
+        _installHeaders(Target ${target} IncludePathReplacement ${ord_IncludePathReplacement})
+    endforeach()
+    
+    string(REPLACE ";" "\n" ALL_IMPORTED_TARGETS_DEFINITION "${ALL_IMPORTED_TARGETS_DEFINITION}")
+    
+    configure_file(${CMAKE_ROOT}/Modules/SBE/templates/ImportedTargetImportFile.cmake.in "${PROJECT_BINARY_DIR}/${PROJECT_NAME}Targets-imported.cmake" @ONLY)
+    configure_file(${CMAKE_ROOT}/Modules/SBE/templates/ImportedTargets.cmake.in "${PROJECT_BINARY_DIR}/${PROJECT_NAME}Targets.cmake" @ONLY)
+     
+    install(FILES
+         "${PROJECT_BINARY_DIR}/${PROJECT_NAME}Targets.cmake"
+         "${PROJECT_BINARY_DIR}/${PROJECT_NAME}Targets-imported.cmake"
+         DESTINATION config COMPONENT Configs)
+
+    set(LIBRARIES_PART "set(${imp_Package}_LIBRARIES ${imp_Targets})")
+
+    set(includePaths "\${_IMPORT_PREFIX}/include")
+    if(DEFINED cfg_IncludePaths)
+        foreach(inc ${cfg_IncludePaths})
+            list(APPEND includePaths "\${_IMPORT_PREFIX}/include/${inc}")
+        endforeach()
+    elseif(DEFINED cfg_IncludePathReplacement)
+        foreach(replacement ${cfg_IncludePathReplacement})
+            string(REGEX REPLACE "[ \t]*->[ \t]*" ";" replacements "${replacement}")
+            list(GET replacements 1 headerDirectory)
+            if (NOT "" STREQUAL "${headerDirectory}")
+                list(APPEND includePaths "\${_IMPORT_PREFIX}/include/${headerDirectory}")
+            endif()
+        endforeach()
+    endif()
+    
+    string(REPLACE ";" " " includePaths "${includePaths}")
+    set(INCLUDES_PART "set(${imp_Package}_INCLUDE_DIRS ${includePaths})")
+    
+    configure_file(${CMAKE_ROOT}/Modules/SBE/templates/PackageConfig.cmake.in "${PROJECT_BINARY_DIR}/${imp_Package}Config.cmake" @ONLY)
+    configure_file(${CMAKE_ROOT}/Modules/SBE/templates/PackageConfigVersion.cmake.in "${PROJECT_BINARY_DIR}/${imp_Package}ConfigVersion.cmake" @ONLY)
+     
+    # Install the Config.cmake and ConfigVersion.cmake
+    install(FILES
+      "${PROJECT_BINARY_DIR}/${imp_Package}Config.cmake"
+      "${PROJECT_BINARY_DIR}/${imp_Package}ConfigVersion.cmake"
+      DESTINATION config COMPONENT Configs) 
+            
 endfunction()
 
 function(_installOrdinaryTargets)
@@ -327,7 +442,8 @@ function(_installConfigs)
     else()
         configure_file(${CMAKE_ROOT}/Modules/SBE/templates/PackageWithoutTargetConfig.cmake.in "${PROJECT_BINARY_DIR}/${cfg_Package}Config.cmake" @ONLY)
         configure_file(${CMAKE_ROOT}/Modules/SBE/templates/PackageConfigVersion.cmake.in "${PROJECT_BINARY_DIR}/${cfg_Package}ConfigVersion.cmake" @ONLY)    
-    endif()     
+    endif()  
+    
     # Install the Config.cmake and ConfigVersion.cmake
     install(FILES
       "${PROJECT_BINARY_DIR}/${cfg_Package}Config.cmake"

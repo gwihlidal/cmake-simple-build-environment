@@ -200,6 +200,10 @@ function(sbeAddTestExecutable)
     endif()
     
     set_property(TARGET ${prop_Name} PROPERTY TEST "yes")
+    
+    if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "TI" OR "${CMAKE_C_COMPILER_ID}" STREQUAL "TI")
+        set_target_properties(${prop_Name} PROPERTIES LINK_FLAGS "--stack_size=0x4000 --heap_size=0x4000")
+    endif()
         
     string(REPLACE "," ";" prop_FromDependency "${prop_FromDependency}")
     

@@ -181,7 +181,7 @@ if(NOT EXISTS ${PROJECT_BINARY_DIR}/preinstallation)
     endforeach()         
 
     string(REPLACE ";" "" ADD_ALL_LIBRARIES "${ADD_ALL_LIBRARIES}")
-    configure_file(${CMAKE_ROOT}/Modules/SBE/templates/ExternalTargets.cmake.in "${PROJECT_BINARY_DIR}/preinstallation/Configs/${PROJECT_NAME}Targets.cmake" @ONLY)
+    configure_file(${CMAKE_ROOT}/Modules/SBE/templates/ImportedTargets.cmake.in "${PROJECT_BINARY_DIR}/preinstallation/Configs/${PROJECT_NAME}Targets.cmake" @ONLY)
 
     # create imported Targets.cmake
     set(IMPORT_ALL_LIBRARIES "")       
@@ -210,7 +210,7 @@ if(NOT EXISTS ${PROJECT_BINARY_DIR}/preinstallation)
     
     string(REPLACE ";" "" IMPORT_ALL_LIBRARIES "${IMPORT_ALL_LIBRARIES}")
     string(TOLOWER "${CMAKE_BUILD_TYPE}" buildType)
-    configure_file(${CMAKE_ROOT}/Modules/SBE/templates/ExternalTargetImportFile.cmake.in "${PROJECT_BINARY_DIR}/preinstallation/Configs/${PROJECT_NAME}Targets-${buildType}.cmake" @ONLY)
+    configure_file(${CMAKE_ROOT}/Modules/SBE/templates/ImportedTargetImportFile.cmake.in "${PROJECT_BINARY_DIR}/preinstallation/Configs/${PROJECT_NAME}Targets-${buildType}.cmake" @ONLY)
     
     set(INSTALL_LIBRARIES "")
     foreach(lib ${libs})
