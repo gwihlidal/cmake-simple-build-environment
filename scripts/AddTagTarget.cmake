@@ -16,7 +16,7 @@ add_custom_target(tag
         -DVERSION_MINOR=${VERSION_MINOR} 
         -DVERSION_MAJOR=${VERSION_MAJOR}
         -DVERSION_BUILD_NUMBER=${versionBuildNum}
-        -DFORCE=${force}
+        -DFORCE=\${FORCE}
         -DPROJECT_NAME=${PROJECT_NAME}
         -DPROJECT_SOURCE_DIR=${PROJECT_SOURCE_DIR}
         -P ${CMAKE_ROOT}/Modules/SBE/helpers/TagSources.cmake)
