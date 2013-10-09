@@ -127,7 +127,7 @@ endfunction()
 
 
 function(sbeAddExecutable)
-    sbeParseArguments(prop "" "Name;Objects" "Sources;ExcludeDependencies;LinkOwnLibraries" "FromDependency" "${ARGN}")
+    sbeParseArguments(prop "" "Name;Objects;ConvertToBin" "Sources;ExcludeDependencies;LinkOwnLibraries" "FromDependency" "${ARGN}")
     
     if(
         (NOT DEFINED prop_Name) OR
@@ -167,6 +167,18 @@ function(sbeAddExecutable)
     if(dependenciesContainsDeclspecs)
         _handleDeclSpec(${prop_Name})
     endif()
+    
+    if (NOT "" STREQUAL "${prop_ConvertToBin}")
+        add_custom_command(TARGET ${prop_Name}
+            POST_BUILD
+            WORKING_DIRECTORY bin
+            COMMAND ${CMAKE_HEX} ${prop_Name}.out -o ${prop_Name}.hex -map ${prop_Name}.mxp ${prop_ConvertToBin}
+            COMMAND ${CMAKE_ROOT}/Modules/SBE/toolchains/TI/hex2bin ${prop_Name}.hex
+            COMMENT "Converting to bin file"
+        )
+        set_target_properties(${prop_Name} PROPERTIES BIN_FILE bin/${prop_Name}.bin)
+    endif()
+    
 endfunction()
 
 function(sbeAddTestExecutable)
