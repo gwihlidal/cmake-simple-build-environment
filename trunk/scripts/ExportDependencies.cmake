@@ -44,22 +44,35 @@ include(${DEP_INFO_FILE} OPTIONAL)
 function(ExportProperties dependencies)
     set(${NAME}_Name "${NAME}" CACHE INTERNAL "" FORCE)
     set(${NAME}_Version "${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}" CACHE INTERNAL "" FORCE)
+
+    _storeOwnDependencies("${dependencies}" areChanged areExternalFlagsChanged)
     
-    _getDependenciesInfo(${NAME} "${dependencies}")
-
-    _recreateInfoAboutExternalFlag("${dependencies}" areExternalDependenciesChanged)
-        
-    _areDependenciesChanged(areChanged)
-
-    if(areChanged OR areExternalDependenciesChanged)     
-        _printDependencies(${NAME} "${dependencies}")
-    endif()
-        
     if(NOT areChanged)
+        if(NOT areExternalFlagsChanged)
+            # nothing to do
+            _cleanup()
+            return()
+        endif()
+        
+        # setup new dependencies data
+        _getDependenciesInfo(${NAME} "${dependencies}")
+        
+        # external flags are changed recreate picture
+        _createInfoAboutExternalFlag("${dependencies}")
+        
+        _printDependencies(${NAME})
+        
+        # only picture is chaged, nothing else has to be done
         _cleanup()
         return()
     endif()
     
+    _getDependenciesInfo(${NAME} "${dependencies}")
+
+    _createInfoAboutExternalFlag("${dependencies}")
+    
+    _printDependencies(${NAME})
+        
     _checkDependenciesVersionsAndStopOnError()
 
     _calculateDependeniesInstallationOrderAndStopOnError()
@@ -87,6 +100,7 @@ function(_getDependenciesInfo dependant dependencies)
         _getDependencyInfo(${dependant} ${dependecyIdentifier})
     endforeach()
 endfunction(_getDependenciesInfo)
+
 
 # export one dependency for given dependant
 function(_getDependencyInfo dependant dependency)
@@ -223,18 +237,20 @@ endfunction(_addToChachedList)
 
 #
 #
-#    _areDependenciesChanged
-#        Return yes when dependencies are changed 
+#    _storeOwnDependencies
+#        Return yes when own dependencies are changed 
 #
 #
-function(_areDependenciesChanged areChanged)
+function(_storeOwnDependencies dependencies areChanged areExternalFlagsChanged)
+    ParseDependencies("${dependencies}" actualOwnDependencies)
+    
     set(oldDep "")
-    if(DEFINED OverallDependencies)
-        set(oldDep ${OverallDependencies})
+    if(DEFINED OwnCachedDependencies)
+        set(oldDep ${OwnCachedDependencies})
     endif()
     set(newDep "")
-    if(DEFINED New_OverallDependencies)
-        set(newDep ${New_OverallDependencies})
+    if(DEFINED actualOwnDependencies)
+        set(newDep ${actualOwnDependencies})
     endif()
             
     list(SORT oldDep)
@@ -242,10 +258,42 @@ function(_areDependenciesChanged areChanged)
     
     if ("${oldDep}" STREQUAL "${newDep}")
         set(${areChanged} "no" PARENT_SCOPE)
+        
+        # dependencies are not changed, check if External flag is changed
+        set(${areExternalFlagsChanged} "no" PARENT_SCOPE)
+        foreach(ownDep ${OwnCachedDependencies})
+            if (NOT "${Own_${ownDep}_IsExternal}" STREQUAL "${${ownDep}_IsExternal}")
+                # external flag is changed, updtae in cache
+                set(${areExternalFlagsChanged} "yes" PARENT_SCOPE)
+                set(Own_${ownDep}_IsExternal ${${ownDep}_IsExternal} CACHE INTERNAL "" FORCE)
+            endif()
+        endforeach()     
     else()
+        _cleanAllOwnDependencyData()
+        # add all own dependencies to cache
+        set(OwnCachedDependencies ${actualOwnDependencies} CACHE INTERNAL "" FORCE)
+        foreach(ownDep ${OwnCachedDependencies})
+            set(Own_${ownDep}_IsExternal ${${ownDep}_IsExternal} CACHE INTERNAL "" FORCE)
+        endforeach()
+                
         set(${areChanged} "yes" PARENT_SCOPE)
+        set(${areExternalFlagsChanged} "yes" PARENT_SCOPE)
     endif()
-endfunction (_areDependenciesChanged)
+endfunction()
+
+#
+#
+#    _cleanAllOwnDependencyData
+#        clean own dependency data 
+#
+#
+function(_cleanAllOwnDependencyData)
+    # remove all own dependencies data from cache
+    foreach(ownDep ${OwnCachedDependencies})
+        unset(Own_${ownDep}_IsExternal CACHE)
+    endforeach()
+    unset(OwnCachedDependencies CACHE)
+endfunction()
 
 #
 #
@@ -253,7 +301,7 @@ endfunction (_areDependenciesChanged)
 #        print all dependencies relations as UML component diagram 
 #
 #
-function(_printDependencies projectName dependencies)
+function(_printDependencies projectName)
     message(STATUS "Generating Dependecies picture.")
     
     set(plantumlContent "@startuml\n")
@@ -344,9 +392,7 @@ function(_printDependencies projectName dependencies)
         list(APPEND plantumlContent "[${New_${dependency}_Name}\\n${New_${dependency}_Version}] <<${stereotype}>>\n")
     endforeach()
     
-    ParseDependencies("${dependencies}" ownDependencies)
-    
-    foreach(dependency ${ownDependencies})
+    foreach(dependency ${OwnCachedDependencies})
         list(APPEND plantumlContent "[${projectName}]-->[${New_${dependency}_Name}\\n${New_${dependency}_Version}]\n")
     endforeach()
     
@@ -490,32 +536,16 @@ endfunction (_updateDependeciesInstallationOrderInInfoFile)
 
 #
 #
-#    _recreateInfoAboutExternalFlag
+#    _createInfoAboutExternalFlag
 #        claculates external dependencies
 #            * dependency is external if is flaged as external in own dependencies
 #
 #
-function (_recreateInfoAboutExternalFlag dependenciesDescription areExternalDependenciesChanged)
+function (_createInfoAboutExternalFlag dependenciesDescription)
     set(externalDependencies "")
     
     _getAllExternalDependenciesRecursivellyFor("${dependenciesDescription}" externalDependencies)
     
-    # check if external flags are changed
-    set(oldDep "${EXTERNAL_DEPENDENCIES}")
-    if(NOT "" STREQUAL "${oldDep}")
-        list(SORT oldDep)
-    endif()
-
-    set(newDep ${externalDependencies})
-    if(NOT "" STREQUAL "${newDep}")
-        list(SORT newDep)
-    endif()
-    
-    if ("${oldDep}" STREQUAL "${newDep}")
-        set(${areExternalDependenciesChanged} "no" PARENT_SCOPE)
-        return()
-    endif()
-
     # write change in info file   
     file(READ ${DEP_INFO_FILE} info)
     string(REPLACE "\n" "\n;" info "${info}")
@@ -544,8 +574,7 @@ function (_recreateInfoAboutExternalFlag dependenciesDescription areExternalDepe
     file(WRITE ${DEP_INFO_FILE} ${info})
     
     set(New_ExternalDependencies ${externalDependencies} CACHE INTERNAL "" FORCE)
-    set(${areExternalDependenciesChanged} "yes" PARENT_SCOPE) 
-endfunction (_recreateInfoAboutExternalFlag)
+endfunction (_createInfoAboutExternalFlag)
 
 function(_getAllExternalDependenciesRecursivellyFor depsDescription externalDeps)
     ParseDependencies("${depsDescription}" dependencies)
@@ -663,6 +692,7 @@ function(_removeFromChachedList list value)
 endfunction(_removeFromChachedList)
 
 function(_exit reason)
+    _cleanAllOwnDependencyData()
     _cleanup()
     message(STATUS "${reason}")
     message(FATAL_ERROR "exit")
