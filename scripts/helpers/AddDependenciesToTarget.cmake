@@ -71,6 +71,12 @@ function(sbeAddDependencies)
                     set(OverallFoundPackages ${tmp} CACHE INTERNAL "" FORCE)
                 endif()
                 
+                if(useMock)
+                    if(DEFINED ${depName}_MOCK_INCLUDE_DIRS)
+                        include_directories(${${depName}_MOCK_INCLUDE_DIRS})
+                    endif()      
+                endif()
+                
                 if(DEFINED ${depName}_INCLUDE_DIRS)
                     include_directories(${${depName}_INCLUDE_DIRS})
                 endif()             
