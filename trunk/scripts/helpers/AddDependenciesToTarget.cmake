@@ -1,7 +1,3 @@
-if(DEFINED DEP_INSTALL_PATH)
-    link_directories(${DEP_INSTALL_PATH}/lib)
-    link_directories(${DEP_INSTALL_PATH}/lib/mock)
-endif()
 
 include(SBE/helpers/ArgumentParser)
 include(SBE/helpers/DependenciesParser)
