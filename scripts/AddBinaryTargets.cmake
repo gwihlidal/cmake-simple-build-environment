@@ -48,7 +48,7 @@ function(sbeAddLibrary)
     		    # create *nix style library versions + symbolic links
     		    VERSION ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}
     		    SOVERSION ${VERSION_MAJOR}.${VERSION_MINOR}
-    		    INSTALL_RPATH ".")
+    		    INSTALL_RPATH "$ORIGIN/../lib:")
     else()
         add_library(${prop_Name} STATIC ${precompilatedObjects})            
     endif()
@@ -57,7 +57,6 @@ function(sbeAddLibrary)
     
     sbeAddDependencies(
         Target ${prop_Name} 
-        DependencyTypesToAdd "Library;Project"
         ExcludeDependencies ${prop_ExcludeDependencies}
         ${prop_FromDependency}) 
 
@@ -65,6 +64,9 @@ function(sbeAddLibrary)
 
     if(prop_ContainsDeclspec OR dependenciesContainsDeclspecs)
         _handleDeclSpec(${prop_Name})
+        if(DEFINED prop_Sources)
+            _handleDeclSpec(${prop_Name}Objects)
+        endif()
     endif()
             
     if(DEFINED prop_PublicHeaders)
@@ -110,7 +112,6 @@ function(sbeAddMockLibrary)
     
     sbeAddDependencies(
         Target ${prop_Name} 
-        DependencyTypesToAdd "Library;Project"
         ExcludeDependencies ${prop_ExcludeDependencies}
         ${prop_FromDependency}) 
 
@@ -147,7 +148,7 @@ function(sbeAddExecutable)
     if(isSharedLibSupported)
         set_target_properties(${prop_Name}
     	    PROPERTIES
-    		    INSTALL_RPATH "../lib")
+    		    INSTALL_RPATH "$ORIGIN/../lib:")
     endif()
     
     if(DEFINED prop_LinkOwnLibraries)
@@ -158,7 +159,6 @@ function(sbeAddExecutable)
     
     sbeAddDependencies(
         Target ${prop_Name} 
-        DependencyTypesToAdd "Library;Project"
         ExcludeDependencies ${prop_ExcludeDependencies}
         ${prop_FromDependency}) 
 
@@ -204,7 +204,7 @@ function(sbeAddTestExecutable)
     if(isSharedLibSupported)
         set_target_properties(${prop_Name}
     	    PROPERTIES
-    		    INSTALL_RPATH "../lib")
+    		    INSTALL_RPATH "$ORIGIN/../lib:$ORIGIN/../lib/mock:")
     endif()
 
     if(DEFINED prop_LinkOwnLibraries)
@@ -221,7 +221,7 @@ function(sbeAddTestExecutable)
     
     sbeAddDependencies(
         Target ${prop_Name} 
-        DependencyTypesToAdd "Library;Project;Unit Test Framework"
+        DependencyTypesToAdd "Unit Test Framework"
         ExcludeDependencies ${prop_ExcludeDependencies}
         ${prop_FromDependency}) 
 

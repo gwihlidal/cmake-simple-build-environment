@@ -19,27 +19,25 @@ function(addPackageTarget)
         # usually we have no much space on tagret platform
         set(DO_STRIP "-DCMAKE_INSTALL_DO_STRIP=yes") 
     endif()
-    
+
     add_custom_command(TARGET package
         COMMAND cmake -E remove_directory ${PROJECT_BINARY_DIR}/package
-        COMMAND cmake -E make_directory ${PROJECT_BINARY_DIR}/package
-        COMMAND cmake -E make_directory ${PROJECT_BINARY_DIR}/package/data
-        COMMAND cmake -DCMAKE_INSTALL_COMPONENT=Distribution -DBUILD_TYPE=${CMAKE_BUILD_TYPE} -DCMAKE_INSTALL_PREFIX=${PROJECT_BINARY_DIR}/package/data ${DO_STRIP} -P cmake_install.cmake 
+        COMMAND cmake -E make_directory ${PROJECT_BINARY_DIR}/package/data/${SBE_DEFAULT_PACKAGE_PATH}
+        COMMAND cmake -DCMAKE_INSTALL_COMPONENT=Distribution -DBUILD_TYPE=${CMAKE_BUILD_TYPE} -DCMAKE_INSTALL_PREFIX=${PROJECT_BINARY_DIR}/package/data/${SBE_DEFAULT_PACKAGE_PATH} ${DO_STRIP} -P cmake_install.cmake 
         COMMENT "Preinstalling...")
         
     # reinstall
     if(NOT "${OverallDependencies}" STREQUAL "")
-        
         foreach(dep ${OverallDependencies})
             set(depName ${${dep}_Name})
             
-            if(("${${dep}_Type}" STREQUAL "Library") OR ("${${dep}_Type}" STREQUAL "Executable"))
+            if("${${dep}_Type}" STREQUAL "")
                 if(${${dep}_IsExternal})
                     add_custom_command(TARGET package
                         COMMENT "Skipping external dependecy ${depName}...")
                 else()
                     add_custom_command(TARGET package
-                        COMMAND cmake -DCMAKE_INSTALL_COMPONENT=Distribution -DBUILD_TYPE=${CMAKE_BUILD_TYPE} -DCMAKE_INSTALL_PREFIX=${PROJECT_BINARY_DIR}/package/data ${DO_STRIP} -P ${${dep}_BuildPath}/build/cmake_install.cmake
+                        COMMAND cmake -DCMAKE_INSTALL_COMPONENT=Distribution -DBUILD_TYPE=${CMAKE_BUILD_TYPE} -DCMAKE_INSTALL_PREFIX=${PROJECT_BINARY_DIR}/package/data/${SBE_DEFAULT_PACKAGE_PATH} ${DO_STRIP} -P ${${dep}_BuildPath}/build/cmake_install.cmake
                         COMMENT "Adding dependecy ${depName} to package...")
                 endif()
             endif()
@@ -47,7 +45,7 @@ function(addPackageTarget)
         endforeach()
     endif()    
         
-    set(PACKAGE_FILE_NAME "${PROJECT_NAME}-${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}-${CMAKE_SYSTEM_PROCESSOR}-${CMAKE_BUILD_TYPE}.tar.gz")
+    set(PACKAGE_FILE_NAME "${PROJECT_NAME}-${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}-${CMAKE_BUILD_TYPE}-${SBE_ARCHITECTURE_NAME}-${SBE_SYSTEM_NAME}-${SBE_SYSTEM_EXTENSION_NAME}.tar.gz")
     
     add_custom_command(TARGET package
         COMMAND cmake -E chdir ./package/data tar -czf ../${PACKAGE_FILE_NAME} .
