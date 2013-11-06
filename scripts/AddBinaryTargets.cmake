@@ -239,6 +239,9 @@ function(sbeAddObjects)
     
     sbeDoesDependenciesContainsDeclSpecs(dependenciesContainsDeclspecs)
     
+     sbeAddDependenciesIncludes(
+        Target ${prop_Name}) 
+        
     if(prop_ContainsDeclspec OR dependenciesContainsDeclspecs)
         _handleDeclSpec(${prop_Name})
     endif()    
