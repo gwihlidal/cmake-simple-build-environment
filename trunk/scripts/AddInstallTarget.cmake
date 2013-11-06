@@ -29,7 +29,10 @@ function(addInstallTarget)
     
     set(isAddInstallCalled yes PARENT_SCOPE)
     
-    CMAKE_PARSE_ARGUMENTS(inst "" "Package" "IncludePaths;Headers;Files;Targets;IncludePathReplacement;FilePathReplacement" ${ARGN})
+    CMAKE_PARSE_ARGUMENTS(inst "" "Package" "IncludePaths;Headers;Files;Targets;MockIncludePathReplacement;IncludePathReplacement;FilePathReplacement" ${ARGN})
+    
+    set(IncludePathReplacement ${inst_IncludePathReplacement})
+    list(APPEND IncludePathReplacement ${inst_MockIncludePathReplacement})
     
     set(InstalledTargets ${inst_Targets} PARENT_SCOPE)
             
@@ -82,7 +85,7 @@ function(addInstallTarget)
     endforeach()
     
     # install mock targets
-    _installMockTargets(Package ${inst_Package} Targets ${mockTargets} IncludePathReplacement ${inst_IncludePathReplacement})
+    _installMockTargets(Package ${inst_Package} Targets ${mockTargets} IncludePathReplacement ${IncludePathReplacement})
     
     # get ordinary targets
     set(ordinaryTargets ${inst_Targets})
@@ -126,13 +129,13 @@ function(addInstallTarget)
         endforeach()
      endif()
     
-    _installOrdinaryTargets(Package ${inst_Package} Targets ${ordinaryTargets} IncludePathReplacement ${inst_IncludePathReplacement})
+    _installOrdinaryTargets(Package ${inst_Package} Targets ${ordinaryTargets} IncludePathReplacement ${IncludePathReplacement})
     
-    _installHeaders(Headers ${inst_Headers} IncludePathReplacement ${inst_IncludePathReplacement})
+    _installHeaders(Headers ${inst_Headers} IncludePathReplacement ${IncludePathReplacement})
     
     _installFiles(Files ${inst_Files} FilePathReplacement ${inst_FilePathReplacement})
     
-    _installConfigs(Package ${inst_Package} Targets ${inst_Targets} IncludePaths ${inst_IncludePaths} IncludePathReplacement ${inst_IncludePathReplacement})
+    _installConfigs(Package ${inst_Package} Targets ${inst_Targets} IncludePaths ${inst_IncludePaths} IncludePathReplacement ${inst_IncludePathReplacement} MockIncludePathReplacement ${inst_MockIncludePathReplacement})
 endfunction()
 
 function(_installTestTargets)
@@ -363,7 +366,7 @@ function(_installHeaders)
 endfunction()
 
 function(_installConfigs)
-    CMAKE_PARSE_ARGUMENTS(cfg "" "Package" "Targets;IncludePaths;IncludePathReplacement" ${ARGN})
+    CMAKE_PARSE_ARGUMENTS(cfg "" "Package" "Targets;IncludePaths;IncludePathReplacement;MockIncludePathReplacement" ${ARGN})
     
     set(needsDeclspec "no")
     foreach(target ${cfg_Targets})
@@ -412,6 +415,17 @@ function(_installConfigs)
         endforeach()
     endif()
     
+    set(mockIncludePaths "")
+    if(DEFINED cfg_MockIncludePathReplacement)
+        foreach(replacement ${cfg_MockIncludePathReplacement})
+            string(REGEX REPLACE "[ \t]*->[ \t]*" ";" replacements "${replacement}")
+            list(GET replacements 1 headerDirectory)
+            if (NOT "" STREQUAL "${headerDirectory}")
+                list(APPEND mockIncludePaths "\${_IMPORT_PREFIX}/include/${headerDirectory}")
+            endif()
+        endforeach()
+    endif()
+    
     if(DEFINED INSTALL_LIBRARIES)
 	    set(LIBRARIES_PART 
 	        "set(${cfg_Package}_LIBRARIES ${INSTALL_LIBRARIES})")
@@ -435,6 +449,9 @@ function(_installConfigs)
     
     string(REPLACE ";" " " includePaths "${includePaths}")
     set(INCLUDES_PART "set(${cfg_Package}_INCLUDE_DIRS ${includePaths})")    
+    
+    string(REPLACE ";" " " mockIncludePaths "${mockIncludePaths}")
+    set(MOCK_INCLUDES_PART "set(${cfg_Package}_MOCK_INCLUDE_DIRS ${mockIncludePaths})")
     
     if (DEFINED INSTALL_LIBRARIES OR DEFINED INSTALL_MOCK_LIBRARIES OR DEFINED INSTALL_TEST_EXECUTABLES OR DEFINED INSTALL_EXECUTABLES)
         install(EXPORT ${cfg_Package}Targets DESTINATION config COMPONENT Configs)
