@@ -160,6 +160,7 @@ function(_fillNewDependecyFromScm dependency)
     # include properties file of dependecy
     set(DEPENDENCIES "")
     set(NAME "")
+    set(TYPE "")
     set(VERSION_MAJOR "")
     set(VERSION_MINOR "")
     set(VERSION_PATCH "")
