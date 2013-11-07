@@ -56,7 +56,8 @@ function(sbeAddLibrary)
     string(REPLACE "," ";" prop_FromDependency "${prop_FromDependency}")
     
     sbeAddDependencies(
-        Target ${prop_Name} 
+        Target ${prop_Name}
+        DependencyTypesToAdd "Container" 
         ExcludeDependencies ${prop_ExcludeDependencies}
         ${prop_FromDependency}) 
 
@@ -111,7 +112,8 @@ function(sbeAddMockLibrary)
     string(REPLACE "," ";" prop_FromDependency "${prop_FromDependency}")
     
     sbeAddDependencies(
-        Target ${prop_Name} 
+        Target ${prop_Name}
+        DependencyTypesToAdd "Container" 
         ExcludeDependencies ${prop_ExcludeDependencies}
         ${prop_FromDependency}) 
 
@@ -159,6 +161,7 @@ function(sbeAddExecutable)
     
     sbeAddDependencies(
         Target ${prop_Name} 
+        DependencyTypesToAdd "Container"
         ExcludeDependencies ${prop_ExcludeDependencies}
         ${prop_FromDependency}) 
 
@@ -221,7 +224,7 @@ function(sbeAddTestExecutable)
     
     sbeAddDependencies(
         Target ${prop_Name} 
-        DependencyTypesToAdd "Unit Test Framework"
+        DependencyTypesToAdd "Container;Unit Test Framework"
         ExcludeDependencies ${prop_ExcludeDependencies}
         ${prop_FromDependency}) 
 
