@@ -176,7 +176,7 @@ function(sbeAddExecutable)
             POST_BUILD
             WORKING_DIRECTORY bin
             COMMAND ${CMAKE_HEX} -quiet ${prop_Name}.out -o ${prop_Name}.hex -map ${prop_Name}.mxp ${prop_ConvertToBin}
-            COMMAND ${CMAKE_ROOT}/Modules/SBE/toolchains/TI/hex2bin ${prop_Name}.hex
+            COMMAND ${CMAKE_ROOT}/Modules/SBE/toolchains/ti/hex2bin ${prop_Name}.hex
             COMMENT "Converting to bin file"
         )
         set_target_properties(${prop_Name} PROPERTIES BIN_FILE bin/${prop_Name}.bin)
