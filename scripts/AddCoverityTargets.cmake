@@ -99,7 +99,6 @@ set(COV_ANALYZE_OPTIONS
 set(COV_DIR_ROOT    ${CMAKE_CURRENT_BINARY_DIR}/coverity)
 set(COV_DIR_CONFIG  ${COV_DIR_ROOT}/config)
 set(COV_DIR_DATA    ${COV_DIR_ROOT}/data)
-set(COV_DIR_RESULT  ${COV_DIR_ROOT}/result)
 set(COV_FILE_CONFIG ${COV_DIR_CONFIG}/coverity_config)
 
 # create coverity configuration
@@ -153,7 +152,6 @@ set(coverityBuildStarter ${COV_BUILD_TOOL} --verbose 0 --config ${COV_FILE_CONFI
 # create dirs
 file(MAKE_DIRECTORY ${COV_DIR_CONFIG})
 file(MAKE_DIRECTORY ${COV_DIR_DATA})
-file(MAKE_DIRECTORY ${COV_DIR_RESULT})
 
 if(NOT "" STREQUAL "${COV_C_COMPTYPE}" AND NOT "yes" STREQUAL "${COV_CONFIGURED_FOR_C}")
     message(STATUS "Configuring Coverity for C compiler...")
