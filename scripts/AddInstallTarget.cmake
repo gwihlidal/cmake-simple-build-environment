@@ -274,14 +274,41 @@ function(_installOrdinaryTargets)
     if(NOT DEFINED ord_Targets)
         return()
     endif()
-    
-    install(
-        TARGETS ${ord_Targets}
-        EXPORT ${ord_Package}Targets
-        RUNTIME DESTINATION bin COMPONENT Distribution
-        LIBRARY DESTINATION lib COMPONENT Distribution
-        ARCHIVE DESTINATION lib)
+
+    # when bin file is created for executable install also this bin file
+    # used for DSP
+    set(binFiles "")
+    set(targetsWithBinFiles "")
+    foreach(target ${ord_Targets})
+        get_property(binFile TARGET ${target} PROPERTY BIN_FILE)
         
+        if(DEFINED binFile)
+            list(APPEND binFiles ${CMAKE_CURRENT_BINARY_DIR}/${binFile})
+            list(APPEND targetsWithBinFiles ${target})
+            list(REMOVE_ITEM ord_Targets ${target})
+        endif()
+    endforeach()
+    
+    if(NOT "" STREQUAL "${targetsWithBinFiles}")
+        install(
+            TARGETS ${targetsWithBinFiles}
+            EXPORT ${ord_Package}Targets
+            RUNTIME DESTINATION bin COMPONENT DoNotInstall_BinFileIsInstalledInstead)
+    endif()
+    
+    if(NOT "" STREQUAL "${ord_Targets}")
+        install(
+            TARGETS ${ord_Targets}
+            EXPORT ${ord_Package}Targets
+            RUNTIME DESTINATION bin COMPONENT Distribution
+            LIBRARY DESTINATION lib COMPONENT Distribution
+            ARCHIVE DESTINATION lib)
+    endif()            
+        
+    if(NOT "" STREQUAL "${binFiles}")
+        install(FILES ${binFiles} DESTINATION bin COMPONENT Distribution)
+    endif()
+    
     foreach(target ${ord_Targets})
         _installHeaders(
             Target ${target} 
