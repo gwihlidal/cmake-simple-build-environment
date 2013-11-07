@@ -185,9 +185,12 @@ function(_installImportedTargets)
         get_property(type TARGET ${target} PROPERTY TYPE)
         get_property(location TARGET ${target} PROPERTY IMPORTED_LOCATION)
         get_filename_component(impotedFile "${location}" NAME)
+        set(componentIdentifier "")
                      
         if("STATIC_LIBRARY" STREQUAL "${type}")
-           list(APPEND ALL_IMPORTED_TARGETS_DEFINITION "add_library(${target} STATIC IMPORTED)")
+            set(componentIdentifier "")
+            
+            list(APPEND ALL_IMPORTED_TARGETS_DEFINITION "add_library(${target} STATIC IMPORTED)")
             
             get_property(languages TARGET ${target} PROPERTY IMPORTED_LINK_INTERFACE_LANGUAGES)
             
@@ -202,6 +205,8 @@ function(_installImportedTargets)
                 set(ALL_IMPORTED_TARGETS_DESCRIPTION "${ALL_IMPORTED_TARGETS_DESCRIPTION}    IMPORTED_LINK_INTERFACE_LANGUAGES_${buildType} \"${languages}\")\n")
             endif()
         elseif("SHARED_LIBRARY" STREQUAL "${type}")
+            set(componentIdentifier "COMPONENT Distribution")
+            
             list(APPEND ALL_IMPORTED_TARGETS_DEFINITION "add_library(${target} SHARED IMPORTED)")
             
             get_property(soName TARGET ${target} PROPERTY IMPORTED_SONAME)
@@ -217,7 +222,8 @@ function(_installImportedTargets)
         set(ALL_IMPORTED_TARGETS_DESCRIPTION "${ALL_IMPORTED_TARGETS_DESCRIPTION}list(APPEND _IMPORT_CHECK_TARGETS ${target})\n")
         set(ALL_IMPORTED_TARGETS_DESCRIPTION "${ALL_IMPORTED_TARGETS_DESCRIPTION}list(APPEND _IMPORT_CHECK_FILES_FOR_${target} \"\${_IMPORT_PREFIX}/lib/${impotedFile}\")\n")
         
-        install(FILES ${location} DESTINATION lib COMPONENT Distribution)
+        install(FILES ${location} DESTINATION lib ${componentIdentifier})
+        
         _installHeaders(Target ${target} IncludePathReplacement ${ord_IncludePathReplacement})
     endforeach()
     
