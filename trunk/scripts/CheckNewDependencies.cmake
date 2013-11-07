@@ -1,28 +1,43 @@
 cmake_minimum_required(VERSION 2.8)
 
 if(NOT PROPERTIES_PATH)
-    message(FATAL_ERROR "URL Path to Properties.cmake has to be defined as PROPERTIES_PATH=path.")
+    message(FATAL_ERROR "URL Path to Properties.cmake or local path has to be defined as PROPERTIES_PATH=path.")
 endif()
 
 include(SBE/helpers/DependenciesParser)
 include(SBE/helpers/SvnHelpers)
 
-# get Properties from scm
-message(STATUS "Exporting dependency properties ${PROPERTIES_PATH}")
+set(localFile no)
+if(EXISTS ${PROPERTIES_PATH}/Properties.cmake)
+    set(localFile yes)
+endif()
 
-execute_process(COMMAND svn export ${PROPERTIES_PATH}/Properties.cmake Properties.cmake
-    RESULT_VARIABLE svnResult
-    OUTPUT_VARIABLE out
-    ERROR_VARIABLE out)
-if(${svnResult} GREATER 0)
-    message(FATAL_ERROR "Error: Could not export ${PROPERTIES_PATH}/Properties.cmake")
+if(NOT localFile AND EXISTS ./Properties.cmake)
+    message(FATAL_ERROR 
+        "Error: Could not export ${PROPERTIES_PATH}/Properties.cmake "
+        "because file ./Properties.cmake already exists")
+endif()
+
+if(NOT localFile)
+    # get Properties from scm
+    message(STATUS "Exporting dependency properties ${PROPERTIES_PATH}")
+    
+    execute_process(COMMAND svn export ${PROPERTIES_PATH}/Properties.cmake Properties.cmake
+        RESULT_VARIABLE svnResult
+        OUTPUT_VARIABLE out
+        ERROR_VARIABLE out)
+    if(${svnResult} GREATER 0)
+        message(FATAL_ERROR "Error: Could not export ${PROPERTIES_PATH}/Properties.cmake")
+    endif()
 endif()
 
 # include properties    
 include(Properties.cmake)
 
-# remove file, after include it is needed any more
-execute_process(COMMAND cmake -E remove -f Properties.cmake)
+if(NOT localFile)
+    # remove file, after include it is needed any more
+    execute_process(COMMAND cmake -E remove -f Properties.cmake)
+endif()    
 
 function(_checkDependency dependency isChanged)
     message(STATUS "Processing ${dependency}")
