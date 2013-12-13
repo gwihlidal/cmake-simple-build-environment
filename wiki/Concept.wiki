@@ -19,7 +19,7 @@ The scripts support
 
 Each package has file `Properties.cmake` in same directory as `CMakeLists.txt`. The file contains package description (e.g. [https://code.google.com/p/sbe-documentlibrary/source/browse/trunk/Properties.cmake Properties.cmake for DocumentLibrary]).
   * `NAME` - package name
-  * `TYPE` - one of _Library, Executable, Unit Test Framework, Project_
+  * `TYPE` - one of _Unit Test Framework, Project_
   * `VERSION_MAJOR`, `VERSION_MINOR`, `VERSION_PATCH` - should be [http://semver.org semantic version]. 
   * `DESCRIPTION` - brief description
   * `MAINTAINER` - maintainer email address
@@ -127,20 +127,49 @@ It provides function
      * `FromDependency xxx LinkOnly yyy zzz` - where `xxx` is dependency name and `yyy`,`zzz` are libraries names of libraries to be linked
      * `ContainsDeclspec` - flag if public header files contains declspec.
      * `Static` - flag to create static library, otherwise shard library is created if target system supports them
+     * `ExcludeDependencies` - list of dependencies that are not link to given library
+      Required argument are
+        * `Name`
+        * one of `Sources`/`Objects`
+   * `sbeAddMockLibrary` - it creates mock library for unit testing. It is always static.
+     * `Name` - name of target, usually the name is in format Mock + name of mocked library
+     * `MockedName` - name of library that is mocked by this library
+     * `PublicHeaders` - list of public headers of library that has to be installed
+     * `Sources` - list of sources to be linked
+     * `Objects` - list of Object libraries to be linked 
+     * `FromDependency xxx LinkOnly yyy zzz` - where `xxx` is dependency name and `yyy`,`zzz` are libraries names of libraries to be linked
+     * `ContainsDeclspec` - flag if public header files contains declspec.
+     * `Static` - flag to create static library, otherwise shard library is created if target system supports them
+     * `ExcludeDependencies` - list of dependencies that are not link to given library
+      Required argument are
+        * `Name`
+        * one of `Sources`/`Objects`
    * `sbeAddExecutable` - it creates executable target and link this library to libraries described by own dependencies.
      * `Name` - name of target
      * `Sources` - list of sources to be linked
      * `Objects` - list of Object libraries to be linked 
      * `FromDependency xxx LinkOnly yyy zzz` - where `xxx` is dependency name and `yyy`,`zzz` are libraries names of libraries to be linked
+     * `ExcludeDependencies` - list of dependencies that are not link to given library
+     * `LinkOwnLibraries` - list of libraries created by current list file
+      Required argument are
+        * `Name`
+        * one of `Sources`/`Objects`
    * `sbeAddTestExecutable` - it creates test executable target and link this library to libraries described by own dependencies. I creates also main file suitable for CppUTest framework from template [http://code.google.com/p/cmake-simple-build-environment/source/browse/trunk/templates/CppUTestRunAllTests.cpp.in template].
-     * `Name` - name of target
+     * `Name` - name of target, usually name of package + Test
      * `Sources` - list of sources to be linked
      * `Objects` - list of Object libraries to be linked 
      * `FromDependency xxx LinkOnly yyy zzz` - where `xxx` is dependency name and `yyy`,`zzz` are libraries names of libraries to be linked
+     * `ExcludeDependencies` - list of dependencies that are not link to given library
+     * `LinkOwnLibraries` - list of libraries created by current list file
+      Required argument are
+        * `Name`
    * `sbeAddObjects` - it creates Object library from sources. It is usefull to compile sources only ones and use it for creation of production executable and test executable.
      * `Name` - name of target
      * `Sources` - list of sources to be linked
      * `ContainsDeclspec` - flag if public header files contains declspec.
+      Required argument are
+        * `Name`
+        * `Sources`
 
 See [http://code.google.com/p/sbe-documentlibrary/source/browse/trunk/CMakeLists.txt DocumentLibrary CMakeLists.txt].
 
