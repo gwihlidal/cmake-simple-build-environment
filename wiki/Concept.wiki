@@ -128,7 +128,7 @@ It provides function
      * `ContainsDeclspec` - flag if public header files contains declspec.
      * `Static` - flag to create static library, otherwise shard library is created if target system supports them
      * `ExcludeDependencies` - list of dependencies that are not link to given library
-      Required argument are
+     Required argument are
         * `Name`
         * one of `Sources`/`Objects`
    * `sbeAddMockLibrary` - it creates mock library for unit testing. It is always static.
@@ -141,7 +141,7 @@ It provides function
      * `ContainsDeclspec` - flag if public header files contains declspec.
      * `Static` - flag to create static library, otherwise shard library is created if target system supports them
      * `ExcludeDependencies` - list of dependencies that are not link to given library
-      Required argument are
+     Required argument are
         * `Name`
         * one of `Sources`/`Objects`
    * `sbeAddExecutable` - it creates executable target and link this library to libraries described by own dependencies.
