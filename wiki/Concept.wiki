@@ -161,13 +161,13 @@ It provides function
      * `FromDependency xxx LinkOnly yyy zzz` - where `xxx` is dependency name and `yyy`,`zzz` are libraries names of libraries to be linked
      * `ExcludeDependencies` - list of dependencies that are not link to given library
      * `LinkOwnLibraries` - list of libraries created by current list file
-      Required argument are
+     Required argument are
         * `Name`
    * `sbeAddObjects` - it creates Object library from sources. It is usefull to compile sources only ones and use it for creation of production executable and test executable.
      * `Name` - name of target
      * `Sources` - list of sources to be linked
      * `ContainsDeclspec` - flag if public header files contains declspec.
-      Required argument are
+     Required argument are
         * `Name`
         * `Sources`
 
@@ -217,14 +217,20 @@ endforeach()
 
 == Install Target ==
 
-==== Install Executable or Library package ====
+==== Install Simple Build Environment package ====
 
 Simple Build Environment provides script [https://code.google.com/p/cmake-simple-build-environment/source/browse/trunk/scripts/AddInstalTarget.cmake AddInstalTarget.cmake] with function `addInstallTarget` to install previously defined targets.
 
 Function `addInstallTarget` arguments:
   * `Package` - name of package
   * `Targets` - targets to add
-  * `IncludePathReplacement` - regxep replacements expression to change include paths directories during installations. The syntax is `"regexp to match include path given in sbeAddLibraryTarget" -> "include path in installation"`
+  * `Headers` - list of additional headers, that are not assigned as `PublicHeaders` of libraries
+  * `Files` - list of files to be installed, e.g some config files\resources\...
+  * `IncludePathReplacement` - regxep replacements expression to change headers paths directories during installations. The syntax is `"regexp to match include path given in `sbeAddLibrary`\`sbeAddMockLibrary`" -> "include path in installation"`
+  * `FilePathReplacement` - regxep replacements expression to change paths of given files during installations. The syntax is `"regexp to match file path given in `Files`" -> "file path in installation"`
+  Required argument are
+     * `Package`
+     * `Targets` at least one target has to be defined
 
 See [https://code.google.com/p/sbe-documentlibrary/source/browse/trunk/CMakeLists.txt DocumentLibrary CMakeLists.txt]
 
@@ -232,22 +238,22 @@ Function does:
    * installs test targets only in configuration `Debug` and `DebugWithCoverage` to directory `bin`
    * installs executables directory `bin`
    * installs libraries in directory `lib`. On Windows `dll` are installed in directory `bin`
-   * installs headers files listed in `sbeAddLibraryTarget` and change theirs include paths according to `IncludePathReplacement`.
+   * installs headers files listed in `sbeAddLibrary`\`sbeAddMockLibrary` as `PublicHeaders` and change theirs include paths according to `IncludePathReplacement`.
+   * creates Mock libraries for production libraries that are not explicitly mocked by `sbeAddMockLibrary` to separate test and production build. When Mock library is not explicitly created, Simple Build Environment re-link all objects of production library into static library with name Mock+NameOfProductionLibrary.
+   * installs mock libraries in directory lib/mock
    * when installed target contains declspec it replace all keyword `__EXPORT` with `__IMPORT` during header files installation.
    * install Config.cmake file for package.
 
 Config.cmake file has following variables:
    * `PackageName_LIBRARIES` - list of libraries
    * `PackageName_INCLUDE_DIRS` - list of include directories
+   * `PackageName_MOCK_LIBRARIES` - list of mocked libraries
+   * `PackageName_MOCK_INCLUDE_DIRS` - list of mock include directories
    * `PackageName_EXECUTABLES` - list of executables
    * `PackageName_EXECUTABLES_PATH` - path where executables are located
    * `PackageName_TEST_EXECUTABLES` - list of test executables
    * `PackageName_TEST_EXECUTABLES_PATH` - path where test executables are located
    * `PackageName_CONTAINS_DECLSPEC` - flag if installed headers contains declspec
-
-==== Install Project package ====
-
-Will be added soon.
 
 ==== Install external tar.gz file ====
 
