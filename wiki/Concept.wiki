@@ -239,7 +239,7 @@ Function does:
    * installs executables directory `bin`
    * installs libraries in directory `lib`. On Windows `dll` are installed in directory `bin`
    * installs headers files listed in `sbeAddLibrary`\`sbeAddMockLibrary` as `PublicHeaders` and change theirs include paths according to `IncludePathReplacement`.
-   * creates Mock libraries for production libraries that are not explicitly mocked by `sbeAddMockLibrary` to separate test and production build. When Mock library is not explicitly created, Simple Build Environment re-link all objects of production library into static library with name Mock+NameOfProductionLibrary.
+   * creates Mock libraries for production libraries that are not explicitly mocked by `sbeAddMockLibrary` to separate test and production build. When Mock library is not explicitly created, Simple Build Environment re-link all objects of production library into static library with name Mock+Name_Of_Production_Library.
    * installs mock libraries in directory lib/mock
    * when installed target contains declspec it replace all keyword `__EXPORT` with `__IMPORT` during header files installation.
    * install Config.cmake file for package.
@@ -270,6 +270,15 @@ The script provide function `addTestTarget`. it has argument `Executable name`, 
   # options for CppUTest executable can be added by environment variable CPPUTEST_FLAGS (`make test CPPUTEST_FLAGS=-ojunit`)
 
 See [http://code.google.com/p/sbe-helloworld/source/browse/trunk/CMakeLists.txt HelloWorld CMakeLists.txt].
+
+==== Separated Production and Test builds ====
+
+Simple Build Environment separates production and test builds. 
+   * Production Targets uses dependencies headers only from `PackageName_INCLUDE_DIRS` and libraries to link with only from `PackageName_LIBRARIES`. 
+   * Tests Targets (executable and mock libraries) uses dependencies headers only from `PackageName_MOCK_INCLUDE_DIRS` and libraries to link with only from `PackageName_MOCK_LIBRARIES`. There can be path to production headers in `PackageName_MOCK_INCLUDE_DIRS`.
+
+Separation is possible even if package doesn't define mock libraries explicitly. 
+Simple Build Environment creates creates mocked versions of libraries for production libraries that are not explicitly mocked by `sbeAddMockLibrary` to separate test and production build. When Mock library is not explicitly created, Simple Build Environment re-link all objects of production library into static library with name Mock+Name_Of_Production_Library.
 
 == Coverity ==
 
