@@ -280,7 +280,7 @@ Simple Build Environment separates production and test builds.
 Separation is possible even if package doesn't define mock libraries explicitly. 
 Simple Build Environment creates creates mocked versions of libraries for production libraries that are not explicitly mocked by `sbeAddMockLibrary` to separate test and production build. When Mock library is not explicitly created, Simple Build Environment re-link all objects of production library into static library with name Mock+Name_Of_Production_Library.
 
-[Separation http://cmake-simple-build-environment.googlecode.com/svn/wiki/images/PTSeparation.png]
+[http://cmake-simple-build-environment.googlecode.com/svn/wiki/images/PTSeparation.png http://cmake-simple-build-environment.googlecode.com/svn/wiki/images/PTSeparationSmall.png]
 
 == Coverity ==
 
