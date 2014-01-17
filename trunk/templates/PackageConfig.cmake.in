@@ -1,10 +1,5 @@
 # Config file for the @PROJECT_NAME@ package
  
-list(FIND OverallFoundPackages @PROJECT_NAME@ isPackageAlreadyFound)
-if(${isPackageAlreadyFound} GREATER -1)
-	return()
-endif()
-
 # Compute the installation prefix relative to this file.
 GET_FILENAME_COMPONENT(_IMPORT_PREFIX "${CMAKE_CURRENT_LIST_FILE}" PATH)
 GET_FILENAME_COMPONENT(_IMPORT_PREFIX "${_IMPORT_PREFIX}" PATH)
