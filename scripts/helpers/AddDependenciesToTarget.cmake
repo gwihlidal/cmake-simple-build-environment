@@ -2,11 +2,6 @@
 include(SBE/helpers/ArgumentParser)
 include(SBE/helpers/DependenciesParser)
 
-if(DEFINED DEP_INSTALL_PATH)
-    link_directories(${DEP_INSTALL_PATH}/lib)
-    link_directories(${DEP_INSTALL_PATH}/lib/mock)
-endif()
-
 function(sbeAddDependencies)
     if(NOT DEFINED DEP_INFO_FILE)
         message(FATAL_ERROR "DEP_INFO_FILE has to be defined")
@@ -19,8 +14,8 @@ function(sbeAddDependencies)
     endif()
 
     # check if mock libraries has to be used
-    get_property(isTestTarget TARGET ${dep_Target} PROPERTY TEST)
-    get_property(isMockTarget TARGET ${dep_Target} PROPERTY IsMock)
+    get_property(isTestTarget TARGET ${dep_Target} PROPERTY SBE_TEST)
+    get_property(isMockTarget TARGET ${dep_Target} PROPERTY SBE_MOCK)
     set(useMock no)
     if(isTestTarget OR isMockTarget)
         set(useMock yes)
@@ -40,8 +35,6 @@ function(sbeAddDependencies)
     # link all dependend libraries
     if(NOT "${ownDependenciesIds}" STREQUAL "")
         include(${DEP_INFO_FILE})
-    
-        include_directories(${DEP_INSTALL_PATH}/include)
     
         foreach(dep ${ownDependenciesIds})
             set(depName ${${dep}_Name})
@@ -69,13 +62,6 @@ function(sbeAddDependencies)
 
             # add dependency            
             if(hasToBeAdded)
-                if(NOT DEFINED ${depName}_FOUND)
-                    find_package(${depName} REQUIRED CONFIG PATHS ${DEP_INSTALL_PATH}/config NO_DEFAULT_PATH)
-                    set(tmp ${OverallFoundPackages})
-                    list(APPEND tmp ${depName})
-                    set(OverallFoundPackages ${tmp} CACHE INTERNAL "" FORCE)
-                endif()
-                
                 if(useMock)
                     if(DEFINED ${depName}_INCLUDE_DIRS OR DEFINED ${depName}_MOCK_INCLUDE_DIRS)
                         set(includes  ${${depName}_MOCK_INCLUDE_DIRS} ${${depName}_INCLUDE_DIRS})
@@ -91,6 +77,16 @@ function(sbeAddDependencies)
                 endif()
                 
                 if(DEFINED ${depName}_LibrariesToLink)
+                    set(tmpList ${${depName}_LibrariesToLink})
+                    if(useMock)
+                        set(libType "MOCK_LIBRARIES")
+                    else()
+                        set(libType "LIBRARIES")
+                    endif()
+                    list(REMOVE_ITEM tmpList ${${depName}_${libType}})
+                    if(NOT "" STREQUAL "${tmpList}")
+                        message(FATAL_ERROR "Libraries ${tmpList} are not provided by ${depName} but requested in target ${dep_Target}.")
+                    endif()
                     # link only requested
                     target_link_libraries(${dep_Target} ${${depName}_LibrariesToLink})
                 else()
@@ -106,8 +102,6 @@ function(sbeAddDependencies)
                 endif()                
             endif()
         endforeach()
-        
-        unset(OverallFoundPackages CACHE)
     endif()
 endfunction()        
 
@@ -123,8 +117,8 @@ function(sbeAddDependenciesIncludes)
     endif()
 
     # check if mock libraries has to be used
-    get_property(isTestTarget TARGET ${dep_Target} PROPERTY TEST)
-    get_property(isMockTarget TARGET ${dep_Target} PROPERTY IsMock)
+    get_property(isTestTarget TARGET ${dep_Target} PROPERTY SBE_TEST)
+    get_property(isMockTarget TARGET ${dep_Target} PROPERTY SBE_MOCK)
     set(useMock no)
     if(isTestTarget OR isMockTarget)
         set(useMock yes)
@@ -150,13 +144,6 @@ function(sbeAddDependenciesIncludes)
             
             # add dependency includes            
             if(hasToBeAdded)
-                if(NOT DEFINED ${depName}_FOUND)
-                    find_package(${depName} REQUIRED CONFIG PATHS ${DEP_INSTALL_PATH}/config NO_DEFAULT_PATH)
-                    set(tmp ${OverallFoundPackages})
-                    list(APPEND tmp ${depName})
-                    set(OverallFoundPackages ${tmp} CACHE INTERNAL "" FORCE)
-                endif()
-                
                 if(useMock)
                     if(DEFINED ${depName}_INCLUDE_DIRS OR DEFINED ${depName}_MOCK_INCLUDE_DIRS)
                         set(includes  ${${depName}_MOCK_INCLUDE_DIRS} ${${depName}_INCLUDE_DIRS})
@@ -172,8 +159,6 @@ function(sbeAddDependenciesIncludes)
                 endif()
             endif()
         endforeach()
-        
-        unset(OverallFoundPackages CACHE)
     endif()
 endfunction()        
 
@@ -189,24 +174,14 @@ function(sbeDoesDependenciesContainsDeclSpecs containsDeclspecs)
         foreach(dep ${ownDependenciesIds})
             if(NOT depContains)
                 set(depName ${${dep}_Name})
-                
-                if(NOT DEFINED ${depName}_FOUND)
-                    find_package(${depName} REQUIRED CONFIG PATHS ${DEP_INSTALL_PATH}/config NO_DEFAULT_PATH)
-                    set(tmp ${OverallFoundPackages})
-                    list(APPEND tmp ${depName})
-                    set(OverallFoundPackages ${tmp} CACHE INTERNAL "" FORCE)
-                endif()
-                
+               
                 if(${depName}_CONTAINS_DECLSPEC)
                     set(depContains "yes")
                 endif()
             endif()
         endforeach()
-        
-        unset(OverallFoundPackages CACHE)
     endif()
     
     set(${containsDeclspecs} ${depContains} PARENT_SCOPE)
 endfunction()
-
-
+  

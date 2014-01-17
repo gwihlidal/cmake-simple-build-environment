@@ -14,7 +14,7 @@ set (CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/lib)
 include_directories(${CMAKE_SOURCE_DIR}/src)
 
 function(sbeAddLibrary)
-    sbeParseArguments(prop "ContainsDeclspec;Static" "Name" "Objects;Sources;PublicHeaders;ExcludeDependencies" "FromDependency" "${ARGN}")
+    sbeParseArguments(prop "SBE_CONTAINS_DECLSPEC;Static" "Name" "Objects;Sources;PublicHeaders;ExcludeDependencies" "FromDependency" "${ARGN}")
     
     if(
         (NOT DEFINED prop_Name) OR
@@ -23,34 +23,27 @@ function(sbeAddLibrary)
         return()
     endif()
     
-    set(usedObjectLibraries "")
     set(precompilatedObjects "")
-    if(DEFINED prop_Sources)
-        add_library(${prop_Name}Objects OBJECT ${prop_Sources})
-        list(APPEND precompilatedObjects "\$<TARGET_OBJECTS:${prop_Name}Objects>")
-        list(APPEND usedObjectLibraries ${prop_Name}Objects)
-    endif()
     
     if(DEFINED prop_Objects)
         foreach(obj ${prop_Objects})
             list(APPEND precompilatedObjects "\$<TARGET_OBJECTS:${obj}>")
-            list(APPEND usedObjectLibraries ${obj})
         endforeach()
     endif()
            
     get_property(isSharedLibSupported GLOBAL PROPERTY TARGET_SUPPORTS_SHARED_LIBS)
     
     if(isSharedLibSupported AND NOT prop_Static)
-        add_library(${prop_Name} SHARED ${precompilatedObjects})
+        add_library(${prop_Name} SHARED ${precompilatedObjects} ${prop_Sources})
         
         set_target_properties(${prop_Name}
     	    PROPERTIES
     		    # create *nix style library versions + symbolic links
     		    VERSION ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}
     		    SOVERSION ${VERSION_MAJOR}.${VERSION_MINOR}
-    		    INSTALL_RPATH "$ORIGIN/../lib:")
+    		    INSTALL_RPATH "$ORIGIN/:")
     else()
-        add_library(${prop_Name} STATIC ${precompilatedObjects})            
+        add_library(${prop_Name} STATIC ${precompilatedObjects} ${prop_Sources})            
     endif()
     
     string(REPLACE "," ";" prop_FromDependency "${prop_FromDependency}")
@@ -61,9 +54,9 @@ function(sbeAddLibrary)
         ExcludeDependencies ${prop_ExcludeDependencies}
         ${prop_FromDependency}) 
 
-    sbeDoesDependenciesContainsDeclSpecs(dependenciesContainsDeclspecs)
+    sbeDoesDependenciesContainsDeclSpecs(dependenciesSBE_CONTAINS_DECLSPECs)
 
-    if(prop_ContainsDeclspec OR dependenciesContainsDeclspecs)
+    if(prop_SBE_CONTAINS_DECLSPEC OR dependenciesSBE_CONTAINS_DECLSPECs)
         _handleDeclSpec(${prop_Name})
         if(DEFINED prop_Sources)
             _handleDeclSpec(${prop_Name}Objects)
@@ -73,12 +66,10 @@ function(sbeAddLibrary)
     if(DEFINED prop_PublicHeaders)
         set_property(TARGET ${prop_Name} PROPERTY PublicHeaders ${prop_PublicHeaders})
     endif()
-    
-    set_property(TARGET ${prop_Name} PROPERTY UsedObjectLibraries ${usedObjectLibraries})
 endfunction()
 
 function(sbeAddMockLibrary)
-    sbeParseArguments(prop "ContainsDeclspec;Static" "MockedName;Name" "Objects;Sources;PublicHeaders;ExcludeDependencies" "FromDependency" "${ARGN}")
+    sbeParseArguments(prop "SBE_CONTAINS_DECLSPEC;Static" "MockedName;Name" "Objects;Sources;PublicHeaders;ExcludeDependencies" "FromDependency" "${ARGN}")
     
     if(
         (NOT DEFINED prop_Name) OR
@@ -94,20 +85,19 @@ function(sbeAddMockLibrary)
     if(NOT DEFINED prop_MockedName)
         string(REGEX REPLACE "^Mock(.*)$" "\\1" prop_MockedName "${prop_Name}")
     endif()
-    
+
+    set(precompilatedObjects "")
+        
     if(DEFINED prop_Objects)
-        set(precompilatedObjects "")
         foreach(obj ${prop_Objects})
             list(APPEND precompilatedObjects "\$<TARGET_OBJECTS:${obj}>")
         endforeach()
     endif()
             
-    get_property(isSharedLibSupported GLOBAL PROPERTY TARGET_SUPPORTS_SHARED_LIBS)
-    
     add_library(${prop_Name} STATIC ${prop_Sources} ${precompilatedObjects})            
     
-    set_property(TARGET ${prop_Name} PROPERTY IsMock yes)
-    set_property(TARGET ${prop_Name} PROPERTY MockedName ${prop_MockedName})
+    set_property(TARGET ${prop_Name} PROPERTY SBE_MOCK yes)
+    set_property(TARGET ${prop_Name} PROPERTY SBE_MOCKED_NAME ${prop_MockedName})
     
     string(REPLACE "," ";" prop_FromDependency "${prop_FromDependency}")
     
@@ -117,9 +107,9 @@ function(sbeAddMockLibrary)
         ExcludeDependencies ${prop_ExcludeDependencies}
         ${prop_FromDependency}) 
 
-    sbeDoesDependenciesContainsDeclSpecs(dependenciesContainsDeclspecs)
+    sbeDoesDependenciesContainsDeclSpecs(dependenciesSBE_CONTAINS_DECLSPECs)
 
-    if(prop_ContainsDeclspec OR dependenciesContainsDeclspecs)
+    if(prop_SBE_CONTAINS_DECLSPEC OR dependenciesSBE_CONTAINS_DECLSPECs)
         _handleDeclSpec(${prop_Name})
     endif()
             
@@ -150,7 +140,7 @@ function(sbeAddExecutable)
     if(isSharedLibSupported)
         set_target_properties(${prop_Name}
     	    PROPERTIES
-    		    INSTALL_RPATH "$ORIGIN/../lib:")
+    		    INSTALL_RPATH "$ORIGIN/../lib/:")
     endif()
     
     if(DEFINED prop_LinkOwnLibraries)
@@ -165,9 +155,9 @@ function(sbeAddExecutable)
         ExcludeDependencies ${prop_ExcludeDependencies}
         ${prop_FromDependency}) 
 
-    sbeDoesDependenciesContainsDeclSpecs(dependenciesContainsDeclspecs)
+    sbeDoesDependenciesContainsDeclSpecs(dependenciesSBE_CONTAINS_DECLSPECs)
 
-    if(dependenciesContainsDeclspecs)
+    if(dependenciesSBE_CONTAINS_DECLSPECs)
         _handleDeclSpec(${prop_Name})
     endif()
     
@@ -207,14 +197,14 @@ function(sbeAddTestExecutable)
     if(isSharedLibSupported)
         set_target_properties(${prop_Name}
     	    PROPERTIES
-    		    INSTALL_RPATH "$ORIGIN/../lib:$ORIGIN/../lib/mock:")
+    		    INSTALL_RPATH "$ORIGIN/../lib/mock/:$ORIGIN/../lib/:")
     endif()
 
     if(DEFINED prop_LinkOwnLibraries)
         target_link_libraries(${prop_Name} ${prop_LinkOwnLibraries})
     endif()
     
-    set_property(TARGET ${prop_Name} PROPERTY TEST "yes")
+    set_property(TARGET ${prop_Name} PROPERTY SBE_TEST "yes")
     
     if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "TI" OR "${CMAKE_C_COMPILER_ID}" STREQUAL "TI")
         set_target_properties(${prop_Name} PROPERTIES LINK_FLAGS "--stack_size=0x4000 --heap_size=0x4000")
@@ -228,24 +218,24 @@ function(sbeAddTestExecutable)
         ExcludeDependencies ${prop_ExcludeDependencies}
         ${prop_FromDependency}) 
 
-    sbeDoesDependenciesContainsDeclSpecs(dependenciesContainsDeclspecs)
+    sbeDoesDependenciesContainsDeclSpecs(dependenciesSBE_CONTAINS_DECLSPECs)
 
-    if(dependenciesContainsDeclspecs)
+    if(dependenciesSBE_CONTAINS_DECLSPECs)
         _handleDeclSpec(${prop_Name})
     endif()
 endfunction()
 
 function(sbeAddObjects)
-    sbeParseArguments(prop "ContainsDeclspec" "Name" "Sources" "" "${ARGN}")
+    sbeParseArguments(prop "SBE_CONTAINS_DECLSPEC" "Name" "Sources" "" "${ARGN}")
 
     add_library(${prop_Name} OBJECT ${prop_Sources})
     
-    sbeDoesDependenciesContainsDeclSpecs(dependenciesContainsDeclspecs)
+    sbeDoesDependenciesContainsDeclSpecs(dependenciesSBE_CONTAINS_DECLSPECs)
     
      sbeAddDependenciesIncludes(
         Target ${prop_Name}) 
         
-    if(prop_ContainsDeclspec OR dependenciesContainsDeclspecs)
+    if(prop_SBE_CONTAINS_DECLSPEC OR dependenciesSBE_CONTAINS_DECLSPECs)
         _handleDeclSpec(${prop_Name})
     endif()    
 endfunction()
@@ -266,5 +256,5 @@ function(_handleDeclSpec targetName)
     endif()
 
     set_target_properties(${targetName} PROPERTIES COMPILE_FLAGS ${defs})
-    set_property(TARGET ${targetName} PROPERTY ContainsDeclspec yes)
+    set_property(TARGET ${targetName} PROPERTY SBE_CONTAINS_DECLSPEC yes)
 endfunction()

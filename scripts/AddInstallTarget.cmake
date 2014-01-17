@@ -4,6 +4,7 @@ endif()
 
 include(CMakeParseArguments)
 include(SBE/AddBinaryTargets)
+include(SBE/AddImportedTarget)
 
 
 # suppress warnings
@@ -17,6 +18,102 @@ set(isAddInstallCalled no)
 
 set(InstalledTargets "")
 
+function(sbeInstallFrequentisVBT)
+    # arguments
+    # Url - path and name of VBT in Svn
+    # File - path and name of VBT in local file system
+    # ExcludeLibraries - libraries that have to be excluded from import
+    #
+    # Only one of Url of File has to be specified.
+    #
+    # Function imports libraries from VBT and install them.
+    
+    # if vbt is already proccessed return
+    if(EXISTS ${PROJECT_BINARY_DIR}/preinstallation)    
+        return()
+    endif()
+    
+    # Get and check arguments
+    CMAKE_PARSE_ARGUMENTS(inst "" "Url;File" "ExcludeLibraries" ${ARGN})
+    
+    if(DEFINED inst_Url AND DEFINED inst_File)
+        message(FATAL_ERROR "In command sbeInstallFrequentisVBT only one of Url or File has to be speciefied.")
+    endif()
+    
+    if(NOT DEFINED inst_Url AND NOT DEFINED inst_File)
+        configure_file(${CMAKE_ROOT}/Modules/SBE/templates/PackageWithoutTargetConfig.cmake.in "${PROJECT_BINARY_DIR}/${PROJECT_NAME}Config.cmake" @ONLY)
+        configure_file(${CMAKE_ROOT}/Modules/SBE/templates/PackageConfigVersion.cmake.in "${PROJECT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake" @ONLY)    
+    
+        # Install the Config.cmake and ConfigVersion.cmake
+        install(FILES
+          "${PROJECT_BINARY_DIR}/${PROJECT_NAME}Config.cmake"
+          "${PROJECT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake"
+          DESTINATION config COMPONENT Configs)
+          
+        return()
+    endif()
+    
+    # get method of getting vbt   
+    set(isSvn no)
+    if(DEFINED inst_Url)
+        set(isSvn yes)
+        set(vbtFile ${inst_Url})
+    else()
+        set(isSvn no)
+        set(vbtFile ${inst_File})
+    endif()
+        
+    get_filename_component(tarFileName "${vbtFile}" NAME)
+
+    # get VBT
+    if(isSvn)
+        # find all necessary tools
+        find_package(Subversion)
+        if(NOT Subversion_SVN_EXECUTABLE)
+            message(FATAL_ERROR "error: could not find svn.")
+        endif()
+        
+        # export frequentis VBT 
+        message(STATUS "Exporting ${tarFileName}...")
+        execute_process(COMMAND svn export ${vbtFile} ${PROJECT_SOURCE_DIR}/${tarFileName}
+            RESULT_VARIABLE svnResult
+            OUTPUT_VARIABLE out
+            ERROR_VARIABLE out)
+        if(${svnResult} GREATER 0)
+            message(FATAL_ERROR "SVN Export Fails:\n${out}")
+        endif()
+        
+        # now vbt is file
+        set(isSvn no)
+        set(vbtFile ${PROJECT_SOURCE_DIR}/${tarFileName})
+    endif()
+    
+    # untar VBT for further analyse
+    message(STATUS "Preinstalling ${tarFileName}...")
+    file(MAKE_DIRECTORY  ${PROJECT_BINARY_DIR}/preinstallation)
+    execute_process(COMMAND tar -xzf ${PROJECT_SOURCE_DIR}/${tarFileName} -C ${PROJECT_BINARY_DIR}/preinstallation
+        RESULT_VARIABLE result
+        OUTPUT_VARIABLE out
+        ERROR_VARIABLE out)
+    if(${result} GREATER 0)
+        message(FATAL_ERROR "Untar Fails:\n${out}")
+    endif()
+    
+    # get libs targets
+    sbeImportsFrequentisVBT(
+        Dir ${PROJECT_BINARY_DIR}/preinstallation
+        ExcludeLibraries ${inst_ExcludeLibraries}
+        ImportedTargets importedTargets
+    )
+
+    # install imported targets
+    _installImportedTargets(
+        Targets ${importedTargets} 
+        HeadersDirectory ${PROJECT_BINARY_DIR}/preinstallation/include/
+        HeadersPathReplacement ".* -> "
+        )
+endfunction()
+
 function(addInstallTarget)
     # temporary solution. It will add only last target to project config.
     if(isAddInstallCalled)
@@ -29,39 +126,17 @@ function(addInstallTarget)
     
     set(isAddInstallCalled yes PARENT_SCOPE)
     
-    CMAKE_PARSE_ARGUMENTS(inst "" "Package" "IncludePaths;Headers;Files;Targets;MockIncludePathReplacement;IncludePathReplacement;FilePathReplacement" ${ARGN})
+    CMAKE_PARSE_ARGUMENTS(inst "" "" "HeadersPaths;Headers;Files;Targets;MockHeadersPathReplacement;HeadersPathReplacement;FilePathReplacement" ${ARGN})
     
-    set(IncludePathReplacement ${inst_IncludePathReplacement})
-    list(APPEND IncludePathReplacement ${inst_MockIncludePathReplacement})
+    set(HeadersPathReplacement ${inst_HeadersPathReplacement})
+    list(APPEND HeadersPathReplacement ${inst_MockHeadersPathReplacement})
     
     set(InstalledTargets ${inst_Targets} PARENT_SCOPE)
             
-    # get imported target
-    set(importedTargets "")
-    foreach(target ${inst_Targets})
-        get_property(isImported TARGET ${target} PROPERTY IMPORTED)
-        
-        if(isImported)
-            list(APPEND importedTargets ${target})
-        endif()
-    endforeach()
-    
-    # install imported tragets
-    if (NOT "" STREQUAL "${importedTargets}")
-        _installImportedTargets(Package ${inst_Package} Targets ${importedTargets})
-        
-        # mixing installation of imported and own targets is not supported
-        if(NOT "${importedTargets}" STREQUAL "${inst_Targets}")
-            message(FATAL_ERROR "mixing installtion of imported and own targets is not supported")
-        endif()
-        
-        return()
-    endif()
-    
     # get test target
     set(testTargets "")
     foreach(target ${inst_Targets})
-        get_property(isTestTarget TARGET ${target} PROPERTY TEST)
+        get_property(isTestTarget TARGET ${target} PROPERTY SBE_TEST)
         
         if(isTestTarget)
             list(APPEND testTargets ${target})
@@ -69,23 +144,20 @@ function(addInstallTarget)
     endforeach()
     
     # install test targets
-    _installTestTargets(Package ${inst_Package} Targets ${testTargets})
+    _installTestTargets(Targets ${testTargets})
     
     # get mock target
     set(mockTargets "")
-    set(mockedTargets "")
     foreach(target ${inst_Targets})
-        get_property(isMockTarget TARGET ${target} PROPERTY IsMock)
+        get_property(isMockTarget TARGET ${target} PROPERTY SBE_MOCK)
         
         if(isMockTarget)
             list(APPEND mockTargets ${target})
-            get_property(mockedTarget TARGET ${target} PROPERTY MockedName)
-            list(APPEND mockedTargets ${mockedTarget})
         endif()
     endforeach()
     
     # install mock targets
-    _installMockTargets(Package ${inst_Package} Targets ${mockTargets} IncludePathReplacement ${IncludePathReplacement})
+    _installMockTargets(Targets ${mockTargets} HeadersPathReplacement ${HeadersPathReplacement})
     
     # get ordinary targets
     set(ordinaryTargets ${inst_Targets})
@@ -96,61 +168,28 @@ function(addInstallTarget)
         list(REMOVE_ITEM ordinaryTargets ${mockTargets})
     endif()
     
-    # to use dependent libraries in test, mock library is automatically generated for production library
-    # It is necessary because cmake automatically adds also dependant libraries of this project dependant library
-    # It rule is not applied for Framework library 
-    if(NOT "Unit Test Framework" STREQUAL "${TYPE}")
-        # get not mocked libraries and create mock target for them
-        set(librariesToMock ${ordinaryTargets})
-        foreach(target ${ordinaryTargets})
-            get_property(type TARGET ${target} PROPERTY TYPE)
-            get_property(isMockDisabled TARGET ${target} PROPERTY DisableMocking)
-                        
-            if(("SHARED_LIBRARY" STREQUAL "${type}" OR "STATIC_LIBRARY" STREQUAL "${type}") AND (NOT isMockDisabled))
-                
-                list(FIND mockedTargets ${target} found)
-                
-                if(${found} GREATER -1)
-                    list(REMOVE_ITEM librariesToMock ${target})
-                endif()
-            else()
-                list(REMOVE_ITEM librariesToMock ${target})
-            endif()
-        endforeach()
-        # add mock libraries for not mocked libraries
-        foreach(target ${librariesToMock})
-            get_property(usedObjectLibraries TARGET ${target} PROPERTY UsedObjectLibraries)
-            
-            sbeAddMockLibrary(Name Mock${target} Objects ${usedObjectLibraries})
-            
-            _installMockTargets(Package ${inst_Package} Targets Mock${target})
-            
-            list(APPEND inst_Targets Mock${target})
-        endforeach()
-     endif()
+    _installOrdinaryTargets(Targets ${ordinaryTargets} HeadersPathReplacement ${HeadersPathReplacement})
     
-    _installOrdinaryTargets(Package ${inst_Package} Targets ${ordinaryTargets} IncludePathReplacement ${IncludePathReplacement})
-    
-    _installHeaders(Headers ${inst_Headers} IncludePathReplacement ${IncludePathReplacement})
+    _installHeaders(Headers ${inst_Headers} HeadersPathReplacement ${HeadersPathReplacement})
     
     _installFiles(Files ${inst_Files} FilePathReplacement ${inst_FilePathReplacement})
     
-    _installConfigs(Package ${inst_Package} Targets ${inst_Targets} IncludePaths ${inst_IncludePaths} IncludePathReplacement ${inst_IncludePathReplacement} MockIncludePathReplacement ${inst_MockIncludePathReplacement})
+    _installConfigs(Targets ${inst_Targets} HeadersPaths ${inst_HeadersPaths} HeadersPathReplacement ${inst_HeadersPathReplacement} MockHeadersPathReplacement ${inst_MockHeadersPathReplacement})
 endfunction()
 
 function(_installTestTargets)
-    CMAKE_PARSE_ARGUMENTS(tst "" "Package" "Targets" ${ARGN})
+    CMAKE_PARSE_ARGUMENTS(tst "" "" "Targets" ${ARGN})
     
     if(DEFINED tst_Targets)
         install(
             TARGETS ${tst_Targets} 
-            EXPORT ${tst_Name}Targets
+            EXPORT ${PROJECT_NAME}Targets
             RUNTIME DESTINATION bin COMPONENT Distribution CONFIGURATIONS Debug | DebugWithCoverage)
     endif()
 endfunction()
 
 function(_installMockTargets)
-    CMAKE_PARSE_ARGUMENTS(mock "" "Package" "Targets;IncludePathReplacement" ${ARGN})
+    CMAKE_PARSE_ARGUMENTS(mock "" "" "Targets;HeadersPathReplacement" ${ARGN})
     
     if(NOT DEFINED mock_Targets)
         return()
@@ -158,7 +197,7 @@ function(_installMockTargets)
     
     install(
         TARGETS ${mock_Targets}
-        EXPORT ${mock_Package}Targets
+        EXPORT ${PROJECT_NAME}Targets
         RUNTIME DESTINATION bin COMPONENT Mocks
         LIBRARY DESTINATION lib/mock COMPONENT Mocks
         ARCHIVE DESTINATION lib/mock COMPONENT Mocks)
@@ -166,15 +205,15 @@ function(_installMockTargets)
     foreach(target ${mock_Targets})
         _installHeaders(
             Target ${target} 
-            IncludePathReplacement ${mock_IncludePathReplacement})
+            HeadersPathReplacement ${mock_HeadersPathReplacement})
     endforeach()    
 endfunction()
 
 function(_installImportedTargets)
-    CMAKE_PARSE_ARGUMENTS(imp "" "Package" "Targets;IncludePathReplacement" ${ARGN})
+    CMAKE_PARSE_ARGUMENTS(imp "" "HeadersDirectory" "Targets;HeadersPathReplacement;Headers" ${ARGN})
     
-    if(NOT DEFINED imp_Targets)
-        return()
+    if(DEFINED imp_Headers OR DEFINED imp_HeadersDirectory)
+        _installHeaders(HeadersDirectory ${imp_HeadersDirectory} Headers ${imp_Headers} HeadersPathReplacement ${imp_HeadersPathReplacement})
     endif()
     
     set(ALL_IMPORTED_TARGETS ${imp_Targets})
@@ -184,6 +223,7 @@ function(_installImportedTargets)
     foreach(target ${imp_Targets})
         get_property(type TARGET ${target} PROPERTY TYPE)
         get_property(location TARGET ${target} PROPERTY IMPORTED_LOCATION)
+        get_property(allFilesToInstall TARGET ${target} PROPERTY SBE_ALL_LIBRARY_FILES)
         get_filename_component(impotedFile "${location}" NAME)
         set(componentIdentifier "")
                      
@@ -205,7 +245,7 @@ function(_installImportedTargets)
                 set(ALL_IMPORTED_TARGETS_DESCRIPTION "${ALL_IMPORTED_TARGETS_DESCRIPTION}    IMPORTED_LINK_INTERFACE_LANGUAGES_${buildType} \"${languages}\")\n")
             endif()
         elseif("SHARED_LIBRARY" STREQUAL "${type}")
-            set(componentIdentifier "COMPONENT Distribution")
+            set(componentIdentifier COMPONENT Distribution)
             
             list(APPEND ALL_IMPORTED_TARGETS_DEFINITION "add_library(${target} SHARED IMPORTED)")
             
@@ -222,9 +262,9 @@ function(_installImportedTargets)
         set(ALL_IMPORTED_TARGETS_DESCRIPTION "${ALL_IMPORTED_TARGETS_DESCRIPTION}list(APPEND _IMPORT_CHECK_TARGETS ${target})\n")
         set(ALL_IMPORTED_TARGETS_DESCRIPTION "${ALL_IMPORTED_TARGETS_DESCRIPTION}list(APPEND _IMPORT_CHECK_FILES_FOR_${target} \"\${_IMPORT_PREFIX}/lib/${impotedFile}\")\n")
         
-        install(FILES ${location} DESTINATION lib ${componentIdentifier})
+        install(FILES ${allFilesToInstall} DESTINATION lib ${componentIdentifier})
         
-        _installHeaders(Target ${target} IncludePathReplacement ${ord_IncludePathReplacement})
+        _installHeaders(Target ${target} HeadersPathReplacement ${imp_HeadersPathReplacement})
     endforeach()
     
     string(REPLACE ";" "\n" ALL_IMPORTED_TARGETS_DEFINITION "${ALL_IMPORTED_TARGETS_DEFINITION}")
@@ -237,39 +277,38 @@ function(_installImportedTargets)
          "${PROJECT_BINARY_DIR}/${PROJECT_NAME}Targets-imported.cmake"
          DESTINATION config COMPONENT Configs)
 
-    set(LIBRARIES_PART "set(${imp_Package}_LIBRARIES ${imp_Targets})")
+    set(LIBRARIES_PART "set(${PROJECT_NAME}_LIBRARIES ${imp_Targets})")
+    set(MOCK_LIBRARIES_PART "set(${PROJECT_NAME}_MOCK_LIBRARIES ${imp_Targets})")
 
-    set(includePaths "\${_IMPORT_PREFIX}/include")
-    if(DEFINED cfg_IncludePaths)
-        foreach(inc ${cfg_IncludePaths})
-            list(APPEND includePaths "\${_IMPORT_PREFIX}/include/${inc}")
-        endforeach()
-    elseif(DEFINED cfg_IncludePathReplacement)
-        foreach(replacement ${cfg_IncludePathReplacement})
+    if(DEFINED imp_HeadersPathReplacement)
+        foreach(replacement ${imp_HeadersPathReplacement})
             string(REGEX REPLACE "[ \t]*->[ \t]*" ";" replacements "${replacement}")
             list(GET replacements 1 headerDirectory)
-            if (NOT "" STREQUAL "${headerDirectory}")
-                list(APPEND includePaths "\${_IMPORT_PREFIX}/include/${headerDirectory}")
-            endif()
+            list(APPEND headerPaths "\${_IMPORT_PREFIX}/include/${headerDirectory}")
         endforeach()
     endif()
     
-    string(REPLACE ";" " " includePaths "${includePaths}")
-    set(INCLUDES_PART "set(${imp_Package}_INCLUDE_DIRS ${includePaths})")
+    string(REPLACE ";" " " headerPaths "${headerPaths}")
+    set(INCLUDES_PART "set(${PROJECT_NAME}_INCLUDE_DIRS ${headerPaths})")
+    set(MOCK_INCLUDES_PART "set(${PROJECT_NAME}_MOCK_INCLUDE_DIRS ${headerPaths})")
     
-    configure_file(${CMAKE_ROOT}/Modules/SBE/templates/PackageConfig.cmake.in "${PROJECT_BINARY_DIR}/${imp_Package}Config.cmake" @ONLY)
-    configure_file(${CMAKE_ROOT}/Modules/SBE/templates/PackageConfigVersion.cmake.in "${PROJECT_BINARY_DIR}/${imp_Package}ConfigVersion.cmake" @ONLY)
-     
+    if (DEFINED imp_Targets)
+        configure_file(${CMAKE_ROOT}/Modules/SBE/templates/PackageConfig.cmake.in "${PROJECT_BINARY_DIR}/${PROJECT_NAME}Config.cmake" @ONLY)
+        configure_file(${CMAKE_ROOT}/Modules/SBE/templates/PackageConfigVersion.cmake.in "${PROJECT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake" @ONLY)
+    else()
+        configure_file(${CMAKE_ROOT}/Modules/SBE/templates/PackageWithoutTargetConfig.cmake.in "${PROJECT_BINARY_DIR}/${PROJECT_NAME}Config.cmake" @ONLY)
+        configure_file(${CMAKE_ROOT}/Modules/SBE/templates/PackageConfigVersion.cmake.in "${PROJECT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake" @ONLY)    
+    endif()  
+    
     # Install the Config.cmake and ConfigVersion.cmake
     install(FILES
-      "${PROJECT_BINARY_DIR}/${imp_Package}Config.cmake"
-      "${PROJECT_BINARY_DIR}/${imp_Package}ConfigVersion.cmake"
+      "${PROJECT_BINARY_DIR}/${PROJECT_NAME}Config.cmake"
+      "${PROJECT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake"
       DESTINATION config COMPONENT Configs) 
-            
 endfunction()
 
 function(_installOrdinaryTargets)
-    CMAKE_PARSE_ARGUMENTS(ord "" "Package" "Targets;IncludePathReplacement" ${ARGN})
+    CMAKE_PARSE_ARGUMENTS(ord "" "" "Targets;HeadersPathReplacement" ${ARGN})
     
     if(NOT DEFINED ord_Targets)
         return()
@@ -292,14 +331,14 @@ function(_installOrdinaryTargets)
     if(NOT "" STREQUAL "${targetsWithBinFiles}")
         install(
             TARGETS ${targetsWithBinFiles}
-            EXPORT ${ord_Package}Targets
+            EXPORT ${PROJECT_NAME}Targets
             RUNTIME DESTINATION bin COMPONENT DoNotInstall_BinFileIsInstalledInstead)
     endif()
     
     if(NOT "" STREQUAL "${ord_Targets}")
         install(
             TARGETS ${ord_Targets}
-            EXPORT ${ord_Package}Targets
+            EXPORT ${PROJECT_NAME}Targets
             RUNTIME DESTINATION bin COMPONENT Distribution
             LIBRARY DESTINATION lib COMPONENT Distribution
             ARCHIVE DESTINATION lib)
@@ -312,7 +351,7 @@ function(_installOrdinaryTargets)
     foreach(target ${ord_Targets})
         _installHeaders(
             Target ${target} 
-            IncludePathReplacement ${ord_IncludePathReplacement})
+            HeadersPathReplacement ${ord_HeadersPathReplacement})
     endforeach()    
 endfunction()
 
@@ -343,8 +382,30 @@ function (_installFiles)
 endfunction()
 
 function(_installHeaders)
-    CMAKE_PARSE_ARGUMENTS(headers "" "Target" "Headers;IncludePathReplacement" ${ARGN})
+    CMAKE_PARSE_ARGUMENTS(headers "" "Target;HeadersDirectory" "Headers;HeadersPathReplacement" ${ARGN})
 
+    # process headers Directories
+    if(DEFINED headers_HeadersDirectory)
+        foreach(headerDir ${headers_HeadersDirectory})
+            set(isReplaced "no")
+            set(installPath "include")
+            foreach(replacement ${headers_HeadersPathReplacement})
+                if(NOT isReplaced)
+                    string(REGEX REPLACE "[ \t]*->[ \t]*" ";" replacements "${replacement}")
+                    list(GET replacements 0 matchExpression)
+                    list(GET replacements 1 headerDirectory)
+                    if("${headerDir}" MATCHES "^${matchExpression}$")
+                        set(installPath "${installPath}/${headerDirectory}")
+                        set(isReplaced "yes")
+                    endif()
+                endif()
+            endforeach() 
+            
+            install(DIRECTORY ${headerDir} DESTINATION ${installPath} COMPONENT Headers)
+        endforeach()
+    endif()
+    
+    # process headers
     set(publicHeaders "")
     set(containsDeclspec "no")
     
@@ -356,14 +417,14 @@ function(_installHeaders)
         get_property(targetPublicHeaders TARGET ${headers_Target} PROPERTY PublicHeaders)
         list(APPEND publicHeaders ${targetPublicHeaders})
     
-        get_property(containsDeclspec TARGET ${headers_Target} PROPERTY ContainsDeclspec)
+        get_property(containsDeclspec TARGET ${headers_Target} PROPERTY SBE_CONTAINS_DECLSPEC)
     endif()
     
     set(generatedPublicHeaders "")
     foreach(header ${publicHeaders})
         set(isReplaced "no")
         set(installPath "include")
-        foreach(replacement ${headers_IncludePathReplacement})
+        foreach(replacement ${headers_HeadersPathReplacement})
             if(NOT isReplaced)
                 string(REGEX REPLACE "[ \t]*->[ \t]*" ";" replacements "${replacement}")
                 list(GET replacements 0 matchExpression)
@@ -399,14 +460,14 @@ function(_installHeaders)
 endfunction()
 
 function(_installConfigs)
-    CMAKE_PARSE_ARGUMENTS(cfg "" "Package" "Targets;IncludePaths;IncludePathReplacement;MockIncludePathReplacement" ${ARGN})
+    CMAKE_PARSE_ARGUMENTS(cfg "" "" "Targets;HeadersPaths;HeadersPathReplacement;MockHeadersPathReplacement" ${ARGN})
     
     set(needsDeclspec "no")
     foreach(target ${cfg_Targets})
         get_property(type TARGET ${target} PROPERTY TYPE)
         
         if("SHARED_LIBRARY" STREQUAL "${type}" OR "STATIC_LIBRARY" STREQUAL "${type}")
-            get_property(isMock TARGET ${target} PROPERTY IsMock)
+            get_property(isMock TARGET ${target} PROPERTY SBE_MOCK)
 
             if(isMock)
                 list(APPEND INSTALL_MOCK_LIBRARIES ${target})
@@ -414,7 +475,7 @@ function(_installConfigs)
                 list(APPEND INSTALL_LIBRARIES ${target})
             endif()
         elseif("EXECUTABLE" STREQUAL "${type}")
-            get_property(isTest TARGET ${target} PROPERTY TEST)
+            get_property(isTest TARGET ${target} PROPERTY SBE_TEST)
             if(isTest)
                 list(APPEND INSTALL_TEST_EXECUTABLES ${target})
             else()
@@ -422,39 +483,42 @@ function(_installConfigs)
             endif()
         endif()
         
-        get_property(containsDeclspec TARGET ${target} PROPERTY ContainsDeclspec)
+        get_property(containsDeclspec TARGET ${target} PROPERTY SBE_CONTAINS_DECLSPEC)
         if(containsDeclspec)
             set(needsDeclspec "yes")    
         endif()
     endforeach()
     
-    # use normal library as mock
-    if(NOT DEFINED INSTALL_MOCK_LIBRARIES AND DEFINED INSTALL_LIBRARIES)
-        set(INSTALL_MOCK_LIBRARIES ${INSTALL_LIBRARIES})
-    endif()
-    
-    set(includePaths "\${_IMPORT_PREFIX}/include")
-    if(DEFINED cfg_IncludePaths)
-        foreach(inc ${cfg_IncludePaths})
-            list(APPEND includePaths "\${_IMPORT_PREFIX}/include/${inc}")
+    # use normal library as mock when it is not mocked
+    set(productionTargetsAsMocks ${INSTALL_LIBRARIES})
+    foreach(mockLibrary ${INSTALL_MOCK_LIBRARIES})
+        get_property(productionLibrary TARGET ${mockLibrary} PROPERTY SBE_MOCKED_NAME)
+        list(REMOVE_ITEM productionTargetsAsMocks ${productionLibrary})                    
+    endforeach()
+    list(APPEND INSTALL_MOCK_LIBRARIES ${productionTargetsAsMocks})
+
+    set(headerPaths "\${_IMPORT_PREFIX}/include")
+    if(DEFINED cfg_HeadersPaths)
+        foreach(inc ${cfg_HeadersPaths})
+            list(APPEND headerPaths "\${_IMPORT_PREFIX}/include/${inc}")
         endforeach()
-    elseif(DEFINED cfg_IncludePathReplacement)
-        foreach(replacement ${cfg_IncludePathReplacement})
+    elseif(DEFINED cfg_HeadersPathReplacement)
+        foreach(replacement ${cfg_HeadersPathReplacement})
             string(REGEX REPLACE "[ \t]*->[ \t]*" ";" replacements "${replacement}")
             list(GET replacements 1 headerDirectory)
             if (NOT "" STREQUAL "${headerDirectory}")
-                list(APPEND includePaths "\${_IMPORT_PREFIX}/include/${headerDirectory}")
+                list(APPEND headerPaths "\${_IMPORT_PREFIX}/include/${headerDirectory}")
             endif()
         endforeach()
     endif()
     
-    set(mockIncludePaths "")
-    if(DEFINED cfg_MockIncludePathReplacement)
-        foreach(replacement ${cfg_MockIncludePathReplacement})
+    set(mockHeadersPaths "")
+    if(DEFINED cfg_MockHeadersPathReplacement)
+        foreach(replacement ${cfg_MockHeadersPathReplacement})
             string(REGEX REPLACE "[ \t]*->[ \t]*" ";" replacements "${replacement}")
             list(GET replacements 1 headerDirectory)
             if (NOT "" STREQUAL "${headerDirectory}")
-                list(APPEND mockIncludePaths "\${_IMPORT_PREFIX}/include/${headerDirectory}")
+                list(APPEND mockHeadersPaths "\${_IMPORT_PREFIX}/include/${headerDirectory}")
             endif()
         endforeach()
     endif()
@@ -480,26 +544,26 @@ function(_installConfigs)
         set(DECLSPEC_PART "set(${cfg_Package}_CONTAINS_DECLSPEC \"yes\")")
     endif()
     
-    string(REPLACE ";" " " includePaths "${includePaths}")
-    set(INCLUDES_PART "set(${cfg_Package}_INCLUDE_DIRS ${includePaths})")    
+    string(REPLACE ";" " " headerPaths "${headerPaths}")
+    set(INCLUDES_PART "set(${cfg_Package}_INCLUDE_DIRS ${headerPaths})")    
     
-    string(REPLACE ";" " " mockIncludePaths "${mockIncludePaths}")
-    set(MOCK_INCLUDES_PART "set(${cfg_Package}_MOCK_INCLUDE_DIRS ${mockIncludePaths})")
+    string(REPLACE ";" " " mockHeadersPaths "${mockHeadersPaths}")
+    set(MOCK_INCLUDES_PART "set(${cfg_Package}_MOCK_INCLUDE_DIRS ${mockHeadersPaths})")
     
     if (DEFINED INSTALL_LIBRARIES OR DEFINED INSTALL_MOCK_LIBRARIES OR DEFINED INSTALL_TEST_EXECUTABLES OR DEFINED INSTALL_EXECUTABLES)
-        install(EXPORT ${cfg_Package}Targets DESTINATION config COMPONENT Configs)
+        install(EXPORT ${PROJECT_NAME}Targets DESTINATION config COMPONENT Configs)
 
-        configure_file(${CMAKE_ROOT}/Modules/SBE/templates/PackageConfig.cmake.in "${PROJECT_BINARY_DIR}/${cfg_Package}Config.cmake" @ONLY)
-        configure_file(${CMAKE_ROOT}/Modules/SBE/templates/PackageConfigVersion.cmake.in "${PROJECT_BINARY_DIR}/${cfg_Package}ConfigVersion.cmake" @ONLY)
+        configure_file(${CMAKE_ROOT}/Modules/SBE/templates/PackageConfig.cmake.in "${PROJECT_BINARY_DIR}/${PROJECT_NAME}Config.cmake" @ONLY)
+        configure_file(${CMAKE_ROOT}/Modules/SBE/templates/PackageConfigVersion.cmake.in "${PROJECT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake" @ONLY)
     else()
-        configure_file(${CMAKE_ROOT}/Modules/SBE/templates/PackageWithoutTargetConfig.cmake.in "${PROJECT_BINARY_DIR}/${cfg_Package}Config.cmake" @ONLY)
-        configure_file(${CMAKE_ROOT}/Modules/SBE/templates/PackageConfigVersion.cmake.in "${PROJECT_BINARY_DIR}/${cfg_Package}ConfigVersion.cmake" @ONLY)    
+        configure_file(${CMAKE_ROOT}/Modules/SBE/templates/PackageWithoutTargetConfig.cmake.in "${PROJECT_BINARY_DIR}/${PROJECT_NAME}Config.cmake" @ONLY)
+        configure_file(${CMAKE_ROOT}/Modules/SBE/templates/PackageConfigVersion.cmake.in "${PROJECT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake" @ONLY)    
     endif()  
     
     # Install the Config.cmake and ConfigVersion.cmake
     install(FILES
-      "${PROJECT_BINARY_DIR}/${cfg_Package}Config.cmake"
-      "${PROJECT_BINARY_DIR}/${cfg_Package}ConfigVersion.cmake"
+      "${PROJECT_BINARY_DIR}/${PROJECT_NAME}Config.cmake"
+      "${PROJECT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake"
       DESTINATION config COMPONENT Configs) 
 
 endfunction()

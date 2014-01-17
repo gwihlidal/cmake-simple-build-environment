@@ -14,6 +14,19 @@ include(SBE/InstallDependencies)
 include(${DEP_INFO_FILE} OPTIONAL)
 include(${DEP_INST_INFO_FILE} OPTIONAL)
 
+include(SBE/helpers/DependenciesParser)
+
+# load dependencies into build system
+ParseDependencies("${DEPENDENCIES}" ownDependenciesIds)
+    
+if(NOT "${ownDependenciesIds}" STREQUAL "")
+    foreach(dep ${ownDependenciesIds})
+        set(depName ${${dep}_Name})
+
+        find_package(${depName} REQUIRED CONFIG PATHS ${DEP_INSTALL_PATH}/config NO_DEFAULT_PATH)
+    endforeach()
+endif()    
+
 
 
 

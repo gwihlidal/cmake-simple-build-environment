@@ -3,11 +3,6 @@
 #  @PROJECT_NAME@_INCLUDE_DIRS - include directories for @PROJECT_NAME@
 #  @PROJECT_NAME@_LIBRARIES    - libraries to link against
 
-list(FIND OverallFoundPackages @PROJECT_NAME@ isPackageAlreadyFound)
-if(${isPackageAlreadyFound} GREATER -1)
-	return()
-endif()
- 
 # Compute the installation prefix relative to this file.
 GET_FILENAME_COMPONENT(_IMPORT_PREFIX "${CMAKE_CURRENT_LIST_FILE}" PATH)
 GET_FILENAME_COMPONENT(_IMPORT_PREFIX "${_IMPORT_PREFIX}" PATH)
@@ -18,15 +13,8 @@ foreach(target @INSTALL_TARGETS@)
 	GET_FILENAME_COMPONENT(_IMPORT_PREFIX "${CMAKE_CURRENT_LIST_FILE}" PATH)
     GET_FILENAME_COMPONENT(_IMPORT_PREFIX "${_IMPORT_PREFIX}" PATH)
     
-    list(FIND OverallFoundPackages ${target} isPackageAlreadyFound)
-	if(${isPackageAlreadyFound} EQUAL -1)
-		find_package(${target} REQUIRED CONFIG PATHS ${_IMPORT_PREFIX}/config NO_DEFAULT_PATH)
+	find_package(${target} REQUIRED CONFIG PATHS ${_IMPORT_PREFIX}/config NO_DEFAULT_PATH)
 		
-		set(tmp ${OverallFoundPackages})
-		list(APPEND tmp ${target})
-		set(OverallFoundPackages ${tmp} CACHE INTERNAL "" FORCE)
-	endif()
-	
 	list(APPEND libs ${${target}_LIBRARIES})
 	list(APPEND mockLibs ${${target}_MOCK_LIBRARIES})
 	list(APPEND includeDirs ${${target}_INCLUDE_DIRS})
