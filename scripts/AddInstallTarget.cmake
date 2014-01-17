@@ -525,30 +525,30 @@ function(_installConfigs)
     
     if(DEFINED INSTALL_LIBRARIES)
 	    set(LIBRARIES_PART 
-	        "set(${cfg_Package}_LIBRARIES ${INSTALL_LIBRARIES})")
+	        "set(${PROJECT_NAME}_LIBRARIES ${INSTALL_LIBRARIES})")
     endif()
     if(DEFINED INSTALL_MOCK_LIBRARIES)
 	    set(MOCK_LIBRARIES_PART 
-	        "set(${cfg_Package}_MOCK_LIBRARIES ${INSTALL_MOCK_LIBRARIES})")
+	        "set(${PROJECT_NAME}_MOCK_LIBRARIES ${INSTALL_MOCK_LIBRARIES})")
     endif()		
     if(DEFINED INSTALL_TEST_EXECUTABLES)
         set(TEST_EXECUTABLES_PART
-	        "set(${cfg_Package}_TEST_EXECUTABLES ${INSTALL_TEST_EXECUTABLES})\nset(${cfg_Package}_TEST_EXECUTABLES_PATH \"\${_IMPORT_PREFIX}/bin\")")
+	        "set(${PROJECT_NAME}_TEST_EXECUTABLES ${INSTALL_TEST_EXECUTABLES})\nset(${PROJECT_NAME}_TEST_EXECUTABLES_PATH \"\${_IMPORT_PREFIX}/bin\")")
     endif()
     if(DEFINED INSTALL_EXECUTABLES)
         set(EXECUTABLES_PART
-	        "set(${cfg_Package}_EXECUTABLES ${INSTALL_EXECUTABLES})\nset(${cfg_Package}_EXECUTABLES_PATH \"\${_IMPORT_PREFIX}/bin\")")
+	        "set(${PROJECT_NAME}_EXECUTABLES ${INSTALL_EXECUTABLES})\nset(${PROJECT_NAME}_EXECUTABLES_PATH \"\${_IMPORT_PREFIX}/bin\")")
     endif()
     
     if(needsDeclspec)
-        set(DECLSPEC_PART "set(${cfg_Package}_CONTAINS_DECLSPEC \"yes\")")
+        set(DECLSPEC_PART "set(${PROJECT_NAME}_CONTAINS_DECLSPEC \"yes\")")
     endif()
     
     string(REPLACE ";" " " headerPaths "${headerPaths}")
-    set(INCLUDES_PART "set(${cfg_Package}_INCLUDE_DIRS ${headerPaths})")    
+    set(INCLUDES_PART "set(${PROJECT_NAME}_INCLUDE_DIRS ${headerPaths})")    
     
     string(REPLACE ";" " " mockHeadersPaths "${mockHeadersPaths}")
-    set(MOCK_INCLUDES_PART "set(${cfg_Package}_MOCK_INCLUDE_DIRS ${mockHeadersPaths})")
+    set(MOCK_INCLUDES_PART "set(${PROJECT_NAME}_MOCK_INCLUDE_DIRS ${mockHeadersPaths})")
     
     if (DEFINED INSTALL_LIBRARIES OR DEFINED INSTALL_MOCK_LIBRARIES OR DEFINED INSTALL_TEST_EXECUTABLES OR DEFINED INSTALL_EXECUTABLES)
         install(EXPORT ${PROJECT_NAME}Targets DESTINATION config COMPONENT Configs)
