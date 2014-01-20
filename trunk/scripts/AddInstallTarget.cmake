@@ -199,7 +199,7 @@ function(_installMockTargets)
         TARGETS ${mock_Targets}
         EXPORT ${PROJECT_NAME}Targets
         RUNTIME DESTINATION bin COMPONENT Mocks
-        LIBRARY DESTINATION lib/mock COMPONENT Mocks
+        LIBRARY DESTINATION lib/mock COMPONENT Mocks NAMELINK_SKIP
         ARCHIVE DESTINATION lib/mock COMPONENT Mocks)
         
     foreach(target ${mock_Targets})
@@ -340,7 +340,7 @@ function(_installOrdinaryTargets)
             TARGETS ${ord_Targets}
             EXPORT ${PROJECT_NAME}Targets
             RUNTIME DESTINATION bin COMPONENT Distribution
-            LIBRARY DESTINATION lib COMPONENT Distribution
+            LIBRARY DESTINATION lib COMPONENT Distribution NAMELINK_SKIP
             ARCHIVE DESTINATION lib)
     endif()            
         

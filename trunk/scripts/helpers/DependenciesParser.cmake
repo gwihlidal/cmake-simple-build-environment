@@ -36,6 +36,23 @@ function(ParseDependencies dependencies parsedDependencies)
     set(${parsedDependencies} ${dependenciesIndentifiers} PARENT_SCOPE)
 endfunction()
 
+function(GetOverallDependencies dependencies parsedDependencies)
+    ParseDependencies("${dependencies}" ids)
+    
+    foreach(dependencyId ${ids})
+        set(dependencyDependencies "")
+        GetOverallDependencies("${${dependencyId}_DependenciesDescription}" dependencyDependencies)
+        list(APPEND ids ${dependencyDependencies})
+    endforeach()
+    
+    if(NOT "" STREQUAL "${ids}")
+        list(REMOVE_DUPLICATES ids)
+    endif()
+    
+    # export dependencies identifiers
+    set(${parsedDependencies} ${ids} PARENT_SCOPE)
+endfunction()
+
 macro(_parseDependency dependencyProperties id)
     CMAKE_PARSE_ARGUMENTS(parsedDependecy "EXTERNAL" "URL;SCM" "" ${dependencyProperties})
     

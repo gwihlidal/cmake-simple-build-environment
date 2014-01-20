@@ -2,11 +2,6 @@
 include(SBE/helpers/ArgumentParser)
 include(SBE/helpers/DependenciesParser)
 
-if(DEFINED DEP_INSTALL_PATH)
-    link_directories(${DEP_INSTALL_PATH}/lib)
-    link_directories(${DEP_INSTALL_PATH}/lib/mock)
-endif()
-
 function(sbeAddDependencies)
     if(NOT DEFINED DEP_INFO_FILE)
         message(FATAL_ERROR "DEP_INFO_FILE has to be defined")

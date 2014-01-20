@@ -5,6 +5,8 @@ endif()
 set(isAddPackageTargetIncluded yes)
 set(isAddPackageCalled no)
 
+include(SBE/helpers/DependenciesParser)
+
 add_custom_target(package)
 
 function(addPackageTarget)
@@ -25,10 +27,12 @@ function(addPackageTarget)
         COMMAND cmake -E make_directory ${PROJECT_BINARY_DIR}/package/data/${SBE_DEFAULT_PACKAGE_PATH}
         COMMAND cmake -DCMAKE_INSTALL_COMPONENT=Distribution -DBUILD_TYPE=${CMAKE_BUILD_TYPE} -DCMAKE_INSTALL_PREFIX=${PROJECT_BINARY_DIR}/package/data/${SBE_DEFAULT_PACKAGE_PATH} ${DO_STRIP} -P cmake_install.cmake 
         COMMENT "Preinstalling...")
-        
+    
+    GetOverallDependencies("${DEPENDENCIES}" MyOverallDependencies)
+    
     # reinstall
-    if(NOT "${OverallDependencies}" STREQUAL "")
-        foreach(dep ${OverallDependencies})
+    if(NOT "${MyOverallDependencies}" STREQUAL "")
+        foreach(dep ${MyOverallDependencies})
             set(depName ${${dep}_Name})
             
             if("${${dep}_Type}" STREQUAL "")
