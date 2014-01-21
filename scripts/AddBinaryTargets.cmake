@@ -14,7 +14,7 @@ set (CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/lib)
 include_directories(${CMAKE_SOURCE_DIR}/src)
 
 function(sbeAddLibrary)
-    sbeParseArguments(prop "SBE_CONTAINS_DECLSPEC;Static" "Name" "Objects;Sources;PublicHeaders;ExcludeDependencies" "FromDependency" "${ARGN}")
+    sbeParseArguments(prop "ContainsDeclspec;Static" "Name" "Objects;Sources;PublicHeaders;ExcludeDependencies" "FromDependency" "${ARGN}")
     
     if(
         (NOT DEFINED prop_Name) OR
@@ -54,9 +54,9 @@ function(sbeAddLibrary)
         ExcludeDependencies ${prop_ExcludeDependencies}
         ${prop_FromDependency}) 
 
-    sbeDoesDependenciesContainsDeclSpecs(dependenciesSBE_CONTAINS_DECLSPECs)
+    sbeDoesDependenciesContainsDeclSpecs(dependenciesContainsDeclspecs)
 
-    if(prop_SBE_CONTAINS_DECLSPEC OR dependenciesSBE_CONTAINS_DECLSPECs)
+    if(prop_ContainsDeclspec OR dependenciesContainsDeclspecs)
         _handleDeclSpec(${prop_Name})
         if(DEFINED prop_Sources)
             _handleDeclSpec(${prop_Name}Objects)
@@ -69,7 +69,7 @@ function(sbeAddLibrary)
 endfunction()
 
 function(sbeAddMockLibrary)
-    sbeParseArguments(prop "SBE_CONTAINS_DECLSPEC;Static" "MockedName;Name" "Objects;Sources;PublicHeaders;ExcludeDependencies" "FromDependency" "${ARGN}")
+    sbeParseArguments(prop "ContainsDeclspec;Static" "MockedName;Name" "Objects;Sources;PublicHeaders;ExcludeDependencies" "FromDependency" "${ARGN}")
     
     if(
         (NOT DEFINED prop_Name) OR
@@ -107,9 +107,9 @@ function(sbeAddMockLibrary)
         ExcludeDependencies ${prop_ExcludeDependencies}
         ${prop_FromDependency}) 
 
-    sbeDoesDependenciesContainsDeclSpecs(dependenciesSBE_CONTAINS_DECLSPECs)
+    sbeDoesDependenciesContainsDeclSpecs(dependenciesContainsDeclspecs)
 
-    if(prop_SBE_CONTAINS_DECLSPEC OR dependenciesSBE_CONTAINS_DECLSPECs)
+    if(prop_ContainsDeclspec OR dependenciesContainsDeclspecs)
         _handleDeclSpec(${prop_Name})
     endif()
             
@@ -155,9 +155,9 @@ function(sbeAddExecutable)
         ExcludeDependencies ${prop_ExcludeDependencies}
         ${prop_FromDependency}) 
 
-    sbeDoesDependenciesContainsDeclSpecs(dependenciesSBE_CONTAINS_DECLSPECs)
+    sbeDoesDependenciesContainsDeclSpecs(dependenciesContainsDeclspecs)
 
-    if(dependenciesSBE_CONTAINS_DECLSPECs)
+    if(dependenciesContainsDeclspecs)
         _handleDeclSpec(${prop_Name})
     endif()
     
@@ -218,24 +218,24 @@ function(sbeAddTestExecutable)
         ExcludeDependencies ${prop_ExcludeDependencies}
         ${prop_FromDependency}) 
 
-    sbeDoesDependenciesContainsDeclSpecs(dependenciesSBE_CONTAINS_DECLSPECs)
+    sbeDoesDependenciesContainsDeclSpecs(dependenciesContainsDeclspecs)
 
-    if(dependenciesSBE_CONTAINS_DECLSPECs)
+    if(dependenciesContainsDeclspecs)
         _handleDeclSpec(${prop_Name})
     endif()
 endfunction()
 
 function(sbeAddObjects)
-    sbeParseArguments(prop "SBE_CONTAINS_DECLSPEC" "Name" "Sources" "" "${ARGN}")
+    sbeParseArguments(prop "ContainsDeclspec" "Name" "Sources" "" "${ARGN}")
 
     add_library(${prop_Name} OBJECT ${prop_Sources})
     
-    sbeDoesDependenciesContainsDeclSpecs(dependenciesSBE_CONTAINS_DECLSPECs)
+    sbeDoesDependenciesContainsDeclSpecs(dependenciesContainsDeclspecs)
     
      sbeAddDependenciesIncludes(
         Target ${prop_Name}) 
         
-    if(prop_SBE_CONTAINS_DECLSPEC OR dependenciesSBE_CONTAINS_DECLSPECs)
+    if(prop_ContainsDeclspec OR dependenciesContainsDeclspecs)
         _handleDeclSpec(${prop_Name})
     endif()    
 endfunction()
