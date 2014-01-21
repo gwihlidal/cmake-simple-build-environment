@@ -18,7 +18,7 @@ if(NOT DEFINED VERSION_PATCH)
     message(SEND_ERROR "VERSION_MINOR has to be defined")
 endif()
 
-find_package(Subversion)
+find_package(Subversion QUIET)
 if(NOT Subversion_SVN_EXECUTABLE)
     message(SEND_ERROR "error: could not find svn.")
 endif()

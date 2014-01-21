@@ -68,7 +68,7 @@ function(sbeInstallFrequentisVBT)
     # get VBT
     if(isSvn)
         # find all necessary tools
-        find_package(Subversion)
+        find_package(Subversion QUIET)
         if(NOT Subversion_SVN_EXECUTABLE)
             message(FATAL_ERROR "error: could not find svn.")
         endif()
