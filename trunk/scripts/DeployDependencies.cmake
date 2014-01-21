@@ -14,6 +14,7 @@ include(SBE/InstallDependencies)
 include(${DEP_INFO_FILE} OPTIONAL)
 include(${DEP_INST_INFO_FILE} OPTIONAL)
 
+# load variables of all dependencies
 include(SBE/helpers/DependenciesParser)
 
 GetOverallDependencies("${DEPENDENCIES}" MyOverallDependencies)
@@ -27,8 +28,6 @@ endforeach()
 unset(MyOverallDependencies)
 
 if(DEFINED depNames)
-    message(STATUS "Loading dependencies ${depNames}...")
-    
     foreach(depName ${depNames})
         find_package(${depName} REQUIRED CONFIG PATHS ${DEP_INSTALL_PATH}/config NO_DEFAULT_PATH)
     endforeach()
