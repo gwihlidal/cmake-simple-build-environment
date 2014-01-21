@@ -113,13 +113,15 @@ function(_uninstallUnusedDependencies)
         message(STATUS "Uninstalling unused dependency ${dependency}")
         
         set(DependencyBuildDirectory "${${dependency}_BuildPath}/build")
-        execute_process(
-            COMMAND cmake -E chdir ${DependencyBuildDirectory} cmake -P cmake_uninstall.cmake
-            COMMAND ${SED_TOOL} -u -e "s/.*/    &/"
-            ERROR_VARIABLE err)
-        # handle error    
-        if(NOT "${err}" STREQUAL "")
-            message(FATAL_ERROR "Error during uninstallation of dependency ${dependency}\n${err}")
+        if(EXISTS ${DependencyBuildDirectory})
+            execute_process(
+                COMMAND cmake -E chdir ${DependencyBuildDirectory} cmake -P cmake_uninstall.cmake
+                COMMAND ${SED_TOOL} -u -e "s/.*/    &/"
+                ERROR_VARIABLE err)
+            # handle error    
+            if(NOT "${err}" STREQUAL "")
+                message(FATAL_ERROR "Error during uninstallation of dependency ${dependency}\n${err}")
+            endif()
         endif()
         
         if(EXISTS ${COV_DIR_DATA})
