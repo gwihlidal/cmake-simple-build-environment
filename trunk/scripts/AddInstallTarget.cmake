@@ -489,13 +489,15 @@ function(_installConfigs)
         endif()
     endforeach()
     
-    # use normal library as mock when it is not mocked
-    set(productionTargetsAsMocks ${INSTALL_LIBRARIES})
-    foreach(mockLibrary ${INSTALL_MOCK_LIBRARIES})
-        get_property(productionLibrary TARGET ${mockLibrary} PROPERTY SBE_MOCKED_NAME)
-        list(REMOVE_ITEM productionTargetsAsMocks ${productionLibrary})                    
-    endforeach()
-    list(APPEND INSTALL_MOCK_LIBRARIES ${productionTargetsAsMocks})
+    if(NOT "" STREQUAL "${INSTALL_LIBRARIES}")
+        # use normal library as mock when it is not mocked
+        set(productionTargetsAsMocks ${INSTALL_LIBRARIES})
+        foreach(mockLibrary ${INSTALL_MOCK_LIBRARIES})
+            get_property(productionLibrary TARGET ${mockLibrary} PROPERTY SBE_MOCKED_NAME)
+            list(REMOVE_ITEM productionTargetsAsMocks ${productionLibrary})                    
+        endforeach()
+        list(APPEND INSTALL_MOCK_LIBRARIES ${productionTargetsAsMocks})
+    endif()
 
     set(headerPaths "\${_IMPORT_PREFIX}/include")
     if(DEFINED cfg_HeadersPaths)
