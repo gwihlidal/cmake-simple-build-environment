@@ -47,24 +47,6 @@ if (NOT "${SOURCES_TAG}" STREQUAL "trunk")
     message(SEND_ERROR "exit")
 endif()
 
-# when trunk is already tagged stop, it is not necessary to tag, when not forced
-if(NOT FORCE)
-    message(STATUS "Checking trunk changes against last tag...")
-
-    svnIsTrunkChangedAgainstLastTags("${PROJECT_SVN_ROOT}" isChanged errorReason)
-
-    if (NOT "${errorReason}" STREQUAL "")
-        message(STATUS "Error when getting info about trunk or tags.\n${errorReason}")
-        message(SEND_ERROR "exit")
-    endif()
-
-    if (NOT isChanged)
-        svnGetNewestSubdirectory("${PROJECT_SVN_ROOT}/tags" newestSubDirectory errorReason)
-        message(STATUS "Trunk is tagged in ${newestSubDirectory}")
-        return()
-    endif()
-endif()    
-
 # fire error when working copy has modifications
 message(STATUS "Checking working copy for modifications...")
 execute_process(
@@ -101,6 +83,24 @@ if (NOT "${out}" STREQUAL "")
     message(STATUS "New trunk in repository. Update first.\n${out}")
     message(SEND_ERROR "exit")
 endif()
+
+# when trunk is already tagged stop, it is not necessary to tag, when not forced
+if(NOT FORCE)
+    message(STATUS "Checking trunk changes against last tag...")
+
+    svnIsTrunkChangedAgainstLastTags("${PROJECT_SVN_ROOT}" isChanged errorReason)
+
+    if (NOT "${errorReason}" STREQUAL "")
+        message(STATUS "Error when getting info about trunk or tags.\n${errorReason}")
+        message(SEND_ERROR "exit")
+    endif()
+
+    if (NOT isChanged)
+        svnGetNewestSubdirectory("${PROJECT_SVN_ROOT}/tags" newestSubDirectory errorReason)
+        message(STATUS "Trunk is tagged in ${newestSubDirectory}")
+        return()
+    endif()
+endif()    
 
 # calculate tag name
 if(VERSION_BUILD_NUMBER)
