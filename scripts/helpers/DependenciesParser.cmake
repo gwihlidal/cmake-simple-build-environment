@@ -37,20 +37,32 @@ function(ParseDependencies dependencies parsedDependencies)
 endfunction()
 
 function(GetOverallDependencies dependencies parsedDependencies)
+    set(deps "")
+    
+    set(__MyOverallDeps "" CACHE INTERNAL "")
+    
+    GetOverallDependenciesRecursively("${dependencies}")
+    
+    if(NOT "" STREQUAL "${__MyOverallDeps}")
+        list(REMOVE_DUPLICATES __MyOverallDeps)
+    endif()
+    
+    set(${parsedDependencies} ${__MyOverallDeps} PARENT_SCOPE)
+    
+    unset(__MyOverallDeps CACHE)
+endfunction()
+
+function(GetOverallDependenciesRecursively dependencies)
     ParseDependencies("${dependencies}" ids)
     
     foreach(dependencyId ${ids})
-        set(dependencyDependencies "")
-        GetOverallDependencies("${${dependencyId}_DependenciesDescription}" dependencyDependencies)
-        list(APPEND ids ${dependencyDependencies})
+        list(FIND __MyOverallDeps ${dependencyId} found)
+        if(${found} EQUAL -1)
+            list(APPEND tmpList ${__MyOverallDeps} ${dependencyId})
+            set(__MyOverallDeps "${tmpList}" CACHE INTERNAL "")
+            GetOverallDependenciesRecursively("${${dependencyId}_DependenciesDescription}")
+        endif()
     endforeach()
-    
-    if(NOT "" STREQUAL "${ids}")
-        list(REMOVE_DUPLICATES ids)
-    endif()
-    
-    # export dependencies identifiers
-    set(${parsedDependencies} ${ids} PARENT_SCOPE)
 endfunction()
 
 macro(_parseDependency dependencyProperties id)
