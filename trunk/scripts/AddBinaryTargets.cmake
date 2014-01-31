@@ -13,6 +13,9 @@ set (CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/lib)
 
 include_directories(${CMAKE_SOURCE_DIR}/src)
 
+set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE "${RULE_LAUNCH_COMPILE}")
+set_property(GLOBAL PROPERTY RULE_LAUNCH_LINK "${RULE_LAUNCH_LINK}")
+
 function(sbeAddLibrary)
     sbeParseArguments(prop "ContainsDeclspec;Static" "Name" "Objects;Sources;PublicHeaders;ExcludeDependencies" "FromDependency" "${ARGN}")
     
@@ -58,9 +61,6 @@ function(sbeAddLibrary)
 
     if(prop_ContainsDeclspec OR dependenciesContainsDeclspecs)
         _handleDeclSpec(${prop_Name})
-        if(DEFINED prop_Sources)
-            _handleDeclSpec(${prop_Name}Objects)
-        endif()
     endif()
             
     if(DEFINED prop_PublicHeaders)
