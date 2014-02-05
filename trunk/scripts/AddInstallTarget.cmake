@@ -12,6 +12,8 @@ if("" STREQUAL "${DEP_INST_DEPLOYMENT_PATH}")
 endif()
 if("" STREQUAL "${DEP_SRC_DEPLOYMENT_PATH}")
 endif()
+if("" STREQUAL "${CMAKE_TOOLCHAIN_FILE}")
+endif()
 
 set(isAddInstallTargetIncluded yes)
 set(isAddInstallCalled no)
@@ -27,11 +29,6 @@ function(sbeInstallFrequentisVBT)
     # Only one of Url of File has to be specified.
     #
     # Function imports libraries from VBT and install them.
-    
-    # if vbt is already proccessed return
-    if(EXISTS ${PROJECT_BINARY_DIR}/preinstallation)    
-        return()
-    endif()
     
     # Get and check arguments
     CMAKE_PARSE_ARGUMENTS(inst "" "Url;File" "ExcludeLibraries" ${ARGN})
@@ -52,7 +49,7 @@ function(sbeInstallFrequentisVBT)
           
         return()
     endif()
-    
+
     # get method of getting vbt   
     set(isSvn no)
     if(DEFINED inst_Url)
@@ -62,36 +59,37 @@ function(sbeInstallFrequentisVBT)
         set(isSvn no)
         set(vbtFile ${inst_File})
     endif()
-        
-    get_filename_component(tarFileName "${vbtFile}" NAME)
 
-    # get VBT
+    get_filename_component(tarFileName "${vbtFile}" NAME)
+                
     if(isSvn)
-        # find all necessary tools
-        find_package(Subversion QUIET)
-        if(NOT Subversion_SVN_EXECUTABLE)
-            message(FATAL_ERROR "error: could not find svn.")
-        endif()
-        
-        # export frequentis VBT 
-        message(STATUS "Exporting ${tarFileName}...")
-        execute_process(COMMAND svn export ${vbtFile} ${PROJECT_SOURCE_DIR}/${tarFileName}
-            RESULT_VARIABLE svnResult
-            OUTPUT_VARIABLE out
-            ERROR_VARIABLE out)
-        if(${svnResult} GREATER 0)
-            message(FATAL_ERROR "SVN Export Fails:\n${out}")
+        if(NOT EXISTS ${PROJECT_BINARY_DIR}/${tarFileName})
+            # find all necessary tools
+            find_package(Subversion QUIET)
+            if(NOT Subversion_SVN_EXECUTABLE)
+                message(FATAL_ERROR "error: could not find svn.")
+            endif()
+            
+            # export frequentis VBT 
+            message(STATUS "Exporting ${tarFileName}...")
+            execute_process(COMMAND svn export ${vbtFile} ${PROJECT_BINARY_DIR}/${tarFileName}
+                RESULT_VARIABLE svnResult
+                OUTPUT_VARIABLE out
+                ERROR_VARIABLE out)
+            if(${svnResult} GREATER 0)
+                message(FATAL_ERROR "SVN Export Fails:\n${out}")
+            endif()
         endif()
         
         # now vbt is file
         set(isSvn no)
-        set(vbtFile ${PROJECT_SOURCE_DIR}/${tarFileName})
+        set(vbtFile ${PROJECT_BINARY_DIR}/${tarFileName})
     endif()
     
     # untar VBT for further analyse
     message(STATUS "Preinstalling ${tarFileName}...")
     file(MAKE_DIRECTORY  ${PROJECT_BINARY_DIR}/preinstallation)
-    execute_process(COMMAND tar -xzf ${PROJECT_SOURCE_DIR}/${tarFileName} -C ${PROJECT_BINARY_DIR}/preinstallation
+    execute_process(COMMAND tar -xzf ${vbtFile} -C ${PROJECT_BINARY_DIR}/preinstallation
         RESULT_VARIABLE result
         OUTPUT_VARIABLE out
         ERROR_VARIABLE out)
