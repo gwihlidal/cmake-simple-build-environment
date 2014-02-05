@@ -19,8 +19,10 @@ endif()
 
 set(DEP_ARCHITECTURE ${CMAKE_SYSTEM_PROCESSOR})
 
-# only to suppress waring "Not used CMAKE_TOOLCHAIN_FILE"
+set(TOOLCHAIN_NAME "host")
 if(CMAKE_TOOLCHAIN_FILE)
+    get_filename_component(TOOLCHAIN_NAME ${CMAKE_TOOLCHAIN_FILE} NAME)
+    string(REPLACE ".cmake" "" TOOLCHAIN_NAME "${TOOLCHAIN_NAME}")
 endif()
 
 # if deployment path is not defined then this script is dependency deployer
@@ -30,13 +32,11 @@ if(NOT DEP_INST_DEPLOYMENT_PATH)
     # set export directories
     set(DEP_INST_INFO_PATH "${DEP_INST_DEPLOYMENT_PATH}/info")
     set(DEP_INST_INFO_FILE "${DEP_INST_INFO_PATH}/info.cmake")
-    set(DEP_BUILD_PATH "${DEP_INST_DEPLOYMENT_PATH}/build")
     set(DEP_INSTALL_PATH "${DEP_INST_DEPLOYMENT_PATH}/installation")
 else()
     # set export directories
     set(DEP_INST_INFO_PATH "${DEP_INST_DEPLOYMENT_PATH}/info")
     set(DEP_INST_INFO_FILE "${DEP_INST_INFO_PATH}/info.cmake")
-    set(DEP_BUILD_PATH "${DEP_INST_DEPLOYMENT_PATH}/build")
     set(DEP_INSTALL_PATH "${DEP_INST_DEPLOYMENT_PATH}/installation")
     
     return()    
@@ -160,7 +160,7 @@ endfunction(_installRequiredDependencies)
 function(_installDependency dependency)
     message(STATUS "Installing dependency ${dependency}")
     # create build directory    
-    set(DependencyBuildDirectory "${DEP_BUILD_PATH}/${${dependency}_Name}/build")
+    set(DependencyBuildDirectory "${DEP_SOURCES_PATH}/${${dependency}_Name}/build/${TOOLCHAIN_NAME}/${CMAKE_BUILD_TYPE}")
     file(MAKE_DIRECTORY  ${DependencyBuildDirectory})
     
     # create arguments for configuring
@@ -170,6 +170,12 @@ function(_installDependency dependency)
     list(APPEND configurationArgs "-DDEP_SRC_DEPLOYMENT_PATH=${DEP_SRC_DEPLOYMENT_PATH}")
     if(CMAKE_TOOLCHAIN_FILE)
        list(APPEND configurationArgs "-DCMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN_FILE}")
+    endif()
+    if(RULE_LAUNCH_COMPILE)
+        list(APPEND configurationArgs "-DRULE_LAUNCH_COMPILE=${RULE_LAUNCH_COMPILE}")
+    endif()
+    if(RULE_LAUNCH_LINK)
+        list(APPEND configurationArgs "-DRULE_LAUNCH_LINK=${RULE_LAUNCH_LINK}")
     endif()
 
     # configure dependency
@@ -207,7 +213,7 @@ function(_storeInstalledDependencies)
 
     foreach(installedDependency ${DEP_INSTALLATION_ORDER})
         list(APPEND info "list(APPEND INSTALLED_DEPENDENCIES ${installedDependency})\n")
-        list(APPEND info "set(${installedDependency}_BuildPath ${DEP_BUILD_PATH}/${${installedDependency}_Name})\n")
+        list(APPEND info "set(${installedDependency}_BuildPath ${DEP_SOURCES_PATH}/${${installedDependency}_Name}/build/${TOOLCHAIN_NAME}/${CMAKE_BUILD_TYPE})\n")
         list(APPEND info "set(${installedDependency}_SourcePath ${DEP_SOURCES_PATH}/${${installedDependency}_Name})\n")
     endforeach()
 
