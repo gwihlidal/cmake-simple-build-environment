@@ -188,6 +188,15 @@ function(_exportFromScm scmType scmFile localFile)
     endif()
 endfunction()
 
+function(_checkoutFromScm scmType scmFile localFile)
+    if("svn" STREQUAL "${scmType}")
+        _checkoutFromSvn(${scmFile} ${localFile})
+    else()
+        _exit("Scm \"${scmType}\" is not supported")
+    endif()
+endfunction()
+
+
 function(_exportFromSvn svnFile localFile)
     # export
     execute_process(COMMAND svn export ${svnFile} ${localFile}
@@ -198,6 +207,17 @@ function(_exportFromSvn svnFile localFile)
         _exit("SVN Export Fails:\n${out}")
     endif()
 endfunction(_exportFromSvn)
+
+function(_checkoutFromSvn svnFile localFile)
+    # export
+    execute_process(COMMAND svn checkout ${svnFile} ${localFile}
+        RESULT_VARIABLE svnResult
+        OUTPUT_VARIABLE out
+        ERROR_VARIABLE out)
+    if(${svnResult} GREATER 0)
+        _exit("SVN checkout Fails:\n${out}")
+    endif()
+endfunction()
 
 function(_storeDependencyInInfoFile dependency)
     set(info "")
@@ -666,7 +686,7 @@ function(_exportRequiredDependencies)
         if(NOT ${New_${dependecy}_IsExported})
             # export dependecy from svn 
             message(STATUS "Exporting Sources for dependency ${dependecy}")
-            _exportFromScm(${New_${dependecy}_ScmType} ${New_${dependecy}_ScmPath} ${DEP_SOURCES_PATH}/${New_${dependecy}_Name})
+            _checkoutFromScm(${New_${dependecy}_ScmType} ${New_${dependecy}_ScmPath} ${DEP_SOURCES_PATH}/${New_${dependecy}_Name})
             _setExported(${dependecy})
         endif()
     endforeach()
