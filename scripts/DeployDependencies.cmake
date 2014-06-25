@@ -9,10 +9,10 @@ else()
     set(DEP_INFO_FILE "${DEP_SRC_DEPLOYMENT_PATH}/info/info.cmake")    
 endif()
     
-include(SBE/InstallDependencies)
+include(SBE/ConfigureDependencies)
     
 include(${DEP_INFO_FILE} OPTIONAL)
-include(${DEP_INST_INFO_FILE} OPTIONAL)
+#include(${DEP_INST_INFO_FILE} OPTIONAL)
 
 # load variables of all dependencies
 include(SBE/helpers/DependenciesParser)
@@ -27,9 +27,19 @@ endforeach()
 
 unset(MyOverallDependencies)
 
+include(ExternalProject)
+
 if(DEFINED depNames)
     foreach(depName ${depNames})
-        find_package(${depName} REQUIRED CONFIG PATHS ${DEP_INSTALL_PATH}/config NO_DEFAULT_PATH)
+        ExternalProject_Add(${depName}
+        SOURCE_DIR ${DEP_SOURCES_PATH}/${depName}
+        BINARY_DIR ${DEP_SOURCES_PATH}/${depName}/build/${TOOLCHAIN_NAME}/${CMAKE_BUILD_TYPE}
+        INSTALL_COMMAND ""
+        TEST_COMMAND ""
+        UPDATE_COMMAND "hhh" 
+        )
+         
+        #find_package(${depName} REQUIRED CONFIG PATHS ${DEP_SOURCES_PATH}/${depName}/build/${TOOLCHAIN_NAME}/${CMAKE_BUILD_TYPE}/Export/config NO_DEFAULT_PATH)
     endforeach()
     
     unset(depNames)

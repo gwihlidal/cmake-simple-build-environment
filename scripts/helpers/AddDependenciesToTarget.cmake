@@ -62,6 +62,8 @@ function(sbeAddDependencies)
 
             # add dependency            
             if(hasToBeAdded)
+                add_dependencies(${dep_Target} ${depName})
+                
                 if(useMock)
                     if(DEFINED ${depName}_INCLUDE_DIRS OR DEFINED ${depName}_MOCK_INCLUDE_DIRS)
                         set(includes  ${${depName}_MOCK_INCLUDE_DIRS} ${${depName}_INCLUDE_DIRS})
