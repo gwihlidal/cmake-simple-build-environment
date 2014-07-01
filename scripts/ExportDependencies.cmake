@@ -4,13 +4,14 @@ if(NOT DEP_SOURCE_DIR)
     message(FATAL_ERROR "Path to Properties.txt has to be defined as DEP_SOURCE_DIR=path.")
 endif()
 
-set(DEP_SRC_DEPLOYMENT_PATH "${DEP_SOURCE_DIR}/dependencies")
+if(NOT DEP_SRC_DEPLOYMENT_PATH)
+    set(DEP_SRC_DEPLOYMENT_PATH "${DEP_SOURCE_DIR}/dependencies")
+endif()
 set(DEP_PROPERTIES_FILE "${DEP_SOURCE_DIR}/Properties.cmake")
 # set export directories
 set(DEP_SOURCES_PATH "${DEP_SRC_DEPLOYMENT_PATH}/sources")
 set(DEP_SRC_INFO_PATH "${DEP_SRC_DEPLOYMENT_PATH}/info")
 set(DEP_INFO_FILE "${DEP_SRC_INFO_PATH}/info.cmake")
-set(DEP_SRC_LOCK_FILE "${DEP_SRC_INFO_PATH}/lock")
 
 # find all necessary tools
 find_package(Subversion QUIET)
@@ -31,13 +32,6 @@ endif()
 
 include(${DEP_PROPERTIES_FILE})
 
-# check if other build type is performing deployment, otherwise lock it for this build type
-if(EXISTS ${DEP_SRC_LOCK_FILE})
-    message(FATAL_ERROR "Other build type is currently performing dependencies source export")
-else()
-    file(WRITE ${DEP_SRC_LOCK_FILE} "")
-endif()
-
 include(${DEP_INFO_FILE} OPTIONAL)
 
 # export all properties files    
@@ -45,6 +39,10 @@ function(ExportProperties dependencies)
     set(${NAME}_Name "${NAME}" CACHE INTERNAL "" FORCE)
     set(${NAME}_Version "${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}" CACHE INTERNAL "" FORCE)
 
+    if(EXISTS ${DEP_INFO_FILE} AND ${DEP_INFO_FILE} IS_NEWER_THAN ${DEP_PROPERTIES_FILE})
+        return()
+    endif()
+    
     _storeOwnDependencies("${dependencies}" areChanged areExternalFlagsChanged)
     
     if(NOT areChanged)
@@ -69,6 +67,10 @@ function(ExportProperties dependencies)
     
     _getDependenciesInfo(${NAME} "${dependencies}")
 
+    foreach(dep ${New_OverallDependencies} ${NAME})
+        message("\n${dep}\nDependants\nDirect - [${New_${dep}_Dependants}]\nOverall - [${New_${dep}_OverallDependants}]\nDependencies\nDirect - [${New_${dep}_DependenciesX}]\nOverall - [${New_${dep}_OverallDependenciesX}]\n")
+    endforeach()
+        
     _createInfoAboutExternalFlag("${dependencies}")
     
     _printDependencies(${NAME})
@@ -95,10 +97,17 @@ endfunction(ExportProperties)
 function(_getDependenciesInfo dependant dependencies)
     ParseDependencies("${dependencies}" dependenciesIndentifiers)
 
+    # remember dependant dependecies
+    set(New_${dependant}_DependenciesX ${dependenciesIndentifiers} CACHE INTERNAL "" FORCE)
+    set(New_${dependant}_OverallDependenciesX "" CACHE INTERNAL "" FORCE)
+    
     foreach(dependecyIdentifier ${dependenciesIndentifiers})
         # export dependecy property
         _getDependencyInfo(${dependant} ${dependecyIdentifier})
+        
+        _addToChachedList(New_${dependant}_OverallDependenciesX ${dependecyIdentifier} ${New_${dependecyIdentifier}_Dependencies})
     endforeach()
+    
 endfunction(_getDependenciesInfo)
 
 
@@ -108,6 +117,7 @@ function(_getDependencyInfo dependant dependency)
     if(NOT "${New_${dependency}_Name}" STREQUAL "")
         # depenedency already processed in this turn, add only dependant
         _addToChachedList(New_${dependency}_Dependants ${dependant})
+        _addToChachedList(New_${dependency}_OverallDependants ${dependant} ${New_${dependant}_Dependants})
         return()
     endif()
     
@@ -119,9 +129,10 @@ function(_getDependencyInfo dependant dependency)
         _storeDependencyInInfoFile(${dependency})
     endif()
 
-    # remember its dependant
+    # remember its dependant and overall dependants
     set(New_${dependency}_Dependants ${dependant} CACHE INTERNAL "" FORCE)    
-        
+    set(New_${dependency}_OverallDependants ${dependant} ${New_${dependant}_Dependants} CACHE INTERNAL "" FORCE)
+            
     # store dependency name in list for further check
     _addToChachedList(New_OverallDependenciesNames ${New_${dependency}_Name})
     # for each name store more different svn packages if any
@@ -141,6 +152,7 @@ function(_fillNewDependecyFromStoredOne dependency)
     set(New_${dependency}_ScmPath ${${dependency}_ScmPath} CACHE INTERNAL "" FORCE)
     set(New_${dependency}_ScmType ${${dependency}_ScmType} CACHE INTERNAL "" FORCE)
     set(New_${dependency}_Dependencies ${${dependency}_Dependencies} CACHE INTERNAL "" FORCE)
+    set(New_${dependency}_Dependants ${${dependency}_Dependants} CACHE INTERNAL "" FORCE)
     set(New_${dependency}_DependenciesDescription ${${dependency}_DependenciesDescription} CACHE INTERNAL "" FORCE)
     if(DEFINED ${dependency}_IsExported)
         set(New_${dependency}_IsExported ${${dependency}_IsExported} CACHE INTERNAL "" FORCE)
@@ -249,9 +261,9 @@ function(_storeDependencyInInfoFile dependency)
 endfunction(_storeDependencyInInfoFile)
 
 
-function(_addToChachedList list value)
+function(_addToChachedList list)
     set(tmp "")
-    list(APPEND tmp ${${list}} ${value})
+    list(APPEND tmp ${${list}} ${ARGN})
     list(REMOVE_DUPLICATES tmp)
     set(${list} ${tmp} CACHE INTERNAL "" FORCE)
 endfunction(_addToChachedList)
@@ -376,10 +388,15 @@ function(_printDependencies projectName)
                     endif()
                 endif()
                 
-                if("" STREQUAL "${stereotype}")
-                    list(APPEND plantumlContent "[${New_${package}_Name}\\n${New_${package}_Version}] .. N${name}\n")
+                if("Development" STREQUAL "${SBE_MODE}")
+                    set(versionText "")
                 else()
-                    list(APPEND plantumlContent "[${New_${package}_Name}\\n${New_${package}_Version}] <<${stereotype}>> .. N${name}\n")
+                    set(versionText "\\n${New_${package}_Version}")
+                endif()
+                if("" STREQUAL "${stereotype}")
+                    list(APPEND plantumlContent "[${New_${package}_Name}${versionText}] .. N${name}\n")
+                else()
+                    list(APPEND plantumlContent "[${New_${package}_Name}${versionText}] <<${stereotype}>> .. N${name}\n")
                     list(REMOVE_ITEM stereotypedPackages ${package})                    
                 endif()
             endforeach()
@@ -410,19 +427,37 @@ function(_printDependencies projectName)
             endif()
         endif()
 
-        list(APPEND plantumlContent "[${New_${dependency}_Name}\\n${New_${dependency}_Version}] <<${stereotype}>>\n")
+        if("Development" STREQUAL "${SBE_MODE}")
+            set(versionText "")
+        else()
+            set(versionText "\\n${New_${dependency}_Version}")
+        endif()
+        list(APPEND plantumlContent "[${New_${dependency}_Name}${versionText}] <<${stereotype}>>\n")
     endforeach()
     
     foreach(dependency ${OwnCachedDependencies})
-        list(APPEND plantumlContent "[${projectName}]-->[${New_${dependency}_Name}\\n${New_${dependency}_Version}]\n")
+        if("Development" STREQUAL "${SBE_MODE}")
+            set(versionText "")
+        else()
+            set(versionText "\\n${New_${dependency}_Version}")
+        endif()
+        
+        list(APPEND plantumlContent "[${projectName}]-->[${New_${dependency}_Name}${versionText}]\n")
     endforeach()
     
     foreach(dependency ${New_OverallDependencies})
         foreach(dependencyOfDependecy ${New_${dependency}_Dependencies})
-            if ("Container" STREQUAL "${New_${dependency}_Type}")
-                list(APPEND plantumlContent "[${New_${dependency}_Name}\\n${New_${dependency}_Version}]-->[${New_${dependencyOfDependecy}_Name}\\n${New_${dependencyOfDependecy}_Version}] : contains\n")
+            if("Development" STREQUAL "${SBE_MODE}")
+                set(versionText "")
+                set(versionTextd "")
             else()
-                list(APPEND plantumlContent "[${New_${dependency}_Name}\\n${New_${dependency}_Version}]-->[${New_${dependencyOfDependecy}_Name}\\n${New_${dependencyOfDependecy}_Version}]\n")
+                set(versionText "\\n${New_${dependency}_Version}")
+                set(versionTextd "\\n${New_${dependencyOfDependecy}_Version}")
+            endif()
+            if ("Container" STREQUAL "${New_${dependency}_Type}")
+                list(APPEND plantumlContent "[${New_${dependency}_Name}${versionText}]-->[${New_${dependencyOfDependecy}_Name}${versionTextd}] : contains\n")
+            else()
+                list(APPEND plantumlContent "[${New_${dependency}_Name}${versionText}]-->[${New_${dependencyOfDependecy}_Name}${versionTextd}]\n")
             endif()                
         endforeach()
     endforeach()
@@ -721,7 +756,6 @@ endfunction(_exit)
 
 function(_cleanup)
     _clearTempCache()
-    file(REMOVE ${DEP_SRC_LOCK_FILE})
 endfunction(_cleanup)
 
 function(_clearTempCache)
