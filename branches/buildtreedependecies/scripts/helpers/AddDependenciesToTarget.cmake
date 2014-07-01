@@ -188,6 +188,7 @@ function(sbeDoesDependenciesContainsDeclSpecs containsDeclspecs)
 endfunction()
   
 function(_AddLibraries targetName libraries)
+    add_dependencies(${targetName} dependencies)
     foreach(lib ${libraries})
         get_target_property(libType ${lib} TYPE)
         

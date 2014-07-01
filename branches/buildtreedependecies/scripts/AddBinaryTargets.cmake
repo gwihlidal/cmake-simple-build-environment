@@ -230,6 +230,8 @@ function(sbeAddObjects)
 
     add_library(${prop_Name} OBJECT ${prop_Sources})
     
+    add_dependencies(${prop_Name} dependencies)
+    
     sbeDoesDependenciesContainsDeclSpecs(dependenciesContainsDeclspecs)
     
      sbeAddDependenciesIncludes(

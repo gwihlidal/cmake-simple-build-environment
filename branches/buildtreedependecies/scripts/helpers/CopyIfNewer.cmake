@@ -11,10 +11,8 @@ if(${SOURCE} IS_NEWER_THAN ${DESTINATION})
         message(${MESSAGE})
     endif()
     
-    file(READ ${SOURCE} context)
-    string(REGEX REPLACE "([^a-zA-Z0-9_]*)__EXPORT([ \t]+)" "\\1__IMPORT\\2" replacedContext "${context}")
-    string(REPLACE ";" "\\;" replacedContext "${replacedContext}")
-    file(WRITE ${DESTINATION} ${replacedContext})
+    execute_process(
+        COMMAND ${CMAKE_COMMAND} -E copy ${SOURCE} ${DESTINATION})
 endif()     
 
 

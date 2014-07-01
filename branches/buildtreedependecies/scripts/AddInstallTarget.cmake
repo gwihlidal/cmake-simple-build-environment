@@ -175,6 +175,12 @@ function(addInstallTarget)
     _installConfigs(Targets ${inst_Targets} HeadersPaths ${inst_HeadersPaths} HeadersPathReplacement ${inst_HeadersPathReplacement} MockHeadersPathReplacement ${inst_MockHeadersPathReplacement})
     
     export(TARGETS ${inst_Targets} FILE Export/config/${PROJECT_NAME}Targets.cmake)
+    
+    
+    foreach(trg ${inst_Targets})
+        add_custom_command(TARGET ${trg} POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E touch Export/buildtimestamp)
+    endforeach()
 endfunction()
 
 function(_installTestTargets)
@@ -390,10 +396,28 @@ endfunction()
 function(_exportHeaders)
     CMAKE_PARSE_ARGUMENTS(headers "" "Target;HeadersDirectory;DestinationDirectory" "Headers;HeadersPathReplacement" ${ARGN})
 
+    # check if something to do
+    if(NOT DEFINED headers_Target AND 
+       NOT DEFINED headers_HeadersDirectory AND
+       NOT DEFINED headers_Headers)
+       return()
+    endif()
+    
     # process headers
     set(publicHeaders "")
     set(containsDeclspec "no")
     
+    # setup target that needs to export headers
+    set(headersTarget "")
+    if(headers_Target)
+        set(headersTarget ${headers_Target})
+    else()
+        set(headersTarget export-headers)
+        add_custom_target(${headersTarget} ALL)
+        add_custom_command(TARGET export-headers POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E touch Export/buildtimestamp)
+    endif()
+                
     # get all headers from headers Directories
     if(DEFINED headers_HeadersDirectory)
         foreach(headerDir ${headers_HeadersDirectory})
@@ -435,20 +459,26 @@ function(_exportHeaders)
         set(exportedHeaderFile "${exportPath}/${headerFile}")
         list(APPEND exportedHeaders ${exportedHeaderFile})
         
+        # setup command to export header. If it contains DECLSPEC then it should be modified
+        # otherwise it should be only copy
+        set(exportCommandArg "")
         if(containsDeclspec)
-            add_custom_command(OUTPUT ${exportedHeaderFile}
-                COMMAND ${CMAKE_COMMAND} -DSOURCE=${PROJECT_SOURCE_DIR}/${header} -DDESTINATION=${exportedHeaderFile} -P ${CMAKE_ROOT}/Modules/SBE/helpers/ChangeExportToImport.cmake 
-                DEPENDS ${PROJECT_SOURCE_DIR}/${header})
+            list(APPEND exportCommandArg "-DSOURCE=${PROJECT_SOURCE_DIR}/${header}")
+            list(APPEND exportCommandArg "-DDESTINATION=${exportedHeaderFile}")
+            list(APPEND exportCommandArg "-DMESSAGE=Exporting ${header}")
+            list(APPEND exportCommandArg "-P")
+            list(APPEND exportCommandArg "${CMAKE_ROOT}/Modules/SBE/helpers/ChangeExportToImport.cmake")
         else()
-            add_custom_command(OUTPUT ${exportedHeaderFile}
-                COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_SOURCE_DIR}/${header} ${exportedHeaderFile} 
-                DEPENDS ${PROJECT_SOURCE_DIR}/${header})
+            list(APPEND exportCommandArg "-DSOURCE=${PROJECT_SOURCE_DIR}/${header}")
+            list(APPEND exportCommandArg "-DDESTINATION=${exportedHeaderFile}")
+            list(APPEND exportCommandArg "-DMESSAGE=Exporting ${header}")
+            list(APPEND exportCommandArg "-P")
+            list(APPEND exportCommandArg "${CMAKE_ROOT}/Modules/SBE/helpers/CopyIfNewer.cmake")
         endif()
+       
+        add_custom_command(TARGET ${headersTarget} POST_BUILD
+            COMMAND ${CMAKE_COMMAND} ${exportCommandArg})            
     endforeach()
-    
-    if (exportedHeaders)
-        add_custom_target(export-headers ALL SOURCES ${exportedHeaders})
-    endif()
 endfunction()
 
 function(_installConfigs)

@@ -75,7 +75,14 @@ macro(_parseDependency dependencyProperties id)
     string(TOLOWER parsedDependecy_SCM "${parsedDependecy_SCM}")
         
     # create dependency identifier
-    set(dep_ID "${parsedDependecy_SCM}-${parsedDependecy_URL}")
+    if("Development" STREQUAL "${SBE_MODE}")
+        set(url "${parsedDependecy_URL}")
+        string(REGEX REPLACE "/tags/.*$" "" url "${url}")
+        string(REGEX REPLACE "/trunk$" "" url "${url}")
+        set(dep_ID "${parsedDependecy_SCM}-${url}")
+    else()
+        set(dep_ID "${parsedDependecy_SCM}-${parsedDependecy_URL}")
+    endif()
     
     # export dependency properties to parent scope
     set(${dep_ID}_ScmType ${parsedDependecy_SCM} PARENT_SCOPE)
