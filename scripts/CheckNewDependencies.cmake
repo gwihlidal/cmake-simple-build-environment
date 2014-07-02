@@ -65,7 +65,7 @@ function(_checkDependency dependency isChanged)
     endif()
 endfunction()  
 
-ParseDependencies("${DEPENDENCIES}" dependenciesIndentifiers)
+ParseDependencies("${DEPENDENCIES}" dependenciesIndentifiers "")
 
 set(isChanged "no")
 
