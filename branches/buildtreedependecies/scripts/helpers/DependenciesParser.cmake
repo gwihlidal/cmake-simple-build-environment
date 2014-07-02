@@ -19,7 +19,7 @@ set(isDependenciesParserAlreadyIncluded "yes")
 
 include (SBE/helpers/ArgumentParser)
 
-function(ParseDependencies dependencies parsedDependencies)
+function(ParseDependencies dependencies parsedDependencies prefix)
     set(dependenciesIndentifiers "")
     set(dependencyProperties "")
     
@@ -28,7 +28,7 @@ function(ParseDependencies dependencies parsedDependencies)
     # parse properties for each dependency
     foreach(depProperties ${depProperties_DEPENDENCY})
         string(REPLACE "," ";" depProperties "${depProperties}")
-        _parseDependency("${depProperties}" parsedDependecy_ID)
+        _parseDependency("${depProperties}" parsedDependecy_ID "${prefix}")
         list(APPEND dependenciesIndentifiers ${parsedDependecy_ID})
     endforeach()
     
@@ -53,7 +53,7 @@ function(GetOverallDependencies dependencies parsedDependencies)
 endfunction()
 
 function(GetOverallDependenciesRecursively dependencies)
-    ParseDependencies("${dependencies}" ids)
+    ParseDependencies("${dependencies}" ids "")
     
     foreach(dependencyId ${ids})
         list(FIND __MyOverallDeps ${dependencyId} found)
@@ -65,7 +65,7 @@ function(GetOverallDependenciesRecursively dependencies)
     endforeach()
 endfunction()
 
-macro(_parseDependency dependencyProperties id)
+macro(_parseDependency dependencyProperties id p)
     CMAKE_PARSE_ARGUMENTS(parsedDependecy "EXTERNAL" "URL;SCM" "" ${dependencyProperties})
     
     # set defaults
@@ -84,10 +84,15 @@ macro(_parseDependency dependencyProperties id)
         set(dep_ID "${parsedDependecy_SCM}-${parsedDependecy_URL}")
     endif()
     
+    if("" STREQUAL "${p}")
+        set(prefix "")
+    else()
+        set(prefix "${p}_")
+    endif()
     # export dependency properties to parent scope
-    set(${dep_ID}_ScmType ${parsedDependecy_SCM} PARENT_SCOPE)
-    set(${dep_ID}_ScmPath ${parsedDependecy_URL} PARENT_SCOPE)
-    set(${dep_ID}_IsExternal ${parsedDependecy_EXTERNAL} PARENT_SCOPE)
+    set(${prefix}${dep_ID}_ScmType ${parsedDependecy_SCM} PARENT_SCOPE)
+    set(${prefix}${dep_ID}_ScmPath ${parsedDependecy_URL} PARENT_SCOPE)
+    set(${prefix}${dep_ID}_IsExternal ${parsedDependecy_EXTERNAL} PARENT_SCOPE)
     
     # export dep id
     set(${id} ${dep_ID})

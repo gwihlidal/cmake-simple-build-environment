@@ -7,7 +7,7 @@ set(INSTALL_TARGETS "")
 
 include(${DEP_INFO_FILE})
 
-ParseDependencies("${DEPENDENCIES}" ownDependenciesIds)
+ParseDependencies("${DEPENDENCIES}" ownDependenciesIds "")
 
 foreach(dep ${ownDependenciesIds})
     set(depName ${${dep}_Name})

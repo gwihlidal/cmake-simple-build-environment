@@ -30,7 +30,7 @@ function(sbeAddDependencies)
         endif()        
     endforeach()
     
-    ParseDependencies("${DEPENDENCIES}" ownDependenciesIds)
+    ParseDependencies("${DEPENDENCIES}" ownDependenciesIds "")
     
     # link all dependend libraries
     if(NOT "${ownDependenciesIds}" STREQUAL "")
@@ -38,6 +38,7 @@ function(sbeAddDependencies)
     
         foreach(dep ${ownDependenciesIds})
             set(depName ${${dep}_Name})
+            message("------- ${dep} with [${${dep}_Name}]")
             
             # check if dependency has to be added
             if("" STREQUAL "${${dep}_Type}")
@@ -126,7 +127,7 @@ function(sbeAddDependenciesIncludes)
         set(useMock yes)
     endif()
     
-    ParseDependencies("${DEPENDENCIES}" ownDependenciesIds)
+    ParseDependencies("${DEPENDENCIES}" ownDependenciesIds "")
     
     # link all dependend libraries
     if(NOT "${ownDependenciesIds}" STREQUAL "")
@@ -167,7 +168,7 @@ endfunction()
 function(sbeDoesDependenciesContainsDeclSpecs containsDeclspecs)
     set(depContains "no")
     
-    ParseDependencies("${DEPENDENCIES}" ownDependenciesIds)
+    ParseDependencies("${DEPENDENCIES}" ownDependenciesIds "")
     
     # check dependend packages
     if(NOT "${ownDependenciesIds}" STREQUAL "")
