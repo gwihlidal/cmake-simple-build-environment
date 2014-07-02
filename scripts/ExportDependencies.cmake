@@ -37,14 +37,27 @@ include(${DEP_INFO_FILE} OPTIONAL)
 
 # export all properties files    
 function(ExportProperties dependencies)
-    
-    set(New_${NAME}_Name "${NAME}" CACHE INTERNAL "" FORCE)
-    set(New_${NAME}_Version "${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}" CACHE INTERNAL "" FORCE)
-
     if(EXISTS ${DEP_INFO_FILE} AND ${DEP_INFO_FILE} IS_NEWER_THAN ${DEP_PROPERTIES_FILE})
         return()
     endif()
-    
+
+    if ("${MAIN_DEPENDANT}" STREQUAL "${NAME}")
+        set_property(GLOBAL PROPERTY New_${NAME}_Name "${NAME}")
+        set_property(GLOBAL PROPERTY New_${NAME}_Version "${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}")
+        set_property(GLOBAL PROPERTY New_${NAME}_Type "${TYPE}")
+        set_property(GLOBAL PROPERTY New_${NAME}_ScmPath "")
+        set_property(GLOBAL PROPERTY New_${NAME}_ScmType "")
+        set_property(GLOBAL PROPERTY New_${NAME}_IsExternal "no")
+        set_property(GLOBAL PROPERTY New_${NAME}_DependenciesDescription ${dependencies})
+        set(${NAME}_Name "${NAME}")
+        set(${NAME}_Version "${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}")
+        set(${NAME}_Type "${TYPE}")
+        set(${NAME}_ScmPath "")
+        set(${NAME}_ScmType "")
+        set(${NAME}_IsExternal "no")
+        set(${NAME}_DependenciesDescription ${dependencies})        
+    endif()
+            
     _areOwnDependenciesChanged("${dependencies}" areChanged areExternalFlagsChanged)
     
     if(NOT areChanged)
@@ -55,21 +68,27 @@ function(ExportProperties dependencies)
         endif()
         
         # setup new dependencies data
-        _getDependenciesInfo(${NAME} "${dependencies}")
+        _getDependenciesInfo(${MAIN_DEPENDANT} "${${MAIN_DEPENDANT}_DependenciesDescription}")
         
+        _publishPropertiesAsVariable()
+        
+        _createInfoAboutExternalFlag()
+            
         # generate picture
-        _printDependencies(${NAME})
+        _printDependencies(${MAIN_DEPENDANT})
         
         # only picture is chaged, nothing else has to be done
         _cleanup()
         return()
     endif()
     
-    _getDependenciesInfo(${NAME} "${dependencies}")
-        
+    _getDependenciesInfo(${MAIN_DEPENDANT} "${${MAIN_DEPENDANT}_DependenciesDescription}")
+
     _publishPropertiesAsVariable()
     
-    _printDependencies(${NAME})
+    _createInfoAboutExternalFlag()
+    
+    _printDependencies(${MAIN_DEPENDANT})
         
     _checkDependenciesVersionsAndStopOnError()
 
@@ -87,9 +106,11 @@ endfunction(ExportProperties)
 macro(_publishPropertiesAsVariable)
     # properties to variable
     get_property(New_OverallDependencies GLOBAL PROPERTY New_OverallDependencies)
-    list(REMOVE_DUPLICATES New_OverallDependencies)
-    list(REVERSE New_OverallDependencies)
-    foreach(dep ${New_OverallDependencies} ${NAME})
+    if(DEFINED New_OverallDependencies)
+        list(REMOVE_DUPLICATES New_OverallDependencies)
+        list(REVERSE New_OverallDependencies)
+    endif()
+    foreach(dep ${New_OverallDependencies} ${MAIN_DEPENDANT})
         get_property(New_${dep}_Dependants GLOBAL PROPERTY New_${dep}_Dependants)
         if(DEFINED New_${dep}_Dependants)
             list(REMOVE_DUPLICATES New_${dep}_Dependants)
@@ -144,7 +165,9 @@ function(_storeNewInfoFile)
 #    list(APPEND info "set(isInfoFileIncluded yes)\n")
 #    list(APPEND info "\n")
     
-    set(tmp ${New_OverallDependencies} ${NAME})
+    list(APPEND info "set(MAIN_DEPENDANT ${MAIN_DEPENDANT})\n")
+    
+    set(tmp ${New_OverallDependencies} ${MAIN_DEPENDANT})
     list(REMOVE_DUPLICATES tmp)
     foreach(dependency ${tmp})
         set(dep ${New_${dependency}_Name})
@@ -221,11 +244,17 @@ function(_getDependenciesInfo dependant dependencies)
         # export dependecy property
         _getDependencyInfo(${dependant} ${dependecyIdentifier})
         
+        set_property(GLOBAL PROPERTY New_${dependecyIdentifier}_IsExternal ${${dependecyIdentifier}_IsExternal})
+        
         get_property(dependencyDependencies GLOBAL PROPERTY New_${dependecyIdentifier}_Dependencies)
         set_property(GLOBAL APPEND PROPERTY New_${dependant}_OverallDependencies ${dependecyIdentifier} ${dependencyDependencies})
     endforeach()
     
-    _createInfoAboutExternalFlag("${dependencies}")
+    #
+    #
+    #  Sort OverallDependencies according to installation order
+    #
+    #
 endfunction(_getDependenciesInfo)
 
 
@@ -374,11 +403,6 @@ function(_checkoutFromSvn svnFile localFile)
     endif()
 endfunction()
 
-
-function(_addToChachedList list)
-    set_property(GLOBAL APPEND PROPERTY ${list} ${ARGN})
-endfunction(_addToChachedList)
-
 #
 #
 #    _areOwnDependenciesChanged
@@ -388,7 +412,10 @@ endfunction(_addToChachedList)
 function(_areOwnDependenciesChanged dependencies areChanged areExternalFlagsChanged)
     ParseDependencies("${dependencies}" actualOwnDependencies aod)
     
-    set(oldOwnDependencies "${${NAME}_Dependencies}")
+    set(oldOwnDependencies "")
+    foreach(oldDep ${${NAME}_Dependencies})
+        list(APPEND oldOwnDependencies ${${oldDep}_Id}) 
+    endforeach()
     set(newOwnDependencies "${actualOwnDependencies}")
             
     list(SORT oldOwnDependencies)
@@ -519,7 +546,7 @@ function(_printDependencies projectName)
         list(APPEND plantumlContent "[${New_${dependency}_Name}${versionText}] <<${stereotype}>>\n")
     endforeach()
     
-    foreach(dependency ${OwnCachedDependencies})
+    foreach(dependency ${New_${projectName}_Dependencies})
         if("Development" STREQUAL "${SBE_MODE}")
             set(versionText "")
         else()
@@ -652,13 +679,13 @@ endfunction (_updateDependeciesInstallationOrderInInfoFile)
 #            * dependency is external if is flaged as external in own dependencies
 #
 #
-function (_createInfoAboutExternalFlag dependenciesDescription)
+function (_createInfoAboutExternalFlag)
     set(externalDependencies "")
     
     foreach(dep ${New_OverallDependencies})
-        if(${New_${dep}_IsExternal)
+        if(${New_${dep}_IsExternal})
             list(APPEND externalDependencies ${dep} ${New_${dep}_OverallDependencies})
-            list(REMOVE_DUPLICITIES externalDependencies)
+            list(REMOVE_DUPLICATES externalDependencies)
         endif()
     endforeach()
     
@@ -684,30 +711,15 @@ function(_removeUnusedDependencies)
     set(dependenciesToRemove ${OverallDependencies})
     
     if(DEFINED New_OverallDependencies)
-        list(REMOVE_ITEM dependenciesToRemove ${New_OverallDependencies})
+        list(REMOVE_ITEM dependenciesToRemove ${New_OverallDependenciesNames})
     endif()
     
     foreach(dependency ${dependenciesToRemove})
         message(STATUS "Removing unused dependency sources ${dependency}")
         
         file(REMOVE_RECURSE ${DEP_SOURCES_PATH}/${${dependency}_Name})
-        
-        _RemoveDependencySectionFromInfoFile(${dependency})
     endforeach()
 endfunction(_removeUnusedDependencies)
-
-function (_RemoveDependencySectionFromInfoFile dependency)
-    file(READ ${DEP_INFO_FILE} info)
-    string(REPLACE "\n" "\n;" info "${info}")
-    list(FIND info "# Begin of info for dependecy ${dependency}\n" beginIndex)
-    list(FIND info "# End of info for dependecy ${dependency}\n" endIndex)
-    
-    foreach(index RANGE ${beginIndex} ${endIndex})
-        list(REMOVE_AT info ${beginIndex})
-    endforeach()
-    
-    file(WRITE ${DEP_INFO_FILE} ${info})
-endfunction()
 
 #
 #

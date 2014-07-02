@@ -38,7 +38,6 @@ function(sbeAddDependencies)
     
         foreach(dep ${ownDependenciesIds})
             set(depName ${${dep}_Name})
-            message("------- ${dep} with [${${dep}_Name}]")
             
             # check if dependency has to be added
             if("" STREQUAL "${${dep}_Type}")
