@@ -1,17 +1,19 @@
 cmake_minimum_required(VERSION 2.8)
 
-if(NOT DEP_SOURCE_DIR)
-    message(FATAL_ERROR "Path to Properties.txt has to be defined as DEP_SOURCE_DIR=path.")
+if(NOT DEFINED SBE_MAIN_DEPENDANT_SOURCE_DIR)
+    message(FATAL_ERROR "Path to Properties.txt has to be defined as SBE_MAIN_DEPENDANT_SOURCE_DIR=path.")
 endif()
 
-if(NOT DEP_SRC_DEPLOYMENT_PATH)
-    set(DEP_SRC_DEPLOYMENT_PATH "${DEP_SOURCE_DIR}/dependencies")
+if(NOT DEFINED SBE_MAIN_DEPENDANT)
+    include(${SBE_MAIN_DEPENDANT_SOURCE_DIR}/Properties.cmake)
     set(MAIN_DEPENDANT ${NAME})
+else()
+    set(MAIN_DEPENDANT ${SBE_MAIN_DEPENDANT})
 endif()
-set(DEP_PROPERTIES_FILE "${DEP_SOURCE_DIR}/Properties.cmake")
+
 # set export directories
-set(DEP_SOURCES_PATH "${DEP_SRC_DEPLOYMENT_PATH}/sources")
-set(DEP_SRC_INFO_PATH "${DEP_SRC_DEPLOYMENT_PATH}/info")
+set(DEP_SOURCES_PATH "${SBE_MAIN_DEPENDANT_SOURCE_DIR}/dependencies/sources")
+set(DEP_SRC_INFO_PATH "${SBE_MAIN_DEPENDANT_SOURCE_DIR}/dependencies/info")
 set(DEP_INFO_FILE "${DEP_SRC_INFO_PATH}/info.cmake")
 
 # find all necessary tools
@@ -31,13 +33,11 @@ if(NOT EXISTS "${DEP_SOURCES_PATH}")
     file(MAKE_DIRECTORY "${DEP_SOURCES_PATH}")
 endif()
 
-include(${DEP_PROPERTIES_FILE})
-
 include(${DEP_INFO_FILE} OPTIONAL)
 
 # export all properties files    
 function(ExportProperties dependencies)
-    if(EXISTS ${DEP_INFO_FILE} AND ${DEP_INFO_FILE} IS_NEWER_THAN ${DEP_PROPERTIES_FILE})
+    if(EXISTS ${DEP_INFO_FILE} AND ${DEP_INFO_FILE} IS_NEWER_THAN ${PROJECT_SOURCE_DIR}/Properties.txt)
         return()
     endif()
 
@@ -94,6 +94,8 @@ function(ExportProperties dependencies)
 
     _checkDependenciesLoopsAndStopOnError()
     
+    _orderDependenies()
+    
     _removeUnusedDependencies()
     
     _exportRequiredDependencies()
@@ -105,42 +107,24 @@ endfunction(ExportProperties)
 
 macro(_publishPropertiesAsVariable)
     # properties to variable
-    get_property(New_OverallDependencies GLOBAL PROPERTY New_OverallDependencies)
+    
+    get_property(New_OverallDependencies GLOBAL PROPERTY New_${MAIN_DEPENDANT}_OverallDependencies)
     if(DEFINED New_OverallDependencies)
         list(REMOVE_DUPLICATES New_OverallDependencies)
-        list(REVERSE New_OverallDependencies)
     endif()
-    foreach(dep ${New_OverallDependencies} ${MAIN_DEPENDANT})
-        get_property(New_${dep}_Dependants GLOBAL PROPERTY New_${dep}_Dependants)
-        if(DEFINED New_${dep}_Dependants)
-            list(REMOVE_DUPLICATES New_${dep}_Dependants)
-        endif()
+    
+    set(New_MaximumDependenciesLength 0)
+    
+    foreach(dep ${New_OverallDependencies})
+        _publishDependencyPropertiesAsVariable(${dep})
         
-        get_property(New_${dep}_OverallDependants GLOBAL PROPERTY New_${dep}_OverallDependants)
-        if(DEFINED New_${dep}_OverallDependants)
-            list(REMOVE_DUPLICATES New_${dep}_OverallDependants)
+        if (${New_${dep}_DependenciesLength} GREATER ${New_MaximumDependenciesLength})
+            set(New_MaximumDependenciesLength ${New_${dep}_DependenciesLength})
         endif()
-        
-        get_property(New_${dep}_Dependencies GLOBAL PROPERTY New_${dep}_Dependencies)
-        if(DEFINED New_${dep}_Dependencies)
-            list(REMOVE_DUPLICATES New_${dep}_Dependencies)
-        endif()
-        
-        get_property(New_${dep}_OverallDependencies GLOBAL PROPERTY New_${dep}_OverallDependencies)
-        if(DEFINED New_${dep}_OverallDependencies)
-            list(REMOVE_DUPLICATES New_${dep}_OverallDependencies)
-            list(REVERSE New_${dep}_OverallDependencies)
-        endif()
-
-        get_property(New_${dep}_Name GLOBAL PROPERTY New_${dep}_Name)
-        get_property(New_${dep}_Type GLOBAL PROPERTY New_${dep}_Type)
-        get_property(New_${dep}_Version GLOBAL PROPERTY New_${dep}_Version)
-        get_property(New_${dep}_ScmPath GLOBAL PROPERTY New_${dep}_ScmPath)
-        get_property(New_${dep}_ScmType GLOBAL PROPERTY New_${dep}_ScmType)
-        get_property(New_${dep}_DependenciesDescription GLOBAL PROPERTY New_${dep}_DependenciesDescription)
-        get_property(New_${dep}_IsExternal GLOBAL PROPERTY New_${dep}_IsExternal)
     endforeach()
     
+    _publishDependencyPropertiesAsVariable(${MAIN_DEPENDANT})
+            
     get_property(New_OverallDependenciesNames GLOBAL PROPERTY New_OverallDependenciesNames)
     if(DEFINED New_OverallDependenciesNames)
         list(REMOVE_DUPLICATES New_OverallDependenciesNames)
@@ -154,6 +138,39 @@ macro(_publishPropertiesAsVariable)
     if(DEFINED New_ExternalDependencies)
         list(REMOVE_DUPLICATES New_ExternalDependencies)
     endif()
+endmacro()
+
+macro(_publishDependencyPropertiesAsVariable dep)
+    get_property(New_${dep}_Dependants GLOBAL PROPERTY New_${dep}_Dependants)
+    if(DEFINED New_${dep}_Dependants)
+        list(REMOVE_DUPLICATES New_${dep}_Dependants)
+    endif()
+    
+    get_property(New_${dep}_OverallDependants GLOBAL PROPERTY New_${dep}_OverallDependants)
+    if(DEFINED New_${dep}_OverallDependants)
+        list(REMOVE_DUPLICATES New_${dep}_OverallDependants)
+    endif()
+    
+    get_property(New_${dep}_Dependencies GLOBAL PROPERTY New_${dep}_Dependencies)
+    if(DEFINED New_${dep}_Dependencies)
+        list(REMOVE_DUPLICATES New_${dep}_Dependencies)
+        list(LENGTH New_${dep}_Dependencies New_${dep}_DependenciesLength)
+    else()
+        set(New_${dep}_DependenciesLength 0)
+    endif()
+    
+    get_property(New_${dep}_OverallDependencies GLOBAL PROPERTY New_${dep}_OverallDependencies)
+    if(DEFINED New_${dep}_OverallDependencies)
+        list(REMOVE_DUPLICATES New_${dep}_OverallDependencies)
+    endif()
+
+    get_property(New_${dep}_Name GLOBAL PROPERTY New_${dep}_Name)
+    get_property(New_${dep}_Type GLOBAL PROPERTY New_${dep}_Type)
+    get_property(New_${dep}_Version GLOBAL PROPERTY New_${dep}_Version)
+    get_property(New_${dep}_ScmPath GLOBAL PROPERTY New_${dep}_ScmPath)
+    get_property(New_${dep}_ScmType GLOBAL PROPERTY New_${dep}_ScmType)
+    get_property(New_${dep}_DependenciesDescription GLOBAL PROPERTY New_${dep}_DependenciesDescription)
+    get_property(New_${dep}_IsExternal GLOBAL PROPERTY New_${dep}_IsExternal)
 endmacro()
 
 function(_storeNewInfoFile)
@@ -238,23 +255,20 @@ function(_getDependenciesInfo dependant dependencies)
 
     # remember dependant dependecies
     set_property(GLOBAL PROPERTY New_${dependant}_Dependencies ${dependenciesIndentifiers})
-    set_property(GLOBAL PROPERTY New_${dependant}_OverallDependencies "")
-    
+   
     foreach(dependecyIdentifier ${dependenciesIndentifiers})
         # export dependecy property
         _getDependencyInfo(${dependant} ${dependecyIdentifier})
         
-        set_property(GLOBAL PROPERTY New_${dependecyIdentifier}_IsExternal ${${dependecyIdentifier}_IsExternal})
+        # once any dependency set external, it stays external
+        get_property(isExternal GLOBAL PROPERTY New_${dependecyIdentifier}_IsExternal)
+        if (NOT isExternal)
+            set_property(GLOBAL PROPERTY New_${dependecyIdentifier}_IsExternal ${${dependecyIdentifier}_IsExternal})
+        endif()
         
         get_property(dependencyDependencies GLOBAL PROPERTY New_${dependecyIdentifier}_Dependencies)
-        set_property(GLOBAL APPEND PROPERTY New_${dependant}_OverallDependencies ${dependecyIdentifier} ${dependencyDependencies})
+        set_property(GLOBAL APPEND PROPERTY New_${dependant}_OverallDependencies ${dependencyDependencies} ${dependecyIdentifier})
     endforeach()
-    
-    #
-    #
-    #  Sort OverallDependencies according to installation order
-    #
-    #
 endfunction(_getDependenciesInfo)
 
 
@@ -289,9 +303,6 @@ function(_getDependencyInfo dependant dependency)
     # for each name store more different svn packages if any
     set_property(GLOBAL APPEND PROPERTY New_${dependencyName}_Packages ${dependency})
     
-    # store dependency in dependencies list
-    set_property(GLOBAL APPEND PROPERTY New_OverallDependencies ${dependency})
-
     # export dependencies of dependency via recursion
     get_property(dependencyDependencies GLOBAL PROPERTY New_${dependency}_DependenciesDescription)    
     _getDependenciesInfo("${dependency}" "${dependencyDependencies}")
@@ -300,7 +311,7 @@ endfunction(_getDependencyInfo)
 function(_fillNewDependecyFromStoredOne dependency)
     set(depName ${${dependency}_Name})
     
-    if(${DEP_INFO_FILE} IS_NEWER_THAN ${DEP_SRC_DEPLOYMENT_PATH}/${depName}/Properties.cmake)
+    if(${DEP_INFO_FILE} IS_NEWER_THAN ${SBE_DEPENDENCIES_DIR}/${depName}/Properties.cmake)
         set_property(GLOBAL PROPERTY New_${dependency}_Name ${${depName}_Name})
         set_property(GLOBAL PROPERTY New_${dependency}_Type ${${depName}_Type})
         set_property(GLOBAL PROPERTY New_${dependency}_Version ${${depName}_Version})
@@ -319,7 +330,7 @@ function(_fillNewDependecyFromStoredOne dependency)
         set(VERSION_MAJOR "")
         set(VERSION_MINOR "")
         set(VERSION_PATCH "")
-        include(${DEP_SRC_DEPLOYMENT_PATH}/${depName}/Properties.cmake)
+        include(${SBE_DEPENDENCIES_DIR}/${depName}/Properties.cmake)
     
         ParseDependencies("${DEPENDENCIES}" dependencyDependenciesIds "")
             
@@ -612,7 +623,6 @@ function(_checkDependenciesVersionsAndStopOnError)
     endif()
 endfunction(_checkDependenciesVersionsAndStopOnError)
 
-
 #
 #
 #    _checkDependenciesLoopsAndStopOnError
@@ -643,34 +653,40 @@ endfunction(_checkDependenciesLoopsAndStopOnError)
 
 #
 #
-#    _updateDependeciesInstallationOrderInInfoFile
-#        write dependencies installation order in info file 
+#    _orderDependenies
+#        order dependencies to installation order 
 #
 #
-function (_updateDependeciesInstallationOrderInInfoFile)
-    file(READ ${DEP_INFO_FILE} info)
-    string(REPLACE "\n" "\n;" info "${info}")
-    list(FIND info "# Begin of installation order section\n" beginIndex)
-    list(FIND info "# End of installation order section\n" endIndex)
+function(_orderDependenies)
     
-    if(NOT ${beginIndex} EQUAL -1 AND NOT ${endIndex} EQUAL -1)
-        # remove old values
-        foreach(index RANGE ${beginIndex} ${endIndex})
-            list(REMOVE_AT info ${beginIndex})
+    # order overall dependencies
+    set(dependenciesToOrder ${New_OverallDependencies})
+    foreach(countToRemove RANGE 0 ${New_MaximumDependenciesLength})
+        foreach(dep ${dependenciesToOrder})
+            list(LENGTH  New_${dep}_Dependencies itsDependenciesCount)
+            if(${countToRemove} EQUAL ${itsDependenciesCount})
+                set_property(GLOBAL APPEND PROPERTY New_OrderedDependencies ${dep})
+                list(REMOVE_ITEM dependenciesToOrder ${dep})
+            endif()        
         endforeach()
-    endif()
+    endforeach()
     
-    # add new values
-    list(APPEND info "# Begin of installation order section\n")
-    list(APPEND info "set(DEP_INSTALLATION_ORDER \"\")\n")
-    foreach(dependency ${NEW_DEP_INSTALLATION_ORDER})
-        list(APPEND info "list(APPEND DEP_INSTALLATION_ORDER \"${dependency}\")\n")
-    endforeach(dependency ${NEW_DEP_INSTALLATION_ORDER})
-    list(APPEND info "# End of installation order section\n")
+    # set ordered dependencies
+    get_property(nod GLOBAL PROPERTY New_OrderedDependencies)
+    set(New_OverallDependencies ${nod} PARENT_SCOPE)
+    set(New_${MAIN_DEPENDANT}_OverallDependencies ${nod} PARENT_SCOPE)
     
-    file(WRITE ${DEP_INFO_FILE} ${info})
-endfunction (_updateDependeciesInstallationOrderInInfoFile)
-
+    # set order dependencies in dependencies
+    foreach(dep ${nod})
+        if (NOT "" STREQUAL "${New_${dep}_OverallDependencies}") 
+            set(tmp ${nod})
+            list(REMOVE_ITEM tmp ${New_${dep}_OverallDependencies})
+            set(orderedDependencies ${nod})
+            list(REMOVE_ITEM orderedDependencies ${tmp})
+            set(New_${dep}_OverallDependencies ${orderedDependencies} PARENT_SCOPE)
+        endif()
+    endforeach()
+endfunction()
 
 #
 #
@@ -737,14 +753,6 @@ function(_exportRequiredDependencies)
     endforeach()
 endfunction(_exportRequiredDependencies)
 
-function(_removeFromChachedList list value)
-    set(tmp ${${list}})
-    if(NOT "${tmp}" STREQUAL "")
-        list(REMOVE_ITEM tmp ${value})
-        set(${list} ${tmp} CACHE INTERNAL "" FORCE)
-    endif()        
-endfunction(_removeFromChachedList)
-
 function(_exit reason)
     _cleanup()
     message(STATUS "${reason}")
@@ -752,72 +760,7 @@ function(_exit reason)
 endfunction(_exit)
 
 function(_cleanup)
-    _clearTempCache()
 endfunction(_cleanup)
 
-function(_clearTempCache)
-    unset(${NAME}_Name CACHE)
-    unset(${NAME}_Version CACHE)
-    
-    foreach(name ${New_OverallDependenciesNames})
-        unset(New_${name}_Packages CACHE)
-    endforeach()
-    unset(New_OverallDependenciesNames CACHE)
-    
-    foreach(dependecy ${New_OverallDependencies})
-        unset(New_${dependecy}_Name CACHE)
-        unset(New_${dependecy}_Type CACHE)
-        unset(New_${dependecy}_Version CACHE)
-        unset(New_${dependecy}_ScmPath CACHE)
-        unset(New_${dependecy}_ScmType CACHE)
-        unset(New_${dependecy}_Dependants CACHE)
-        unset(New_${dependecy}_Dependencies CACHE)
-        unset(New_${dependecy}_DependenciesDescription CACHE)
-        unset(New_${dependecy}_IsExported CACHE)
-    endforeach()
-    unset(New_OverallDependencies CACHE)
-    
-    foreach(dependecy ${New_ExternalDependencies})
-        unset(New_${dependecy}_IsExternal CACHE)
-    endforeach()
-    unset(New_ExternalDependencies CACHE)
-   
-    unset(NEW_DEP_INSTALLATION_ORDER CACHE)
-endfunction(_clearTempCache)
-
-function (_removeInstallationOrderSection)
-    file(READ ${DEP_INFO_FILE} info)
-    string(REPLACE "\n" "\n;" info "${info}")
-    list(FIND info "# Begin of installation order section\n" beginIndex)
-    list(FIND info "# End of installation order section\n" endIndex)
-    
-    if(${beginIndex} EQUAL -1 OR ${endIndex} EQUAL -1)
-        return()
-    endif()
-    
-    foreach(index RANGE ${beginIndex} ${endIndex})
-        list(REMOVE_AT info ${beginIndex})
-    endforeach()
-    
-    file(WRITE ${DEP_INFO_FILE} ${info})
-endfunction()
-
 ExportProperties("${DEPENDENCIES}")
-
-foreach(dependecy ${OverallDependencies})
-    unset(${dependecy}_Name)
-    unset(${dependecy}_Type)
-    unset(${dependecy}_Version)
-    unset(${dependecy}_ScmPath)
-    unset(${dependecy}_Dependencies)
-    unset(${dependecy}_DependenciesDescription)
-    unset(${dependecy}_IsExported)
-endforeach()
-unset(OverallDependencies)
-unset(DEP_INSTALLATION_ORDER)
-
-foreach(dependecy ${EXTERNAL_DEPENDENCIES})
-    unset(${dependecy}_IsExternal)
-endforeach()
-unset(EXTERNAL_DEPENDENCIES)
   

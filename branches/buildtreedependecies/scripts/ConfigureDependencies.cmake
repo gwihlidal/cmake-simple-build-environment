@@ -1,7 +1,15 @@
 cmake_minimum_required(VERSION 2.8)
 
+if(NOT DEFINED SBE_MAIN_DEPENDANT_SOURCE_DIR)
+    message(FATAL_ERROR "SBE_MAIN_DEPENDANT_SOURCE_DIR has to be defined.")
+endif()
+
 if(NOT DEFINED DEP_SOURCES_PATH)
-    message(FATAL_ERROR "DEP_SOURCES_PATH has to be defined to know where are sources to install.")
+    message(FATAL_ERROR "DEP_SOURCES_PATH has to be defined to know where find dependencies.")
+endif()
+
+if(NOT DEFINED SBE_MAIN_DEPENDANT)
+    message(FATAL_ERROR "SBE_MAIN_DEPENDANT has to be defined to know name of main dependant.")
 endif()
 
 if(NOT DEFINED DEP_INFO_FILE)
@@ -17,96 +25,36 @@ if(CMAKE_TOOLCHAIN_FILE)
     string(REPLACE ".cmake" "" TOOLCHAIN_NAME "${TOOLCHAIN_NAME}")
 endif()
 
-# if deployment path is not defined then this script is dependency deployer
-# otherwise deployer already deploy dependencies, do nothing
-if(NOT DEP_INST_DEPLOYMENT_PATH)
-    set(DEP_INST_DEPLOYMENT_PATH "${PROJECT_BINARY_DIR}/dependencies")
-    # set export directories
-    set(DEP_INST_INFO_PATH "${DEP_INST_DEPLOYMENT_PATH}/info")
-    set(DEP_INST_INFO_FILE "${DEP_INST_INFO_PATH}/info.cmake")
-    set(DEP_INSTALL_PATH "${DEP_INST_DEPLOYMENT_PATH}/installation")
-else()
-    # set export directories
-    set(DEP_INST_INFO_PATH "${DEP_INST_DEPLOYMENT_PATH}/info")
-    set(DEP_INST_INFO_FILE "${DEP_INST_INFO_PATH}/info.cmake")
-    set(DEP_INSTALL_PATH "${DEP_INST_DEPLOYMENT_PATH}/installation")
-    
-    return()    
-endif()
-
 find_program(SED_TOOL sed)
 if(NOT SED_TOOL)
     message(FATAL_ERROR "error: could not find sed.")
 endif()
 
-# create export directories    
-if(NOT EXISTS "${DEP_INST_INFO_PATH}")
-    file(MAKE_DIRECTORY "${DEP_INST_INFO_PATH}")
-endif()
-
-if(NOT EXISTS "${DEP_INSTALL_PATH}")
-    file(MAKE_DIRECTORY "${DEP_INSTALL_PATH}")
-endif()
-
 include(${DEP_INFO_FILE} OPTIONAL)
-include(${DEP_INST_INFO_FILE} OPTIONAL)
 
 # export all properties files    
 function(ConfigureDependecies)
-    _areDependenciesChanged(areChanged)
+    foreach(dependency ${${PROJECT_NAME}_OverallDependencies})
+        _configureDependency(${dependency})
+    endforeach()
+endfunction(ConfigureDependecies)
+
+function(_configureDependency dependency)
+    set(DependencyBuildDirectory "${DEP_SOURCES_PATH}/${dependency}/build/${TOOLCHAIN_NAME}/${CMAKE_BUILD_TYPE}")
     
-    if(NOT areChanged)
+    if(EXISTS "${DependencyBuildDirectory}/Makefile")
         return()
     endif()
     
-    _configureRequiredDependencies()
-endfunction(ConfigureDependecies)
-
-function(_areDependenciesChanged areChanged)
-    set(oldDep "")
-    if(DEFINED INSTALLED_DEPENDENCIES)
-        set(oldDep ${INSTALLED_DEPENDENCIES})
-    endif()
-    
-    set(newDep "")
-    if(DEFINED DEP_INSTALLATION_ORDER)
-        set(newDep ${DEP_INSTALLATION_ORDER})
-    endif()        
-            
-    list(SORT oldDep)
-    list(SORT newDep)
-    
-    if ("${oldDep}" STREQUAL "${newDep}")
-        set(${areChanged} "no" PARENT_SCOPE)
-    else()
-        set(${areChanged} "yes" PARENT_SCOPE)
-    endif()
-endfunction (_areDependenciesChanged)
-
-
-function(_configureRequiredDependencies)
-    set(dependenciesToConfigure "")
-    if(DEFINED DEP_INSTALLATION_ORDER)
-        set(dependenciesToConfigure ${DEP_INSTALLATION_ORDER})
-    endif()       
-    
-    foreach(dependency ${dependenciesToConfigure})
-        _configureDependency(${dependency})
-    endforeach()
-
-endfunction(_configureRequiredDependencies)
-
-function(_configureDependency dependency)
     message(STATUS "Configuring dependency ${dependency}")
     # create build directory    
-    set(DependencyBuildDirectory "${DEP_SOURCES_PATH}/${${dependency}_Name}/build/${TOOLCHAIN_NAME}/${CMAKE_BUILD_TYPE}")
-    file(MAKE_DIRECTORY  ${DependencyBuildDirectory})
+
+    file(MAKE_DIRECTORY ${DependencyBuildDirectory})
     
     # create arguments for configuring
     list(APPEND configurationArgs "-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}")
-    list(APPEND configurationArgs "-DCMAKE_INSTALL_PREFIX=${DEP_INSTALL_PATH}")
-    list(APPEND configurationArgs "-DDEP_INST_DEPLOYMENT_PATH=${DEP_INST_DEPLOYMENT_PATH}")
-    list(APPEND configurationArgs "-DDEP_SRC_DEPLOYMENT_PATH=${DEP_SRC_DEPLOYMENT_PATH}")
+    list(APPEND configurationArgs "-DSBE_MAIN_DEPENDANT_SOURCE_DIR=${SBE_MAIN_DEPENDANT_SOURCE_DIR}")
+    list(APPEND configurationArgs "-DSBE_MAIN_DEPENDANT=${SBE_MAIN_DEPENDANT}")
     list(APPEND configurationArgs "-DSBE_MODE=${SBE_MODE}")
     if(CMAKE_TOOLCHAIN_FILE)
        list(APPEND configurationArgs "-DCMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN_FILE}")
@@ -133,20 +81,3 @@ function(_configureDependency dependency)
 endfunction(_configureDependency)
 
 ConfigureDependecies()
-
-foreach(dependecy ${OverallDependencies})
-    unset(${dependecy}_Name)
-    unset(${dependecy}_Type)
-    unset(${dependecy}_Version)
-    unset(${dependecy}_SvnPath)
-    unset(${dependecy}_Dependencies)
-    unset(${dependecy}_IsExported)
-endforeach()
-unset(OverallDependencies)
-
-foreach(dependecy ${DEP_INSTALLATION_ORDER})
-    unset(${dependecy}_BuildPath)
-endforeach()
-unset(DEP_INSTALLATION_ORDER)
-
-unset(INSTALLED_DEPENDENCIES)
