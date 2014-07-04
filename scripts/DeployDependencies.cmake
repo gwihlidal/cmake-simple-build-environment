@@ -17,6 +17,8 @@ include(SBE/helpers/DependenciesParser)
 
 add_custom_target(dependencies
     COMMAND ${CMAKE_COMMAND}
+        -DPROJECT_NAME=${PROJECT_NAME}
+        -DPROJECT_TIMESTAMPFILE=${PROJECT_BINARY_DIR}/Export/buildtimestamp
         -DDEPENDENCIES_PATH=${DEP_SOURCES_PATH} 
         -DDEPENDENCIES_INFO=${DEP_INFO_FILE} 
         -DDEPENDENCIES_BUILD_SUBDIRECTORY=${TOOLCHAIN_NAME}/${CMAKE_BUILD_TYPE}
