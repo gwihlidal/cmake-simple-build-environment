@@ -1,7 +1,15 @@
 cmake_minimum_required(VERSION 2.8)
 
+if(NOT DEFINED PROJECT_NAME)
+    message(FATAL_ERROR "PROJECT_NAME dependency name that has to be checked.")
+endif()
+
 if(NOT DEFINED DEPENDENCIES_PATH)
     message(FATAL_ERROR "DEPENDENCIES_PATH has to be defined to know where are the dependecies to build.")
+endif()
+
+if(NOT DEFINED PROJECT_TIMESTAMPFILE)
+    message(FATAL_ERROR "PROJECT_TIMESTAMPFILE has to be defined to know to check against.")
 endif()
 
 if(NOT DEFINED DEPENDENCIES_INFO)
@@ -12,10 +20,6 @@ if(NOT DEFINED DEPENDENCIES_BUILD_SUBDIRECTORY)
     message(FATAL_ERROR "DEPENDENCIES_BUILD_SUBDIRECTORY has to be defined to know build subdirectory under dependency build directory.")
 endif()
 
-if(NOT DEFINED MAIN_DEPENDENCY)
-    message(FATAL_ERROR "MAIN_DEPENDENCY has to be defined to know for which dependecy dependecies are build.")
-endif()
-
 find_program(SED_TOOL sed)
 if(NOT SED_TOOL)
     message(FATAL_ERROR "error: could not find sed.")
@@ -23,17 +27,42 @@ endif()
 
 include(${DEPENDENCIES_INFO})
 
+# get dependencies that are build after this project
+set(dependenciesToRebuild "")
 
-set(dependenciesToRebuild ${${MAIN_DEPENDENCY}_OverallDependencies})
+foreach(dependency ${${PROJECT_NAME}_OverallDependencies})
+    if(NOT EXISTS ${DEPENDENCIES_PATH}/${dependency}/build/${DEPENDENCIES_BUILD_SUBDIRECTORY}/Export/buildtimestamp)
+        list(APPEND dependenciesToRebuild ${dependency} ${${dependency}_OverallDependants})
+    elseif (${DEPENDENCIES_PATH}/${dependency}/build/${DEPENDENCIES_BUILD_SUBDIRECTORY}/Export/buildtimestamp IS_NEWER_THAN ${PROJECT_TIMESTAMPFILE})
+        list(APPEND dependenciesToRebuild ${${dependency}_OverallDependants})
+    endif()
+endforeach()
 
-# rebuild dependencies
-message("${MAIN_DEPENDENCY} - ${dependenciesToRebuild}")
+# remove not my dependencies
+list(REMOVE_DUPLICATES dependenciesToRebuild)
+if(NOT "" STREQUAL "${dependenciesToRebuild}")
+    set(tmp ${dependenciesToRebuild})
+    list(REMOVE_ITEM tmp ${${PROJECT_NAME}_OverallDependencies})
+    list(REMOVE_ITEM dependenciesToRebuild ${tmp})
+
+    if (NOT "" STREQUAL "${dependenciesToRebuild}")
+        # order dependenciesToRebuild
+        set(tmp ${${PROJECT_NAME}_OverallDependencies})
+        list(REMOVE_ITEM tmp ${dependenciesToRebuild})
+        
+        if (NOT "" STREQUAL "${tmp}")
+            set(orderedDependenciesToRebuild ${${PROJECT_NAME}_OverallDependencies})
+            list(REMOVE_ITEM orderedDependenciesToRebuild ${tmp})
+            set(dependenciesToRebuild ${orderedDependenciesToRebuild})
+        endif()
+   endif()
+endif()
+ 
 foreach(dependency ${dependenciesToRebuild})
-    message("${MAIN_DEPENDENCY} - ${dependency} - ${DEPENDENCIES_PATH}/${${dependency}_Name}/build/${DEPENDENCIES_BUILD_SUBDIRECTORY}")
     execute_process(
         COMMAND ${CMAKE_COMMAND} --build .
-        WORKING_DIRECTORY ${DEPENDENCIES_PATH}/${${dependency}_Name}/build/${DEPENDENCIES_BUILD_SUBDIRECTORY}
+        WORKING_DIRECTORY ${DEPENDENCIES_PATH}/${dependency}/build/${DEPENDENCIES_BUILD_SUBDIRECTORY}
         )
-endforeach()
+endforeach()        
 
 
