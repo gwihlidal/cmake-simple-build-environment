@@ -11,6 +11,11 @@ else()
     set(MAIN_DEPENDANT ${SBE_MAIN_DEPENDANT})
 endif()
 
+# in case of stand alone script
+if(NOT DEFINED PROJECT_SOURCE_DIR)
+    set(PROJECT_SOURCE_DIR ${SBE_MAIN_DEPENDANT_SOURCE_DIR})
+endif()
+
 # set export directories
 set(DEP_SOURCES_PATH "${SBE_MAIN_DEPENDANT_SOURCE_DIR}/dependencies/sources")
 set(DEP_SRC_INFO_PATH "${SBE_MAIN_DEPENDANT_SOURCE_DIR}/dependencies/info")
@@ -37,7 +42,7 @@ include(${DEP_INFO_FILE} OPTIONAL)
 
 # export all properties files    
 function(ExportProperties dependencies)
-    if(EXISTS ${DEP_INFO_FILE} AND ${DEP_INFO_FILE} IS_NEWER_THAN ${PROJECT_SOURCE_DIR}/Properties.txt)
+    if(EXISTS ${DEP_INFO_FILE} AND ${DEP_INFO_FILE} IS_NEWER_THAN ${PROJECT_SOURCE_DIR}/Properties.cmake)
         return()
     endif()
 
@@ -55,7 +60,15 @@ function(ExportProperties dependencies)
         set(${NAME}_ScmPath "")
         set(${NAME}_ScmType "")
         set(${NAME}_IsExternal "no")
-        set(${NAME}_DependenciesDescription ${dependencies})        
+        set(${NAME}_DependenciesDescription ${dependencies})
+    else()
+        set_property(GLOBAL PROPERTY New_${MAIN_DEPENDANT}_Name "${${MAIN_DEPENDANT}_Name}")
+        set_property(GLOBAL PROPERTY New_${MAIN_DEPENDANT}_Version "${${MAIN_DEPENDANT}_Version}")
+        set_property(GLOBAL PROPERTY New_${MAIN_DEPENDANT}_Type "${${MAIN_DEPENDANT}_Type}")
+        set_property(GLOBAL PROPERTY New_${MAIN_DEPENDANT}_ScmPath "")
+        set_property(GLOBAL PROPERTY New_${MAIN_DEPENDANT}_ScmType "")
+        set_property(GLOBAL PROPERTY New_${MAIN_DEPENDANT}_IsExternal "no")
+        set_property(GLOBAL PROPERTY New_${MAIN_DEPENDANT}_DependenciesDescription ${${MAIN_DEPENDANT}_DependenciesDescription})
     endif()
             
     _areOwnDependenciesChanged("${dependencies}" areChanged areExternalFlagsChanged)
@@ -69,13 +82,17 @@ function(ExportProperties dependencies)
         
         # setup new dependencies data
         _getDependenciesInfo(${MAIN_DEPENDANT} "${${MAIN_DEPENDANT}_DependenciesDescription}")
+
+        _createInfoAboutExternalFlag()
         
         _publishPropertiesAsVariable()
         
-        _createInfoAboutExternalFlag()
-            
         # generate picture
         _printDependencies(${MAIN_DEPENDANT})
+        
+        _orderDependenies()
+        
+        _storeNewInfoFile()
         
         # only picture is chaged, nothing else has to be done
         _cleanup()
@@ -84,9 +101,9 @@ function(ExportProperties dependencies)
     
     _getDependenciesInfo(${MAIN_DEPENDANT} "${${MAIN_DEPENDANT}_DependenciesDescription}")
 
-    _publishPropertiesAsVariable()
-    
     _createInfoAboutExternalFlag()
+    
+    _publishPropertiesAsVariable()
     
     _printDependencies(${MAIN_DEPENDANT})
         
@@ -251,21 +268,28 @@ endfunction()
 #
 #
 function(_getDependenciesInfo dependant dependencies)
-    ParseDependencies("${dependencies}" dependenciesIndentifiers "")
+    ParseDependencies("${dependencies}" dependenciesIndentifiers "ad")
 
     # remember dependant dependecies
     set_property(GLOBAL PROPERTY New_${dependant}_Dependencies ${dependenciesIndentifiers})
    
+    # remember data   
     foreach(dependecyIdentifier ${dependenciesIndentifiers})
-        # export dependecy property
-        _getDependencyInfo(${dependant} ${dependecyIdentifier})
-        
         # once any dependency set external, it stays external
-        get_property(isExternal GLOBAL PROPERTY New_${dependecyIdentifier}_IsExternal)
-        if (NOT isExternal)
-            set_property(GLOBAL PROPERTY New_${dependecyIdentifier}_IsExternal ${${dependecyIdentifier}_IsExternal})
+        get_property(isAlreadyExternal GLOBAL PROPERTY New_${dependecyIdentifier}_IsExternal)
+        if (NOT isAlreadyExternal AND ${ad_${dependecyIdentifier}_IsExternal})
+            set_property(GLOBAL PROPERTY New_${dependecyIdentifier}_IsExternal "yes")
         endif()
         
+        set_property(GLOBAL PROPERTY New_${dependecyIdentifier}_ScmPath ${ad_${dependecyIdentifier}_ScmPath})
+        set_property(GLOBAL PROPERTY New_${dependecyIdentifier}_ScmType ${ad_${dependecyIdentifier}_ScmType})
+    endforeach()
+    
+    # get data recursively
+    foreach(dependecyIdentifier ${dependenciesIndentifiers})
+        # export dependecy property
+        _getDependencyInfo(${dependant} ${dependecyIdentifier}) 
+
         get_property(dependencyDependencies GLOBAL PROPERTY New_${dependecyIdentifier}_Dependencies)
         set_property(GLOBAL APPEND PROPERTY New_${dependant}_OverallDependencies ${dependencyDependencies} ${dependecyIdentifier})
     endforeach()
@@ -290,9 +314,11 @@ function(_getDependencyInfo dependant dependency)
         # depenedency already processed in previous turn, fill all stored data
         _fillNewDependecyFromStoredOne(${dependency})
     else()
-        _fillNewDependecyFromScm(${dependency})
+        get_property(scmPath GLOBAL PROPERTY New_${dependency}_ScmPath)
+        get_property(scmType GLOBAL PROPERTY New_${dependency}_ScmType)
+        _fillNewDependecyFromScm(${dependency} ${scmType} ${scmPath})
     endif()
-
+    
     # remember its dependant and overall dependants
     set_property(GLOBAL PROPERTY New_${dependency}_Dependants ${dependant})
     get_property(dependencyDependants GLOBAL PROPERTY New_${dependant}_Dependants)    
@@ -311,18 +337,16 @@ endfunction(_getDependencyInfo)
 function(_fillNewDependecyFromStoredOne dependency)
     set(depName ${${dependency}_Name})
     
-    if(${DEP_INFO_FILE} IS_NEWER_THAN ${SBE_DEPENDENCIES_DIR}/${depName}/Properties.cmake)
+    if(${DEP_INFO_FILE} IS_NEWER_THAN ${DEP_SOURCES_PATH}/${depName}/Properties.cmake)
         set_property(GLOBAL PROPERTY New_${dependency}_Name ${${depName}_Name})
         set_property(GLOBAL PROPERTY New_${dependency}_Type ${${depName}_Type})
         set_property(GLOBAL PROPERTY New_${dependency}_Version ${${depName}_Version})
         set_property(GLOBAL PROPERTY New_${dependency}_ScmPath ${${depName}_ScmPath})
         set_property(GLOBAL PROPERTY New_${dependency}_ScmType ${${depName}_ScmType})
-        set_property(GLOBAL PROPERTY New_${dependency}_Dependencies ${${depName}_Dependencies})
-        set_property(GLOBAL PROPERTY New_${dependency}_OverallDependencies ${${depName}_OverallDependencies})
-        set_property(GLOBAL PROPERTY New_${dependency}_Dependants ${${depName}_Dependants})
-        set_property(GLOBAL PROPERTY New_${dependency}_OverallDependants ${${depName}_OverallDependants})
+        foreach(dep ${${depName}_Dependencies})       
+            set_property(GLOBAL PROPERTY New_${dependency}_Dependencies ${${dep}_Id})
+        endforeach()
         set_property(GLOBAL PROPERTY New_${dependency}_DependenciesDescription ${${depName}_DependenciesDescription})
-        set_property(GLOBAL PROPERTY New_${dependency}_IsExternal ${${depName}_IsExternal})
     else()
         set(DEPENDENCIES "")
         set(NAME "")
@@ -330,29 +354,29 @@ function(_fillNewDependecyFromStoredOne dependency)
         set(VERSION_MAJOR "")
         set(VERSION_MINOR "")
         set(VERSION_PATCH "")
-        include(${SBE_DEPENDENCIES_DIR}/${depName}/Properties.cmake)
+        include(${DEP_SOURCES_PATH}/${depName}/Properties.cmake)
     
-        ParseDependencies("${DEPENDENCIES}" dependencyDependenciesIds "")
+        ParseDependencies("${DEPENDENCIES}" dependencyDependenciesIds "exp")
             
         # store exported info
         set_property(GLOBAL PROPERTY New_${dependency}_Name "${NAME}")
         set_property(GLOBAL PROPERTY New_${dependency}_Type "${TYPE}")
         set_property(GLOBAL PROPERTY New_${dependency}_Version "${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}")
-        set_property(GLOBAL PROPERTY New_${dependency}_ScmPath "${${dependency}_ScmPath}")
-        set_property(GLOBAL PROPERTY New_${dependency}_ScmType "${${dependency}_ScmType}")
+        set_property(GLOBAL PROPERTY New_${dependency}_ScmPath "${exp_${dependency}_ScmPath}")
+        set_property(GLOBAL PROPERTY New_${dependency}_ScmType "${exp_${dependency}_ScmType}")
         set_property(GLOBAL PROPERTY New_${dependency}_DependenciesDescription ${DEPENDENCIES})
         set_property(GLOBAL PROPERTY New_${dependency}_Dependencies ${dependencyDependenciesIds})
     endif()
 endfunction(_fillNewDependecyFromStoredOne)
 
-function(_fillNewDependecyFromScm dependency)
+function(_fillNewDependecyFromScm dependency scmType scmPath)
     # log
     message(STATUS "Exporting Properties for dependency ${dependency}")
     # export dependecy property file
     set(localFile "${DEP_SRC_INFO_PATH}/properties.cmake")
-    set(scmFile "${${dependency}_ScmPath}/Properties.cmake")
+    set(scmFile "${scmPath}/Properties.cmake")
     file(REMOVE ${localFile})
-    _exportFromScm(${${dependency}_ScmType} ${scmFile} ${localFile})
+    _exportFromScm(${scmType} ${scmFile} ${localFile})
     # include properties file of dependecy
     set(DEPENDENCIES "")
     set(NAME "")
@@ -360,6 +384,7 @@ function(_fillNewDependecyFromScm dependency)
     set(VERSION_MAJOR "")
     set(VERSION_MINOR "")
     set(VERSION_PATCH "")
+    set(dependencyDependenciesIds "")
     include(${localFile})
 
     ParseDependencies("${DEPENDENCIES}" dependencyDependenciesIds "")
@@ -368,8 +393,8 @@ function(_fillNewDependecyFromScm dependency)
     set_property(GLOBAL PROPERTY New_${dependency}_Name "${NAME}")
     set_property(GLOBAL PROPERTY New_${dependency}_Type "${TYPE}")
     set_property(GLOBAL PROPERTY New_${dependency}_Version "${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}")
-    set_property(GLOBAL PROPERTY New_${dependency}_ScmPath "${${dependency}_ScmPath}")
-    set_property(GLOBAL PROPERTY New_${dependency}_ScmType "${${dependency}_ScmType}")
+    set_property(GLOBAL PROPERTY New_${dependency}_ScmPath "${scmPath}")
+    set_property(GLOBAL PROPERTY New_${dependency}_ScmType "${scmType}")
     set_property(GLOBAL PROPERTY New_${dependency}_DependenciesDescription ${DEPENDENCIES})
     set_property(GLOBAL PROPERTY New_${dependency}_Dependencies ${dependencyDependenciesIds})
     file(REMOVE ${localFile})
@@ -698,19 +723,27 @@ endfunction()
 function (_createInfoAboutExternalFlag)
     set(externalDependencies "")
     
+    get_property(New_OverallDependencies GLOBAL PROPERTY New_${MAIN_DEPENDANT}_OverallDependencies)
+    if(DEFINED New_OverallDependencies)
+        list(REMOVE_DUPLICATES New_OverallDependencies)
+    endif()
+    
     foreach(dep ${New_OverallDependencies})
-        if(${New_${dep}_IsExternal})
-            list(APPEND externalDependencies ${dep} ${New_${dep}_OverallDependencies})
-            list(REMOVE_DUPLICATES externalDependencies)
+        get_property(isExternal GLOBAL PROPERTY New_${dep}_IsExternal)
+        if(isExternal)
+            list(APPEND externalDependencies ${dep})
+            get_property(depDependencies GLOBAL PROPERTY New_${dep}_OverallDependencies)
+            foreach(depDependency ${depDependencies})
+                set_property(GLOBAL PROPERTY New_${depDependency}_IsExternal "yes")
+                list(APPEND externalDependencies ${depDependency})
+            endforeach()
         endif()
     endforeach()
     
-    foreach(dep ${externalDependencies})
-        set_property(GLOBAL PROPERTY New_${dep}_IsExternal "yes")
-    endforeach()
-    
+    list(REMOVE_DUPLICATES externalDependencies)
+        
     set_property(GLOBAL PROPERTY New_ExternalDependencies ${externalDependencies})
-endfunction (_createInfoAboutExternalFlag)
+endfunction ()
 
 
 #
@@ -726,14 +759,14 @@ function(_removeUnusedDependencies)
     
     set(dependenciesToRemove ${OverallDependencies})
     
-    if(DEFINED New_OverallDependencies)
-        list(REMOVE_ITEM dependenciesToRemove ${New_OverallDependenciesNames})
-    endif()
+    foreach(newDep ${New_OverallDependencies})
+        list(REMOVE_ITEM dependenciesToRemove ${New_${newDep}_Name})
+    endforeach()
     
     foreach(dependency ${dependenciesToRemove})
         message(STATUS "Removing unused dependency sources ${dependency}")
         
-        file(REMOVE_RECURSE ${DEP_SOURCES_PATH}/${${dependency}_Name})
+        file(REMOVE_RECURSE ${DEP_SOURCES_PATH}/${dependency}})
     endforeach()
 endfunction(_removeUnusedDependencies)
 
