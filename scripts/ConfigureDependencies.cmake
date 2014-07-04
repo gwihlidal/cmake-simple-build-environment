@@ -52,9 +52,11 @@ function(_configureDependency dependency)
     file(MAKE_DIRECTORY ${DependencyBuildDirectory})
     
     # create arguments for configuring
+    list(APPEND configurationArgs "--no-warn-unused-cli")
     list(APPEND configurationArgs "-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}")
     list(APPEND configurationArgs "-DSBE_MAIN_DEPENDANT_SOURCE_DIR=${SBE_MAIN_DEPENDANT_SOURCE_DIR}")
     list(APPEND configurationArgs "-DSBE_MAIN_DEPENDANT=${SBE_MAIN_DEPENDANT}")
+    list(APPEND configurationArgs "-DSBE_COVERITY_CONFIGURED=${SBE_COVERITY_CONFIGURED}")
     list(APPEND configurationArgs "-DSBE_MODE=${SBE_MODE}")
     if(CMAKE_TOOLCHAIN_FILE)
        list(APPEND configurationArgs "-DCMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN_FILE}")
@@ -69,10 +71,10 @@ function(_configureDependency dependency)
     # configure dependency
     execute_process(
         COMMAND cmake -E chdir ${DependencyBuildDirectory} 
-            cmake ${DEP_CMAKE_GENERATOR}
-            ${DEP_SOURCES_PATH}/${${dependency}_Name} 
-            ${configurationArgs}
-        COMMAND ${SED_TOOL} -u -e "s/.*/    &/"            
+            cmake ${configurationArgs}
+            ${DEP_SOURCES_PATH}/${${dependency}_Name}
+        COMMAND ${SED_TOOL} -u -e "/Not searching for unused variables given on the command line./d"            
+        COMMAND ${SED_TOOL} -u -e "s/.*/    &/"
         RESULT_VARIABLE configureResult)
     # handle configuration result
     if((${configureResult} GREATER 0) OR (NOT EXISTS ${DependencyBuildDirectory}/Makefile))
