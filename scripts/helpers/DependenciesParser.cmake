@@ -36,35 +36,6 @@ function(ParseDependencies dependencies parsedDependencies p)
     set(${parsedDependencies} ${dependenciesIndentifiers} PARENT_SCOPE)
 endfunction()
 
-function(GetOverallDependencies dependencies parsedDependencies)
-    set(deps "")
-    
-    set(__MyOverallDeps "" CACHE INTERNAL "")
-    
-    GetOverallDependenciesRecursively("${dependencies}")
-    
-    if(NOT "" STREQUAL "${__MyOverallDeps}")
-        list(REMOVE_DUPLICATES __MyOverallDeps)
-    endif()
-    
-    set(${parsedDependencies} ${__MyOverallDeps} PARENT_SCOPE)
-    
-    unset(__MyOverallDeps CACHE)
-endfunction()
-
-function(GetOverallDependenciesRecursively dependencies)
-    ParseDependencies("${dependencies}" ids "")
-    
-    foreach(dependencyId ${ids})
-        list(FIND __MyOverallDeps ${dependencyId} found)
-        if(${found} EQUAL -1)
-            list(APPEND tmpList ${__MyOverallDeps} ${dependencyId})
-            set(__MyOverallDeps "${tmpList}" CACHE INTERNAL "")
-            GetOverallDependenciesRecursively("${${dependencyId}_DependenciesDescription}")
-        endif()
-    endforeach()
-endfunction()
-
 macro(_parseDependency dependencyProperties id p)
     CMAKE_PARSE_ARGUMENTS(parsedDependecy "EXTERNAL" "URL;SCM" "" ${dependencyProperties})
     
