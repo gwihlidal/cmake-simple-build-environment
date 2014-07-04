@@ -19,7 +19,7 @@ set(isDependenciesParserAlreadyIncluded "yes")
 
 include (SBE/helpers/ArgumentParser)
 
-function(ParseDependencies dependencies parsedDependencies prefix)
+function(ParseDependencies dependencies parsedDependencies p)
     set(dependenciesIndentifiers "")
     set(dependencyProperties "")
     
@@ -28,7 +28,7 @@ function(ParseDependencies dependencies parsedDependencies prefix)
     # parse properties for each dependency
     foreach(depProperties ${depProperties_DEPENDENCY})
         string(REPLACE "," ";" depProperties "${depProperties}")
-        _parseDependency("${depProperties}" parsedDependecy_ID "${prefix}")
+        _parseDependency("${depProperties}" parsedDependecy_ID "${p}")
         list(APPEND dependenciesIndentifiers ${parsedDependecy_ID})
     endforeach()
     
@@ -85,14 +85,14 @@ macro(_parseDependency dependencyProperties id p)
     endif()
     
     if("" STREQUAL "${p}")
-        set(prefix "")
+        set(prf "")
     else()
-        set(prefix "${p}_")
+        set(prf "${p}_")
     endif()
     # export dependency properties to parent scope
-    set(${prefix}${dep_ID}_ScmType ${parsedDependecy_SCM} PARENT_SCOPE)
-    set(${prefix}${dep_ID}_ScmPath ${parsedDependecy_URL} PARENT_SCOPE)
-    set(${prefix}${dep_ID}_IsExternal ${parsedDependecy_EXTERNAL} PARENT_SCOPE)
+    set(${prf}${dep_ID}_ScmType ${parsedDependecy_SCM} PARENT_SCOPE)
+    set(${prf}${dep_ID}_ScmPath ${parsedDependecy_URL} PARENT_SCOPE)
+    set(${prf}${dep_ID}_IsExternal ${parsedDependecy_EXTERNAL} PARENT_SCOPE)
     
     # export dep id
     set(${id} ${dep_ID})
