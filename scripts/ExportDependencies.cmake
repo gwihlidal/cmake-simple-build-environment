@@ -83,14 +83,16 @@ function(ExportProperties dependencies)
         # setup new dependencies data
         _getDependenciesInfo(${MAIN_DEPENDANT} "${${MAIN_DEPENDANT}_DependenciesDescription}")
 
+        _orderDependenies()
+                
+        _getDependantsInfo()
+
         _createInfoAboutExternalFlag()
         
         _publishPropertiesAsVariable()
         
         # generate picture
         _printDependencies(${MAIN_DEPENDANT})
-        
-        _orderDependenies()
         
         _storeNewInfoFile()
         
@@ -101,6 +103,10 @@ function(ExportProperties dependencies)
     
     _getDependenciesInfo(${MAIN_DEPENDANT} "${${MAIN_DEPENDANT}_DependenciesDescription}")
 
+    _orderDependenies()
+        
+    _getDependantsInfo()
+
     _createInfoAboutExternalFlag()
     
     _publishPropertiesAsVariable()
@@ -110,8 +116,6 @@ function(ExportProperties dependencies)
     _checkDependenciesVersionsAndStopOnError()
 
     _checkDependenciesLoopsAndStopOnError()
-    
-    _orderDependenies()
     
     _removeUnusedDependencies()
     
@@ -126,21 +130,14 @@ macro(_publishPropertiesAsVariable)
     # properties to variable
     
     get_property(New_OverallDependencies GLOBAL PROPERTY New_${MAIN_DEPENDANT}_OverallDependencies)
+    
     if(DEFINED New_OverallDependencies)
         list(REMOVE_DUPLICATES New_OverallDependencies)
     endif()
     
-    set(New_MaximumDependenciesLength 0)
-    
-    foreach(dep ${New_OverallDependencies})
+    foreach(dep ${New_OverallDependencies} ${MAIN_DEPENDANT})
         _publishDependencyPropertiesAsVariable(${dep})
-        
-        if (${New_${dep}_DependenciesLength} GREATER ${New_MaximumDependenciesLength})
-            set(New_MaximumDependenciesLength ${New_${dep}_DependenciesLength})
-        endif()
     endforeach()
-    
-    _publishDependencyPropertiesAsVariable(${MAIN_DEPENDANT})
             
     get_property(New_OverallDependenciesNames GLOBAL PROPERTY New_OverallDependenciesNames)
     if(DEFINED New_OverallDependenciesNames)
@@ -290,23 +287,44 @@ function(_getDependenciesInfo dependant dependencies)
         # export dependecy property
         _getDependencyInfo(${dependant} ${dependecyIdentifier}) 
 
-        get_property(dependencyDependencies GLOBAL PROPERTY New_${dependecyIdentifier}_Dependencies)
-        set_property(GLOBAL APPEND PROPERTY New_${dependant}_OverallDependencies ${dependencyDependencies} ${dependecyIdentifier})
+        get_property(dependencyDependencies GLOBAL PROPERTY New_${dependecyIdentifier}_OverallDependencies)
+        set(tmp ${dependecyIdentifier} ${dependencyDependencies})
+        list(REMOVE_DUPLICATES tmp)
+        set_property(GLOBAL APPEND PROPERTY New_${dependant}_OverallDependencies ${tmp})
     endforeach()
 endfunction(_getDependenciesInfo)
 
+function(_getDependantsInfo)
+    get_property(overallDeps GLOBAL PROPERTY New_${MAIN_DEPENDANT}_OverallDependencies)
+    list(REVERSE overallDeps)
+    foreach(dep ${overallDeps})
+        get_property(depDirectDependants GLOBAL PROPERTY New_${dep}_Dependants)
+        foreach(dependant ${depDirectDependants})
+            get_property(dependantDependants GLOBAL PROPERTY New_${dependant}_OverallDependants)
+            set(tmp ${dependant} ${dependantDependants})
+            list(REMOVE_DUPLICATES tmp)
+            set_property(GLOBAL APPEND PROPERTY New_${dep}_OverallDependants ${tmp})
+        endforeach()
+        # sort
+        get_property(oad GLOBAL PROPERTY New_${dep}_OverallDependants)
+        if (NOT "" STREQUAL "${oad}")
+            set(tmp ${MAIN_DEPENDANT} ${overallDeps})
+            list(REMOVE_ITEM tmp ${oad})
+            set(sorted ${MAIN_DEPENDANT}  ${overallDeps})
+            list(REMOVE_ITEM sorted ${tmp})
+            set_property(GLOBAL PROPERTY New_${dep}_OverallDependants ${sorted})
+        endif()
+    endforeach()
+endfunction()
 
 # export one dependency for given dependant
 function(_getDependencyInfo dependant dependency)
 
     get_property(dependencyName GLOBAL PROPERTY New_${dependency}_Name)
-    
+
     if(NOT "${dependencyName}" STREQUAL "")
         # depenedency already processed in this turn, add only dependant
         set_property(GLOBAL APPEND PROPERTY New_${dependency}_Dependants ${dependant})
-        
-        get_property(dependencyDependants GLOBAL PROPERTY New_${dependant}_Dependants)
-        set_property(GLOBAL APPEND PROPERTY New_${dependency}_OverallDependants ${dependant} ${dependencyDependants})
         return()
     endif()
     
@@ -323,7 +341,7 @@ function(_getDependencyInfo dependant dependency)
     set_property(GLOBAL PROPERTY New_${dependency}_Dependants ${dependant})
     get_property(dependencyDependants GLOBAL PROPERTY New_${dependant}_Dependants)    
     set_property(GLOBAL PROPERTY New_${dependency}_OverallDependants ${dependant} ${dependencyDependants})
-            
+    
     # store dependency name in list for further check
     set_property(GLOBAL APPEND PROPERTY New_OverallDependenciesNames ${dependencyName})
     # for each name store more different svn packages if any
@@ -337,16 +355,14 @@ endfunction(_getDependencyInfo)
 function(_fillNewDependecyFromStoredOne dependency)
     set(depName ${${dependency}_Name})
     
-    if(${DEP_INFO_FILE} IS_NEWER_THAN ${DEP_SOURCES_PATH}/${depName}/Properties.cmake)
+    if(EXISTS ${DEP_INFO_FILE} AND ${DEP_INFO_FILE} IS_NEWER_THAN ${DEP_SOURCES_PATH}/${depName}/Properties.cmake)
         set_property(GLOBAL PROPERTY New_${dependency}_Name ${${depName}_Name})
         set_property(GLOBAL PROPERTY New_${dependency}_Type ${${depName}_Type})
         set_property(GLOBAL PROPERTY New_${dependency}_Version ${${depName}_Version})
         set_property(GLOBAL PROPERTY New_${dependency}_ScmPath ${${depName}_ScmPath})
         set_property(GLOBAL PROPERTY New_${dependency}_ScmType ${${depName}_ScmType})
-        foreach(dep ${${depName}_Dependencies})       
-            set_property(GLOBAL PROPERTY New_${dependency}_Dependencies ${${dep}_Id})
-        endforeach()
         set_property(GLOBAL PROPERTY New_${dependency}_DependenciesDescription ${${depName}_DependenciesDescription})
+        set_property(GLOBAL PROPERTY New_${dependency}_Dependencies ${${depName}_Dependencies})
     else()
         set(DEPENDENCIES "")
         set(NAME "")
@@ -356,7 +372,7 @@ function(_fillNewDependecyFromStoredOne dependency)
         set(VERSION_PATCH "")
         include(${DEP_SOURCES_PATH}/${depName}/Properties.cmake)
     
-        ParseDependencies("${DEPENDENCIES}" dependencyDependenciesIds "exp")
+        ParseDependencies("${DEPENDENCIES}" ddi "exp")
             
         # store exported info
         set_property(GLOBAL PROPERTY New_${dependency}_Name "${NAME}")
@@ -365,7 +381,7 @@ function(_fillNewDependecyFromStoredOne dependency)
         set_property(GLOBAL PROPERTY New_${dependency}_ScmPath "${exp_${dependency}_ScmPath}")
         set_property(GLOBAL PROPERTY New_${dependency}_ScmType "${exp_${dependency}_ScmType}")
         set_property(GLOBAL PROPERTY New_${dependency}_DependenciesDescription ${DEPENDENCIES})
-        set_property(GLOBAL PROPERTY New_${dependency}_Dependencies ${dependencyDependenciesIds})
+        set_property(GLOBAL PROPERTY New_${dependency}_Dependencies ${ddi})
     endif()
 endfunction(_fillNewDependecyFromStoredOne)
 
@@ -384,10 +400,9 @@ function(_fillNewDependecyFromScm dependency scmType scmPath)
     set(VERSION_MAJOR "")
     set(VERSION_MINOR "")
     set(VERSION_PATCH "")
-    set(dependencyDependenciesIds "")
     include(${localFile})
 
-    ParseDependencies("${DEPENDENCIES}" dependencyDependenciesIds "")
+    ParseDependencies("${DEPENDENCIES}" ddi "")
         
     # store exported info
     set_property(GLOBAL PROPERTY New_${dependency}_Name "${NAME}")
@@ -396,7 +411,7 @@ function(_fillNewDependecyFromScm dependency scmType scmPath)
     set_property(GLOBAL PROPERTY New_${dependency}_ScmPath "${scmPath}")
     set_property(GLOBAL PROPERTY New_${dependency}_ScmType "${scmType}")
     set_property(GLOBAL PROPERTY New_${dependency}_DependenciesDescription ${DEPENDENCIES})
-    set_property(GLOBAL PROPERTY New_${dependency}_Dependencies ${dependencyDependenciesIds})
+    set_property(GLOBAL PROPERTY New_${dependency}_Dependencies ${ddi})
     file(REMOVE ${localFile})
 endfunction(_fillNewDependecyFromScm)
 
@@ -685,11 +700,26 @@ endfunction(_checkDependenciesLoopsAndStopOnError)
 function(_orderDependenies)
     
     # order overall dependencies
-    set(dependenciesToOrder ${New_OverallDependencies})
-    foreach(countToRemove RANGE 0 ${New_MaximumDependenciesLength})
+    get_property(dependenciesToOrder GLOBAL PROPERTY New_${MAIN_DEPENDANT}_OverallDependencies)
+    # get dependencies length
+    set(depsNumbers "")
+    foreach(dep ${dependenciesToOrder})
+        get_property(deps GLOBAL PROPERTY New_${dep}_Dependencies)
+        if("" STREQUAL "${deps}")
+            list(APPEND depsNumbers 0)
+            set(New_${dep}_DepsLength 0)
+        else()
+            list(LENGTH  deps depLength)
+            list(APPEND depsNumbers ${depLength})
+            set(New_${dep}_DepsLength ${depLength})
+        endif()
+    endforeach()
+    list(REMOVE_DUPLICATES depsNumbers)
+    list(SORT depsNumbers)
+    
+    foreach(countToRemove ${depsNumbers})
         foreach(dep ${dependenciesToOrder})
-            list(LENGTH  New_${dep}_Dependencies itsDependenciesCount)
-            if(${countToRemove} EQUAL ${itsDependenciesCount})
+            if(${countToRemove} EQUAL ${New_${dep}_DepsLength})
                 set_property(GLOBAL APPEND PROPERTY New_OrderedDependencies ${dep})
                 list(REMOVE_ITEM dependenciesToOrder ${dep})
             endif()        
@@ -698,17 +728,18 @@ function(_orderDependenies)
     
     # set ordered dependencies
     get_property(nod GLOBAL PROPERTY New_OrderedDependencies)
-    set(New_OverallDependencies ${nod} PARENT_SCOPE)
-    set(New_${MAIN_DEPENDANT}_OverallDependencies ${nod} PARENT_SCOPE)
+    set_property(GLOBAL PROPERTY New_OverallDependencies ${nod})
+    set_property(GLOBAL PROPERTY New_${MAIN_DEPENDANT}_OverallDependencies ${nod})
     
     # set order dependencies in dependencies
     foreach(dep ${nod})
-        if (NOT "" STREQUAL "${New_${dep}_OverallDependencies}") 
+        get_property(deps GLOBAL PROPERTY New_${dep}_OverallDependencies)
+        if (NOT "" STREQUAL "${deps}") 
             set(tmp ${nod})
-            list(REMOVE_ITEM tmp ${New_${dep}_OverallDependencies})
+            list(REMOVE_ITEM tmp ${deps})
             set(orderedDependencies ${nod})
             list(REMOVE_ITEM orderedDependencies ${tmp})
-            set(New_${dep}_OverallDependencies ${orderedDependencies} PARENT_SCOPE)
+            set_property(GLOBAL PROPERTY New_${dep}_OverallDependencies ${orderedDependencies})
         endif()
     endforeach()
 endfunction()

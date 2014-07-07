@@ -62,9 +62,13 @@ foreach(dependency ${dependenciesToRebuild})
     message(STATUS "Building dependency ${dependency}")
     execute_process(
         COMMAND ${CMAKE_COMMAND} --build . --use-stderr
-        COMMAND ${SED_TOOL} -u -e "s/.*/    &/"
+#        COMMAND ${SED_TOOL} -u -e "s/.*/    &/"
         WORKING_DIRECTORY ${DEPENDENCIES_PATH}/${dependency}/build/${DEPENDENCIES_BUILD_SUBDIRECTORY}
+        RESULT_VARIABLE result
         )
+    if(NOT ${result} EQUAL 0)
+        message( SEND_ERROR "Error in ${dependency}" )
+    endif()
 endforeach()        
 
 
