@@ -13,6 +13,10 @@ if(${SOURCE} IS_NEWER_THAN ${DESTINATION})
     
     execute_process(
         COMMAND ${CMAKE_COMMAND} -E copy ${SOURCE} ${DESTINATION})
+    if(DEFINED TIMESTAMP_FILE)
+        execute_process(
+        COMMAND ${CMAKE_COMMAND} -E touch ${TIMESTAMP_FILE})
+    endif()
 endif()     
 
 

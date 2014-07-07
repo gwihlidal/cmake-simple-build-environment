@@ -33,6 +33,9 @@ function(sbeAddDependencies)
     endforeach()
 
     # link all dependend libraries
+    # loop through over all dependencies due to include paths, but link only direct dependencies
+    sbeAddDependenciesIncludes(Target ${dep_Target})
+    
     foreach(dep ${${NAME}_Dependencies})
         # check if dependency has to be added
         if("" STREQUAL "${${dep}_Type}" OR "Container" STREQUAL "${${dep}_Type}")
@@ -58,20 +61,6 @@ function(sbeAddDependencies)
         # add dependency            
         if(hasToBeAdded)
             add_dependencies(${dep_Target} ${dep})
-            
-            if(useMock)
-                if(DEFINED ${dep}_INCLUDE_DIRS OR DEFINED ${dep}_MOCK_INCLUDE_DIRS)
-                    set(includes  ${${dep}_MOCK_INCLUDE_DIRS} ${${dep}_INCLUDE_DIRS})
-                    
-                    foreach(include ${includes})
-                        target_include_directories(${dep_Target} PRIVATE ${include})
-                    endforeach()
-                endif()
-            elseif(DEFINED ${dep}_INCLUDE_DIRS)
-                foreach(include ${${dep}_INCLUDE_DIRS})
-                    target_include_directories(${dep_Target} PRIVATE ${include})
-                endforeach()
-            endif()
             
             if(DEFINED ${dep}_LibrariesToLink)
                 set(tmpList ${${dep}_LibrariesToLink})
@@ -116,7 +105,7 @@ function(sbeAddDependenciesIncludes)
         set(useMock yes)
     endif()
             
-    foreach(dep ${${NAME}_Dependencies})
+    foreach(dep ${${NAME}_OverallDependencies})
         # add dependency includes            
         if(useMock)
             if(DEFINED ${dep}_INCLUDE_DIRS OR DEFINED ${dep}_MOCK_INCLUDE_DIRS)
