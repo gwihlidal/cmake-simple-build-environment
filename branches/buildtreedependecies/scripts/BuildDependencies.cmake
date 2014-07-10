@@ -32,41 +32,36 @@ set(dependenciesToRebuild "")
 
 foreach(dependency ${${PROJECT_NAME}_OverallDependencies})
     if(NOT EXISTS ${DEPENDENCIES_PATH}/${dependency}/build/${DEPENDENCIES_BUILD_SUBDIRECTORY}/Export/buildtimestamp)
-        list(APPEND dependenciesToRebuild ${dependency} ${${dependency}_OverallDependants})
-    elseif (${DEPENDENCIES_PATH}/${dependency}/build/${DEPENDENCIES_BUILD_SUBDIRECTORY}/Export/buildtimestamp IS_NEWER_THAN ${PROJECT_TIMESTAMPFILE})
+        list(APPEND dependenciesToRebuild ${dependency})
+        list(APPEND ${${dependency}_OverallDependants})
+    elseif (EXISTS ${PROJECT_TIMESTAMPFILE} AND ${DEPENDENCIES_PATH}/${dependency}/build/${DEPENDENCIES_BUILD_SUBDIRECTORY}/Export/buildtimestamp IS_NEWER_THAN ${PROJECT_TIMESTAMPFILE})
         list(APPEND dependenciesToRebuild ${${dependency}_OverallDependants})
     endif()
 endforeach()
 
-# remove not my dependencies
+# remove not my dependencies, and sort accorind to installation oredr
+list(REMOVE_ITEM dependenciesToRebuild ${PROJECT_NAME})
 list(REMOVE_DUPLICATES dependenciesToRebuild)
 if(NOT "" STREQUAL "${dependenciesToRebuild}")
-    set(tmp ${dependenciesToRebuild})
-    list(REMOVE_ITEM tmp ${${PROJECT_NAME}_OverallDependencies})
-    list(REMOVE_ITEM dependenciesToRebuild ${tmp})
-
-    if (NOT "" STREQUAL "${dependenciesToRebuild}")
-        # order dependenciesToRebuild
-        set(tmp ${${PROJECT_NAME}_OverallDependencies})
-        list(REMOVE_ITEM tmp ${dependenciesToRebuild})
-        
-        if (NOT "" STREQUAL "${tmp}")
-            set(orderedDependenciesToRebuild ${${PROJECT_NAME}_OverallDependencies})
-            list(REMOVE_ITEM orderedDependenciesToRebuild ${tmp})
-            set(dependenciesToRebuild ${orderedDependenciesToRebuild})
-        endif()
-   endif()
+    set(tmp ${${PROJECT_NAME}_OverallDependencies})
+    list(REMOVE_ITEM tmp ${dependenciesToRebuild})
+    if(NOT "" STREQUAL "${tmp}")
+        set(dependenciesToRebuild ${${PROJECT_NAME}_OverallDependencies})
+        list(REMOVE_ITEM dependenciesToRebuild ${tmp})
+    endif() 
 endif()
  
 foreach(dependency ${dependenciesToRebuild})
-    message(STATUS "Building dependency ${dependency}")
+    message(STATUS "${PROJECT_NAME} Building dependency ${dependency}")
     execute_process(
         COMMAND ${CMAKE_COMMAND} --build . --use-stderr
-#        COMMAND ${SED_TOOL} -u -e "s/.*/    &/"
         WORKING_DIRECTORY ${DEPENDENCIES_PATH}/${dependency}/build/${DEPENDENCIES_BUILD_SUBDIRECTORY}
         RESULT_VARIABLE result
         )
     if(NOT ${result} EQUAL 0)
+        # remove build timestamp
+        execute_process(
+            COMMAND ${CMAKE_COMMAND} -E remove ${DEPENDENCIES_PATH}/${dependency}/build/${DEPENDENCIES_BUILD_SUBDIRECTORY}/Export/buildtimestamp)        
         message( SEND_ERROR "Error in ${dependency}" )
     endif()
 endforeach()        

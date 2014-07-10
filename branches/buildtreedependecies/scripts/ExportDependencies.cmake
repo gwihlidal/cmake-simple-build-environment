@@ -83,13 +83,13 @@ function(ExportProperties dependencies)
         # setup new dependencies data
         _getDependenciesInfo(${MAIN_DEPENDANT} "${${MAIN_DEPENDANT}_DependenciesDescription}")
 
-        _orderDependenies()
-                
+        _orderDependeniesAndCheckLoops()
+        
         _getDependantsInfo()
-
+                
         _createInfoAboutExternalFlag()
         
-        _publishPropertiesAsVariable()
+        _exposePropertiesAsVariables("New")
         
         # generate picture
         _printDependencies(${MAIN_DEPENDANT})
@@ -101,22 +101,18 @@ function(ExportProperties dependencies)
         return()
     endif()
     
-    _getDependenciesInfo(${MAIN_DEPENDANT} "${${MAIN_DEPENDANT}_DependenciesDescription}")
-
-    _orderDependenies()
+    _GetOverallDependenciesProperties(isLoopDetected)
+    
+    _exposePropertiesAsVariables("New")
         
-    _getDependantsInfo()
-
-    _createInfoAboutExternalFlag()
-    
-    _publishPropertiesAsVariable()
-    
     _printDependencies(${MAIN_DEPENDANT})
-        
+    
+    if(isLoopDetected)        
+        _exit("Check dependencies picture for loops.")
+    endif()
+    
     _checkDependenciesVersionsAndStopOnError()
 
-    _checkDependenciesLoopsAndStopOnError()
-    
     _removeUnusedDependencies()
     
     _exportRequiredDependencies()
@@ -126,65 +122,76 @@ function(ExportProperties dependencies)
     _cleanup()
 endfunction(ExportProperties)
 
-macro(_publishPropertiesAsVariable)
+function(_GetOverallDependenciesProperties ild)
+    _getDependenciesInfo(${MAIN_DEPENDANT} "${${MAIN_DEPENDANT}_DependenciesDescription}")
+
+    _orderDependeniesAndCheckLoops(isLoopDetected)
+    
+    if (NOT isLoopDetected)
+        _getDependantsInfo()
+        
+       _createInfoAboutExternalFlag()
+    endif()
+    
+    set(${ild} ${isLoopDetected} PARENT_SCOPE)
+endfunction()
+
+macro(_exposePropertiesAsVariables prefix)
     # properties to variable
     
-    get_property(New_OverallDependencies GLOBAL PROPERTY New_${MAIN_DEPENDANT}_OverallDependencies)
+    get_property(${prefix}_OverallDependencies GLOBAL PROPERTY New_${MAIN_DEPENDANT}_OverallDependencies)
     
-    if(DEFINED New_OverallDependencies)
-        list(REMOVE_DUPLICATES New_OverallDependencies)
+    if(DEFINED ${prefix}_OverallDependencies)
+        list(REMOVE_DUPLICATES ${prefix}_OverallDependencies)
     endif()
     
-    foreach(dep ${New_OverallDependencies} ${MAIN_DEPENDANT})
-        _publishDependencyPropertiesAsVariable(${dep})
+    foreach(dep ${${prefix}_OverallDependencies} ${MAIN_DEPENDANT})
+        _publishDependencyPropertiesAsVariable(${dep} "${prefix}")
     endforeach()
             
-    get_property(New_OverallDependenciesNames GLOBAL PROPERTY New_OverallDependenciesNames)
-    if(DEFINED New_OverallDependenciesNames)
-        list(REMOVE_DUPLICATES New_OverallDependenciesNames)
+    get_property(${prefix}_OverallDependenciesNames GLOBAL PROPERTY New_OverallDependenciesNames)
+    if(DEFINED ${prefix}_OverallDependenciesNames)
+        list(REMOVE_DUPLICATES ${prefix}_OverallDependenciesNames)
     endif()
     
-    foreach(dep ${New_OverallDependenciesNames})
-        get_property(New_${dep}_Packages GLOBAL PROPERTY New_${dep}_Packages)
+    foreach(dep ${${prefix}_OverallDependenciesNames})
+        get_property(${prefix}_${dep}_Packages GLOBAL PROPERTY New_${dep}_Packages)
     endforeach()
    
-    get_property(New_ExternalDependencies GLOBAL PROPERTY New_ExternalDependencies)
-    if(DEFINED New_ExternalDependencies)
-        list(REMOVE_DUPLICATES New_ExternalDependencies)
+    get_property(${prefix}_ExternalDependencies GLOBAL PROPERTY New_ExternalDependencies)
+    if(DEFINED ${prefix}_ExternalDependencies)
+        list(REMOVE_DUPLICATES ${prefix}_ExternalDependencies)
     endif()
 endmacro()
 
-macro(_publishDependencyPropertiesAsVariable dep)
-    get_property(New_${dep}_Dependants GLOBAL PROPERTY New_${dep}_Dependants)
-    if(DEFINED New_${dep}_Dependants)
-        list(REMOVE_DUPLICATES New_${dep}_Dependants)
+macro(_publishDependencyPropertiesAsVariable dep prefix)
+    get_property(${prefix}_${dep}_Dependants GLOBAL PROPERTY New_${dep}_Dependants)
+    if(DEFINED ${prefix}_${dep}_Dependants)
+        list(REMOVE_DUPLICATES ${prefix}_${dep}_Dependants)
     endif()
     
-    get_property(New_${dep}_OverallDependants GLOBAL PROPERTY New_${dep}_OverallDependants)
-    if(DEFINED New_${dep}_OverallDependants)
-        list(REMOVE_DUPLICATES New_${dep}_OverallDependants)
+    get_property(${prefix}_${dep}_OverallDependants GLOBAL PROPERTY New_${dep}_OverallDependants)
+    if(DEFINED ${prefix}_${dep}_OverallDependants)
+        list(REMOVE_DUPLICATES ${prefix}_${dep}_OverallDependants)
     endif()
     
-    get_property(New_${dep}_Dependencies GLOBAL PROPERTY New_${dep}_Dependencies)
-    if(DEFINED New_${dep}_Dependencies)
-        list(REMOVE_DUPLICATES New_${dep}_Dependencies)
-        list(LENGTH New_${dep}_Dependencies New_${dep}_DependenciesLength)
-    else()
-        set(New_${dep}_DependenciesLength 0)
+    get_property(${prefix}_${dep}_Dependencies GLOBAL PROPERTY New_${dep}_Dependencies)
+    if(DEFINED ${prefix}_${dep}_Dependencies)
+        list(REMOVE_DUPLICATES ${prefix}_${dep}_Dependencies)
     endif()
     
-    get_property(New_${dep}_OverallDependencies GLOBAL PROPERTY New_${dep}_OverallDependencies)
-    if(DEFINED New_${dep}_OverallDependencies)
-        list(REMOVE_DUPLICATES New_${dep}_OverallDependencies)
+    get_property(${prefix}_${dep}_OverallDependencies GLOBAL PROPERTY New_${dep}_OverallDependencies)
+    if(DEFINED ${prefix}_${dep}_OverallDependencies)
+        list(REMOVE_DUPLICATES ${prefix}_${dep}_OverallDependencies)
     endif()
 
-    get_property(New_${dep}_Name GLOBAL PROPERTY New_${dep}_Name)
-    get_property(New_${dep}_Type GLOBAL PROPERTY New_${dep}_Type)
-    get_property(New_${dep}_Version GLOBAL PROPERTY New_${dep}_Version)
-    get_property(New_${dep}_ScmPath GLOBAL PROPERTY New_${dep}_ScmPath)
-    get_property(New_${dep}_ScmType GLOBAL PROPERTY New_${dep}_ScmType)
-    get_property(New_${dep}_DependenciesDescription GLOBAL PROPERTY New_${dep}_DependenciesDescription)
-    get_property(New_${dep}_IsExternal GLOBAL PROPERTY New_${dep}_IsExternal)
+    get_property(${prefix}_${dep}_Name GLOBAL PROPERTY New_${dep}_Name)
+    get_property(${prefix}_${dep}_Type GLOBAL PROPERTY New_${dep}_Type)
+    get_property(${prefix}_${dep}_Version GLOBAL PROPERTY New_${dep}_Version)
+    get_property(${prefix}_${dep}_ScmPath GLOBAL PROPERTY New_${dep}_ScmPath)
+    get_property(${prefix}_${dep}_ScmType GLOBAL PROPERTY New_${dep}_ScmType)
+    get_property(${prefix}_${dep}_DependenciesDescription GLOBAL PROPERTY New_${dep}_DependenciesDescription)
+    get_property(${prefix}_${dep}_IsExternal GLOBAL PROPERTY New_${dep}_IsExternal)
 endmacro()
 
 function(_storeNewInfoFile)
@@ -296,8 +303,9 @@ endfunction(_getDependenciesInfo)
 
 function(_getDependantsInfo)
     get_property(overallDeps GLOBAL PROPERTY New_${MAIN_DEPENDANT}_OverallDependencies)
-    list(REVERSE overallDeps)
-    foreach(dep ${overallDeps})
+    set(overallDepsReversed ${overallDeps})
+    list(REVERSE overallDepsReversed)
+    foreach(dep ${overallDepsReversed})
         get_property(depDirectDependants GLOBAL PROPERTY New_${dep}_Dependants)
         foreach(dependant ${depDirectDependants})
             get_property(dependantDependants GLOBAL PROPERTY New_${dependant}_OverallDependants)
@@ -308,9 +316,9 @@ function(_getDependantsInfo)
         # sort
         get_property(oad GLOBAL PROPERTY New_${dep}_OverallDependants)
         if (NOT "" STREQUAL "${oad}")
-            set(tmp ${MAIN_DEPENDANT} ${overallDeps})
+            set(tmp ${overallDeps} ${MAIN_DEPENDANT})
             list(REMOVE_ITEM tmp ${oad})
-            set(sorted ${MAIN_DEPENDANT}  ${overallDeps})
+            set(sorted ${overallDeps} ${MAIN_DEPENDANT})
             list(REMOVE_ITEM sorted ${tmp})
             set_property(GLOBAL PROPERTY New_${dep}_OverallDependants ${sorted})
         endif()
@@ -665,83 +673,75 @@ endfunction(_checkDependenciesVersionsAndStopOnError)
 
 #
 #
-#    _checkDependenciesLoopsAndStopOnError
-#        checks if all dependencies are installable, report error when cyclic dependencies occures 
-#
-#
-function(_checkDependenciesLoopsAndStopOnError)
-    set(error "no")
-    
-    foreach(dependency ${New_OverallDependencies})
-        if(NOT "" STREQUAL "${New_${dependency}_OverallDependencies}" AND NOT "" STREQUAL "${New_${dependency}_OverallDependants}")
-            set(dependencies ${New_${dependency}_OverallDependencies})
-            set(dependants ${New_${dependency}_OverallDependants})
-            list(LENGTH dependants dependantsLength)
-            list(REMOVE_ITEM dependants ${dependencies})
-            list(LENGTH dependants newDependantsLength)
-            if(NOT ${dependantsLength} EQUAL ${newDependantsLength})
-               set(error "yes")
-               break()
-            endif()
-        endif() 
-    endforeach()
-    
-    if(error)
-        _exit("Check generated picture for dependencies loops.")
-    endif()
-endfunction(_checkDependenciesLoopsAndStopOnError)
-
-#
-#
-#    _orderDependenies
+#    _orderDependeniesAndCheckLoops
 #        order dependencies to installation order 
 #
 #
-function(_orderDependenies)
+function(_orderDependeniesAndCheckLoops isLoop)
+    # Expose properties as variables to acces them easily.
+    # Exposed properites will be modified later in recursion. Originals have to stay untached.
+    _exposePropertiesAsVariables("Ord")
     
-    # order overall dependencies
-    get_property(dependenciesToOrder GLOBAL PROPERTY New_${MAIN_DEPENDANT}_OverallDependencies)
-    # get dependencies length
-    set(depsNumbers "")
-    foreach(dep ${dependenciesToOrder})
-        get_property(deps GLOBAL PROPERTY New_${dep}_Dependencies)
-        if("" STREQUAL "${deps}")
-            list(APPEND depsNumbers 0)
-            set(New_${dep}_DepsLength 0)
-        else()
-            list(LENGTH  deps depLength)
-            list(APPEND depsNumbers ${depLength})
-            set(New_${dep}_DepsLength ${depLength})
-        endif()
-    endforeach()
-    list(REMOVE_DUPLICATES depsNumbers)
-    list(SORT depsNumbers)
+    # define variables modifed in recursion in this scope
+    set(containsLoops "no")
+        
+    # order dependencies In recursion
+    _orderDependenciesInRecursion(0)
     
-    foreach(countToRemove ${depsNumbers})
-        foreach(dep ${dependenciesToOrder})
-            if(${countToRemove} EQUAL ${New_${dep}_DepsLength})
-                set_property(GLOBAL APPEND PROPERTY New_OrderedDependencies ${dep})
-                list(REMOVE_ITEM dependenciesToOrder ${dep})
-            endif()        
+    # exposes loop flag
+    get_property(containsLoops GLOBAL PROPERTY DependenciesLoop)
+    set(${isLoop} ${containsLoops} PARENT_SCOPE)
+
+    if (NOT containsLoops)
+        get_property(orderedDependencies GLOBAL PROPERTY OrderedOverallDependencies)
+        # propagate order to properties
+        set_property(GLOBAL PROPERTY New_OverallDependencies ${orderedDependencies})
+        set_property(GLOBAL PROPERTY New_${MAIN_DEPENDANT}_OverallDependencies ${orderedDependencies})
+        # order dependencies in each dependency
+        foreach(dep ${orderedDependencies})
+            if (NOT "" STREQUAL "${Ord_${dep}_OverallDependencies}") 
+                set(tmp ${orderedDependencies})
+                list(REMOVE_ITEM tmp ${Ord_${dep}_OverallDependencies})
+                set(orderedDependencyDependencies ${orderedDependencies})
+                list(REMOVE_ITEM orderedDependencyDependencies ${tmp})
+                set_property(GLOBAL PROPERTY New_${dep}_OverallDependencies ${orderedDependencyDependencies})
+            endif()
         endforeach()
-    endforeach()
-    
-    # set ordered dependencies
-    get_property(nod GLOBAL PROPERTY New_OrderedDependencies)
-    set_property(GLOBAL PROPERTY New_OverallDependencies ${nod})
-    set_property(GLOBAL PROPERTY New_${MAIN_DEPENDANT}_OverallDependencies ${nod})
-    
-    # set order dependencies in dependencies
-    foreach(dep ${nod})
-        get_property(deps GLOBAL PROPERTY New_${dep}_OverallDependencies)
-        if (NOT "" STREQUAL "${deps}") 
-            set(tmp ${nod})
-            list(REMOVE_ITEM tmp ${deps})
-            set(orderedDependencies ${nod})
-            list(REMOVE_ITEM orderedDependencies ${tmp})
-            set_property(GLOBAL PROPERTY New_${dep}_OverallDependencies ${orderedDependencies})
+    endif()
+endfunction()
+
+function(_orderDependenciesInRecursion recursionDepth)
+    set(dependenciesWithoutDependencies "")
+    foreach(dep ${Ord_OverallDependencies})
+        list(LENGTH Ord_${dep}_Dependencies dependencyDependenciesNumber)
+        if (0 EQUAL ${dependencyDependenciesNumber})
+            list(APPEND dependenciesWithoutDependencies ${dep})
         endif()
     endforeach()
+    
+    # check loop
+    if ("" STREQUAL "${dependenciesWithoutDependencies}" AND NOT "" STREQUAL "${Ord_OverallDependencies}")
+        set_property(GLOBAL PROPERTY DependenciesLoop "yes")
+        return()
+    endif()
+    
+    list(REMOVE_ITEM Ord_OverallDependencies ${dependenciesWithoutDependencies})
+    set_property(GLOBAL APPEND PROPERTY OrderedOverallDependencies ${dependenciesWithoutDependencies})
+    set_property(GLOBAL APPEND PROPERTY OrderedOverallDependenciesGroups ParallelBuildGroup_${recursionDepth})
+    set_property(GLOBAL PROPERTY ParallelBuildGroup_${recursionDepth} ${dependenciesWithoutDependencies})
+    
+    # all dependencies are sorted?
+    if("" STREQUAL "${Ord_OverallDependencies}")
+        return()
+    endif()
+    
+    foreach(dep ${Ord_OverallDependencies})
+        list(REMOVE_ITEM Ord_${dep}_Dependencies ${dependenciesWithoutDependencies})
+    endforeach()
+    
+    # continue with recursion to sort all dependencies
+    math(EXPR recursionDepth "${recursionDepth} + 1")
+    _orderDependenciesInRecursion(${recursionDepth})
 endfunction()
 
 #
