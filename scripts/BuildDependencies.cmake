@@ -45,10 +45,6 @@ endforeach()
 # remove not my dependencies, and sort accorind to installation oredr
 list(REMOVE_ITEM dependenciesToRebuild ${PROJECT_NAME})
 
-if("" STREQUAL "${dependenciesToRebuild}")
-    return()
-endif()
-
 list(REMOVE_DUPLICATES dependenciesToRebuild)
 set(tmp ${${PROJECT_NAME}_OverallDependencies})
 list(REMOVE_ITEM tmp ${dependenciesToRebuild})
@@ -57,6 +53,9 @@ if(NOT "" STREQUAL "${tmp}")
     list(REMOVE_ITEM dependenciesToRebuild ${tmp})
 endif() 
 
+if("" STREQUAL "${dependenciesToRebuild}")
+    return()
+endif()
 
 foreach(dependency ${dependenciesToRebuild})
     message(STATUS "${PROJECT_NAME} Building dependency ${dependency}")
