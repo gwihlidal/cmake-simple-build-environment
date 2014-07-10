@@ -1,13 +1,5 @@
 cmake_minimum_required(VERSION 2.8)
 
-# check if this script is before DeployDependencies
-if (${DeployDependenciesIncluded})
-    message(FATAL_ERROR "AddCoverityTargets scripts has to be included before DeployDependencies to ensure that denepndencies will be installed with coverity data.")
-endif()
-
-# set AddCoverityTargets script usage flag, for checking dependencies between scripts
-set(AddCoverityTargetsIncluded "yes")
-
 if(SBE_COVERITY_CONFIGURED)
     return()
 endif()

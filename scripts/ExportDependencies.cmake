@@ -802,6 +802,14 @@ function(_removeUnusedDependencies)
         
         file(REMOVE_RECURSE ${DEP_SOURCES_PATH}/${dependency}})
     endforeach()
+
+#        if(EXISTS ${COV_DIR_DATA})
+#            execute_process(
+#                COMMAND cov-manage-emit --verbose 0 --dir ${COV_DIR_DATA} --tu-pattern "file('${${dependency}_SourcePath}/*')" delete
+#                COMMAND ${SED_TOOL} -u -e "s/.*/    &/"
+#                ERROR_VARIABLE err)
+#        endif()
+    
 endfunction(_removeUnusedDependencies)
 
 #
