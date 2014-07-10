@@ -7,14 +7,6 @@ include(SBE/AddBinaryTargets)
 include(SBE/AddImportedTarget)
 
 
-# suppress warnings
-if("" STREQUAL "${DEP_INST_DEPLOYMENT_PATH}")
-endif()
-if("" STREQUAL "${DEP_SRC_DEPLOYMENT_PATH}")
-endif()
-if("" STREQUAL "${CMAKE_TOOLCHAIN_FILE}")
-endif()
-
 set(isAddInstallTargetIncluded yes)
 set(isAddInstallCalled no)
 
