@@ -32,8 +32,9 @@ set(dependenciesToRebuild "")
 
 foreach(dependency ${${PROJECT_NAME}_OverallDependencies})
     set(DEPENDENCY_TIMESTAMPFILE ${DEPENDENCIES_PATH}/${dependency}/build/${DEPENDENCIES_BUILD_SUBDIRECTORY}/Export/buildtimestamp)
+    set(DEPENDENCY_ALL_TIMESTAMPFILE ${DEPENDENCIES_PATH}/${dependency}/build/${DEPENDENCIES_BUILD_SUBDIRECTORY}/Export/buildalltimestamp)
     
-    if(NOT EXISTS ${DEPENDENCY_TIMESTAMPFILE})
+    if(NOT EXISTS ${DEPENDENCY_TIMESTAMPFILE} OR NOT EXISTS ${DEPENDENCY_ALL_TIMESTAMPFILE})
         list(APPEND dependenciesToRebuild ${dependency})
         list(APPEND ${${dependency}_OverallDependants})
     # when timestamp files are equal do not add dependency        
@@ -66,6 +67,8 @@ foreach(dependency ${dependenciesToRebuild})
 
     execute_process(
             COMMAND ${CMAKE_COMMAND} -E touch ${DEPENDENCIES_PATH}/${dependency}/build/${DEPENDENCIES_BUILD_SUBDIRECTORY}/Export/buildtimestamp)
+    execute_process(
+            COMMAND ${CMAKE_COMMAND} -E touch ${DEPENDENCIES_PATH}/${dependency}/build/${DEPENDENCIES_BUILD_SUBDIRECTORY}/Export/buildalltimestamp)            
             
     execute_process(
         COMMAND ${CMAKE_COMMAND} --build . --use-stderr
