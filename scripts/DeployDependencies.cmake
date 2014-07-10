@@ -12,9 +12,6 @@ include(SBE/ConfigureDependencies)
     
 include(${DEP_INFO_FILE} OPTIONAL)
 
-# load variables of all dependencies
-include(SBE/helpers/DependenciesParser)
-
 add_custom_target(dependencies
     COMMAND ${CMAKE_COMMAND}
         -DPROJECT_NAME=${PROJECT_NAME}
