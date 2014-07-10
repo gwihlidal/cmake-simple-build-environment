@@ -120,8 +120,12 @@ function(addInstallTarget)
     
     CMAKE_PARSE_ARGUMENTS(inst "" "" "HeadersPaths;Headers;Files;Targets;MockHeadersPathReplacement;HeadersPathReplacement;FilePathReplacement" ${ARGN})
     
-    set(HeadersPathReplacement ${inst_HeadersPathReplacement})
-    list(APPEND HeadersPathReplacement ${inst_MockHeadersPathReplacement})
+    # use mock first
+    set(HeadersPathReplacement "")
+    if(DEFINED inst_MockHeadersPathReplacement)
+        list(APPEND HeadersPathReplacement ${inst_MockHeadersPathReplacement})
+    endif()
+    list(APPEND HeadersPathReplacement ${inst_HeadersPathReplacement})
     
     set(InstalledTargets ${inst_Targets} PARENT_SCOPE)
             
