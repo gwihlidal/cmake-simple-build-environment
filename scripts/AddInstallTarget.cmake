@@ -12,6 +12,8 @@ set(isAddInstallCalled no)
 
 set(InstalledTargets "")
 
+execute_process(COMMAND ${CMAKE_COMMAND} -E remove Export/buildalltimestamp)
+            
 function(sbeInstallFrequentisVBT)
     # arguments
     # Url - path and name of VBT in Svn
