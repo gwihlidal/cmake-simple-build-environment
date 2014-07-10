@@ -12,7 +12,11 @@ if(${SOURCE} IS_NEWER_THAN ${DESTINATION})
     endif()
     
     execute_process(
-        COMMAND ${CMAKE_COMMAND} -E copy ${SOURCE} ${DESTINATION})
+        COMMAND ${CMAKE_COMMAND} -E copy ${SOURCE} ${DESTINATION}
+        RESULT_VARIABLE result)
+    if(NOT 0 EQUAL ${result})
+        message(FATAL_ERROR "")
+    endif()
     if(DEFINED TIMESTAMP_FILE)
         execute_process(
         COMMAND ${CMAKE_COMMAND} -E touch ${TIMESTAMP_FILE})

@@ -155,7 +155,11 @@ endif()
 # coverity build command
 set(coverityBuildStarter "${COV_BUILD_TOOL} --verbose 0 --config ${COV_FILE_CONFIG} --dir ${COV_DIR_DATA}")
 configure_file(${CMAKE_ROOT}/Modules/SBE/tools/coverityLauncher.in "${PROJECT_BINARY_DIR}/coverityLauncher" @ONLY)
-set(RULE_LAUNCH_COMPILE "${RULE_LAUNCH_COMPILE} ${PROJECT_BINARY_DIR}/coverityLauncher")
+if(DEFINED RULE_LAUNCH_COMPILE)
+    set(RULE_LAUNCH_COMPILE "${RULE_LAUNCH_COMPILE} ${PROJECT_BINARY_DIR}/coverityLauncher")
+else()
+    set(RULE_LAUNCH_COMPILE "${PROJECT_BINARY_DIR}/coverityLauncher")
+endif()    
 
 # create dirs
 file(MAKE_DIRECTORY ${COV_DIR_CONFIG})
