@@ -31,39 +31,51 @@ include(${DEPENDENCIES_INFO})
 set(dependenciesToRebuild "")
 
 foreach(dependency ${${PROJECT_NAME}_OverallDependencies})
-    if(NOT EXISTS ${DEPENDENCIES_PATH}/${dependency}/build/${DEPENDENCIES_BUILD_SUBDIRECTORY}/Export/buildtimestamp)
+    set(DEPENDENCY_TIMESTAMPFILE ${DEPENDENCIES_PATH}/${dependency}/build/${DEPENDENCIES_BUILD_SUBDIRECTORY}/Export/buildtimestamp)
+    
+    if(NOT EXISTS ${DEPENDENCY_TIMESTAMPFILE})
         list(APPEND dependenciesToRebuild ${dependency})
         list(APPEND ${${dependency}_OverallDependants})
-    elseif (EXISTS ${PROJECT_TIMESTAMPFILE} AND ${DEPENDENCIES_PATH}/${dependency}/build/${DEPENDENCIES_BUILD_SUBDIRECTORY}/Export/buildtimestamp IS_NEWER_THAN ${PROJECT_TIMESTAMPFILE})
+    # when timestamp files are equal do not add dependency        
+    elseif (EXISTS ${PROJECT_TIMESTAMPFILE} AND ${DEPENDENCY_TIMESTAMPFILE} IS_NEWER_THAN ${PROJECT_TIMESTAMPFILE} AND NOT ${PROJECT_TIMESTAMPFILE} IS_NEWER_THAN ${DEPENDENCY_TIMESTAMPFILE})
         list(APPEND dependenciesToRebuild ${${dependency}_OverallDependants})
     endif()
 endforeach()
 
 # remove not my dependencies, and sort accorind to installation oredr
 list(REMOVE_ITEM dependenciesToRebuild ${PROJECT_NAME})
-list(REMOVE_DUPLICATES dependenciesToRebuild)
-if(NOT "" STREQUAL "${dependenciesToRebuild}")
-    set(tmp ${${PROJECT_NAME}_OverallDependencies})
-    list(REMOVE_ITEM tmp ${dependenciesToRebuild})
-    if(NOT "" STREQUAL "${tmp}")
-        set(dependenciesToRebuild ${${PROJECT_NAME}_OverallDependencies})
-        list(REMOVE_ITEM dependenciesToRebuild ${tmp})
-    endif() 
+
+if("" STREQUAL "${dependenciesToRebuild}")
+    return()
 endif()
- 
+
+list(REMOVE_DUPLICATES dependenciesToRebuild)
+set(tmp ${${PROJECT_NAME}_OverallDependencies})
+list(REMOVE_ITEM tmp ${dependenciesToRebuild})
+if(NOT "" STREQUAL "${tmp}")
+    set(dependenciesToRebuild ${${PROJECT_NAME}_OverallDependencies})
+    list(REMOVE_ITEM dependenciesToRebuild ${tmp})
+endif() 
+
+
 foreach(dependency ${dependenciesToRebuild})
     message(STATUS "${PROJECT_NAME} Building dependency ${dependency}")
+
+    execute_process(
+            COMMAND ${CMAKE_COMMAND} -E touch ${DEPENDENCIES_PATH}/${dependency}/build/${DEPENDENCIES_BUILD_SUBDIRECTORY}/Export/buildtimestamp)
+            
     execute_process(
         COMMAND ${CMAKE_COMMAND} --build . --use-stderr
         WORKING_DIRECTORY ${DEPENDENCIES_PATH}/${dependency}/build/${DEPENDENCIES_BUILD_SUBDIRECTORY}
         RESULT_VARIABLE result
         )
+        
     if(NOT ${result} EQUAL 0)
         # remove build timestamp
         execute_process(
             COMMAND ${CMAKE_COMMAND} -E remove ${DEPENDENCIES_PATH}/${dependency}/build/${DEPENDENCIES_BUILD_SUBDIRECTORY}/Export/buildtimestamp)        
         message( SEND_ERROR "Error in ${dependency}" )
     endif()
-endforeach()        
+endforeach()
 
-
+execute_process(COMMAND ${CMAKE_COMMAND} -E touch ${PROJECT_TIMESTAMPFILE})        

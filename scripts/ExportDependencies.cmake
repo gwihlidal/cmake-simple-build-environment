@@ -81,14 +81,8 @@ function(ExportProperties dependencies)
         endif()
         
         # setup new dependencies data
-        _getDependenciesInfo(${MAIN_DEPENDANT} "${${MAIN_DEPENDANT}_DependenciesDescription}")
-
-        _orderDependeniesAndCheckLoops()
-        
-        _getDependantsInfo()
+        _getOverallDependenciesProperties(isLoopDetected)
                 
-        _createInfoAboutExternalFlag()
-        
         _exposePropertiesAsVariables("New")
         
         # generate picture
@@ -101,7 +95,7 @@ function(ExportProperties dependencies)
         return()
     endif()
     
-    _GetOverallDependenciesProperties(isLoopDetected)
+    _getOverallDependenciesProperties(isLoopDetected)
     
     _exposePropertiesAsVariables("New")
         
@@ -122,7 +116,7 @@ function(ExportProperties dependencies)
     _cleanup()
 endfunction(ExportProperties)
 
-function(_GetOverallDependenciesProperties ild)
+function(_getOverallDependenciesProperties ild)
     _getDependenciesInfo(${MAIN_DEPENDANT} "${${MAIN_DEPENDANT}_DependenciesDescription}")
 
     _orderDependeniesAndCheckLoops(isLoopDetected)
@@ -146,7 +140,7 @@ macro(_exposePropertiesAsVariables prefix)
     endif()
     
     foreach(dep ${${prefix}_OverallDependencies} ${MAIN_DEPENDANT})
-        _publishDependencyPropertiesAsVariable(${dep} "${prefix}")
+        _exposeDependencyPropertiesAsVariable(${dep} "${prefix}")
     endforeach()
             
     get_property(${prefix}_OverallDependenciesNames GLOBAL PROPERTY New_OverallDependenciesNames)
@@ -169,7 +163,7 @@ macro(_exposePropertiesAsVariables prefix)
     endforeach()
 endmacro()
 
-macro(_publishDependencyPropertiesAsVariable dep prefix)
+macro(_exposeDependencyPropertiesAsVariable dep prefix)
     get_property(${prefix}_${dep}_Dependants GLOBAL PROPERTY New_${dep}_Dependants)
     if(DEFINED ${prefix}_${dep}_Dependants)
         list(REMOVE_DUPLICATES ${prefix}_${dep}_Dependants)
@@ -202,11 +196,11 @@ endmacro()
 function(_storeNewInfoFile)
     set(info "")
 
-#    list(APPEND info "if(DEFINED isInfoFileIncluded)\n")
-#    list(APPEND info "   return()\n")
-#    list(APPEND info "endif()\n")
-#    list(APPEND info "set(isInfoFileIncluded yes)\n")
-#    list(APPEND info "\n")
+    list(APPEND info "if(DEFINED isInfoFileIncluded)\n")
+    list(APPEND info "   return()\n")
+    list(APPEND info "endif()\n")
+    list(APPEND info "set(isInfoFileIncluded yes)\n")
+    list(APPEND info "\n")
     
     list(APPEND info "set(MAIN_DEPENDANT ${MAIN_DEPENDANT})\n")
     
@@ -833,6 +827,7 @@ function(_exit reason)
 endfunction(_exit)
 
 function(_cleanup)
+    unset(isInfoFileIncluded)
 endfunction(_cleanup)
 
 ExportProperties("${DEPENDENCIES}")
