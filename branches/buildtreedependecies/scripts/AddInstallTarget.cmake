@@ -3,7 +3,6 @@ if(isAddInstallTargetIncluded)
 endif()
 
 include(CMakeParseArguments)
-include(SBE/AddBinaryTargets)
 include(SBE/AddImportedTarget)
 
 
