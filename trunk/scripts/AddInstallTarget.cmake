@@ -3,23 +3,16 @@ if(isAddInstallTargetIncluded)
 endif()
 
 include(CMakeParseArguments)
-include(SBE/AddBinaryTargets)
 include(SBE/AddImportedTarget)
 
-
-# suppress warnings
-if("" STREQUAL "${DEP_INST_DEPLOYMENT_PATH}")
-endif()
-if("" STREQUAL "${DEP_SRC_DEPLOYMENT_PATH}")
-endif()
-if("" STREQUAL "${CMAKE_TOOLCHAIN_FILE}")
-endif()
 
 set(isAddInstallTargetIncluded yes)
 set(isAddInstallCalled no)
 
 set(InstalledTargets "")
 
+execute_process(COMMAND ${CMAKE_COMMAND} -E remove Export/buildalltimestamp)
+            
 function(sbeInstallFrequentisVBT)
     # arguments
     # Url - path and name of VBT in Svn
@@ -126,8 +119,12 @@ function(addInstallTarget)
     
     CMAKE_PARSE_ARGUMENTS(inst "" "" "HeadersPaths;Headers;Files;Targets;MockHeadersPathReplacement;HeadersPathReplacement;FilePathReplacement" ${ARGN})
     
-    set(HeadersPathReplacement ${inst_HeadersPathReplacement})
-    list(APPEND HeadersPathReplacement ${inst_MockHeadersPathReplacement})
+    # use mock first
+    set(HeadersPathReplacement "")
+    if(DEFINED inst_MockHeadersPathReplacement)
+        list(APPEND HeadersPathReplacement ${inst_MockHeadersPathReplacement})
+    endif()
+    list(APPEND HeadersPathReplacement ${inst_HeadersPathReplacement})
     
     set(InstalledTargets ${inst_Targets} PARENT_SCOPE)
             
@@ -173,6 +170,14 @@ function(addInstallTarget)
     _installFiles(Files ${inst_Files} FilePathReplacement ${inst_FilePathReplacement})
     
     _installConfigs(Targets ${inst_Targets} HeadersPaths ${inst_HeadersPaths} HeadersPathReplacement ${inst_HeadersPathReplacement} MockHeadersPathReplacement ${inst_MockHeadersPathReplacement})
+    
+    export(TARGETS ${inst_Targets} FILE Export/config/${PROJECT_NAME}Targets.cmake)
+    
+    
+    foreach(trg ${inst_Targets})
+        add_custom_command(TARGET ${trg} POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E touch Export/buildtimestamp)
+    endforeach()
 endfunction()
 
 function(_installTestTargets)
@@ -222,7 +227,6 @@ function(_installImportedTargets)
         get_property(type TARGET ${target} PROPERTY TYPE)
         get_property(location TARGET ${target} PROPERTY IMPORTED_LOCATION)
         get_property(allFilesToInstall TARGET ${target} PROPERTY SBE_ALL_LIBRARY_FILES)
-        get_filename_component(impotedFile "${location}" NAME)
         set(componentIdentifier "")
                      
         if("STATIC_LIBRARY" STREQUAL "${type}")
@@ -235,11 +239,11 @@ function(_installImportedTargets)
             if ("" STREQUAL "${languages}")
                  set(ALL_IMPORTED_TARGETS_DESCRIPTION "${ALL_IMPORTED_TARGETS_DESCRIPTION}set_property(TARGET ${target} APPEND PROPERTY IMPORTED_CONFIGURATIONS ${buildType})\n")
                  set(ALL_IMPORTED_TARGETS_DESCRIPTION "${ALL_IMPORTED_TARGETS_DESCRIPTION}set_target_properties(${target} PROPERTIES\n")
-                 set(ALL_IMPORTED_TARGETS_DESCRIPTION "${ALL_IMPORTED_TARGETS_DESCRIPTION}    IMPORTED_LOCATION_${buildType} \"\${_IMPORT_PREFIX}/lib/${impotedFile}\")\n")
+                 set(ALL_IMPORTED_TARGETS_DESCRIPTION "${ALL_IMPORTED_TARGETS_DESCRIPTION}    IMPORTED_LOCATION_${buildType} \"${location}\")\n")
             else()
                 set(ALL_IMPORTED_TARGETS_DESCRIPTION "${ALL_IMPORTED_TARGETS_DESCRIPTION}set_property(TARGET ${target} APPEND PROPERTY IMPORTED_CONFIGURATIONS ${buildType})\n")
                 set(ALL_IMPORTED_TARGETS_DESCRIPTION "${ALL_IMPORTED_TARGETS_DESCRIPTION}set_target_properties(${target} PROPERTIES\n")
-                set(ALL_IMPORTED_TARGETS_DESCRIPTION "${ALL_IMPORTED_TARGETS_DESCRIPTION}    IMPORTED_LOCATION_${buildType} \"\${_IMPORT_PREFIX}/lib/${impotedFile}\"\n")
+                set(ALL_IMPORTED_TARGETS_DESCRIPTION "${ALL_IMPORTED_TARGETS_DESCRIPTION}    IMPORTED_LOCATION_${buildType} \"${location}\"\n")
                 set(ALL_IMPORTED_TARGETS_DESCRIPTION "${ALL_IMPORTED_TARGETS_DESCRIPTION}    IMPORTED_LINK_INTERFACE_LANGUAGES_${buildType} \"${languages}\")\n")
             endif()
         elseif("SHARED_LIBRARY" STREQUAL "${type}")
@@ -251,24 +255,28 @@ function(_installImportedTargets)
             
             set(ALL_IMPORTED_TARGETS_DESCRIPTION "${ALL_IMPORTED_TARGETS_DESCRIPTION}set_property(TARGET ${target} APPEND PROPERTY IMPORTED_CONFIGURATIONS ${buildType})\n")
             set(ALL_IMPORTED_TARGETS_DESCRIPTION "${ALL_IMPORTED_TARGETS_DESCRIPTION}set_target_properties(${target} PROPERTIES\n")
-            set(ALL_IMPORTED_TARGETS_DESCRIPTION "${ALL_IMPORTED_TARGETS_DESCRIPTION}    IMPORTED_LOCATION_${buildType} \"\${_IMPORT_PREFIX}/lib/${impotedFile}\"\n")
+            set(ALL_IMPORTED_TARGETS_DESCRIPTION "${ALL_IMPORTED_TARGETS_DESCRIPTION}    IMPORTED_LOCATION_${buildType} \"${location}\"\n")
             set(ALL_IMPORTED_TARGETS_DESCRIPTION "${ALL_IMPORTED_TARGETS_DESCRIPTION}    IMPORTED_SONAME_${buildType} \"${soName}\")\n")
         elseif("EXECUTABLE" STREQUAL "${type}")
             message(FATAL_ERROR "Not implemented")
         endif()
         
         set(ALL_IMPORTED_TARGETS_DESCRIPTION "${ALL_IMPORTED_TARGETS_DESCRIPTION}list(APPEND _IMPORT_CHECK_TARGETS ${target})\n")
-        set(ALL_IMPORTED_TARGETS_DESCRIPTION "${ALL_IMPORTED_TARGETS_DESCRIPTION}list(APPEND _IMPORT_CHECK_FILES_FOR_${target} \"\${_IMPORT_PREFIX}/lib/${impotedFile}\")\n")
+        set(ALL_IMPORTED_TARGETS_DESCRIPTION "${ALL_IMPORTED_TARGETS_DESCRIPTION}list(APPEND _IMPORT_CHECK_FILES_FOR_${target} \"${location}\")\n")
         
         install(FILES ${allFilesToInstall} DESTINATION lib ${componentIdentifier})
         
-        _installHeaders(Target ${target} HeadersPathReplacement ${imp_HeadersPathReplacement})
+        get_property(targetPublicHeaders TARGET ${target} PROPERTY PublicHeaders)
+        if(NOT "" STREQUAL "${targetPublicHeaders}")
+            # cold not be based on target because target is not maked
+            _installHeaders(Headers ${targetPublicHeaders} HeadersPathReplacement ${imp_HeadersPathReplacement})
+        endif()
     endforeach()
     
     string(REPLACE ";" "\n" ALL_IMPORTED_TARGETS_DEFINITION "${ALL_IMPORTED_TARGETS_DEFINITION}")
     
-    configure_file(${CMAKE_ROOT}/Modules/SBE/templates/ImportedTargetImportFile.cmake.in "${PROJECT_BINARY_DIR}/${PROJECT_NAME}Targets-imported.cmake" @ONLY)
-    configure_file(${CMAKE_ROOT}/Modules/SBE/templates/ImportedTargets.cmake.in "${PROJECT_BINARY_DIR}/${PROJECT_NAME}Targets.cmake" @ONLY)
+    configure_file(${CMAKE_ROOT}/Modules/SBE/templates/ImportedTargetImportFile.cmake.in "${PROJECT_BINARY_DIR}/Export/config/${PROJECT_NAME}Targets-imported.cmake" @ONLY)
+    configure_file(${CMAKE_ROOT}/Modules/SBE/templates/ImportedTargets.cmake.in "${PROJECT_BINARY_DIR}/Export/config/${PROJECT_NAME}Targets.cmake" @ONLY)
      
     install(FILES
          "${PROJECT_BINARY_DIR}/${PROJECT_NAME}Targets.cmake"
@@ -291,11 +299,11 @@ function(_installImportedTargets)
     set(MOCK_INCLUDES_PART "set(${PROJECT_NAME}_MOCK_INCLUDE_DIRS ${headerPaths})")
     
     if (DEFINED imp_Targets)
-        configure_file(${CMAKE_ROOT}/Modules/SBE/templates/PackageConfig.cmake.in "${PROJECT_BINARY_DIR}/${PROJECT_NAME}Config.cmake" @ONLY)
-        configure_file(${CMAKE_ROOT}/Modules/SBE/templates/PackageConfigVersion.cmake.in "${PROJECT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake" @ONLY)
+        configure_file(${CMAKE_ROOT}/Modules/SBE/templates/PackageConfig.cmake.in "${PROJECT_BINARY_DIR}/Export/config/${PROJECT_NAME}Config.cmake" @ONLY)
+        configure_file(${CMAKE_ROOT}/Modules/SBE/templates/PackageConfigVersion.cmake.in "${PROJECT_BINARY_DIR}/Export/config/${PROJECT_NAME}ConfigVersion.cmake" @ONLY)
     else()
-        configure_file(${CMAKE_ROOT}/Modules/SBE/templates/PackageWithoutTargetConfig.cmake.in "${PROJECT_BINARY_DIR}/${PROJECT_NAME}Config.cmake" @ONLY)
-        configure_file(${CMAKE_ROOT}/Modules/SBE/templates/PackageConfigVersion.cmake.in "${PROJECT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake" @ONLY)    
+        configure_file(${CMAKE_ROOT}/Modules/SBE/templates/PackageWithoutTargetConfig.cmake.in "${PROJECT_BINARY_DIR}/Export/config/${PROJECT_NAME}Config.cmake" @ONLY)
+        configure_file(${CMAKE_ROOT}/Modules/SBE/templates/PackageConfigVersion.cmake.in "${PROJECT_BINARY_DIR}/Export/config/${PROJECT_NAME}ConfigVersion.cmake" @ONLY)    
     endif()  
     
     # Install the Config.cmake and ConfigVersion.cmake
@@ -380,32 +388,41 @@ function (_installFiles)
 endfunction()
 
 function(_installHeaders)
-    CMAKE_PARSE_ARGUMENTS(headers "" "Target;HeadersDirectory" "Headers;HeadersPathReplacement" ${ARGN})
+    _exportHeaders(${ARGN} DestinationDirectory Export/include)
+    
+    install(DIRECTORY ${PROJECT_BINARY_DIR}/Export/include DESTINATION include COMPONENT Headers)
+endfunction()
 
-    # process headers Directories
-    if(DEFINED headers_HeadersDirectory)
-        foreach(headerDir ${headers_HeadersDirectory})
-            set(isReplaced "no")
-            set(installPath "include")
-            foreach(replacement ${headers_HeadersPathReplacement})
-                if(NOT isReplaced)
-                    string(REGEX REPLACE "[ \t]*->[ \t]*" ";" replacements "${replacement}")
-                    list(GET replacements 0 matchExpression)
-                    list(GET replacements 1 headerDirectory)
-                    if("${headerDir}" MATCHES "^${matchExpression}$")
-                        set(installPath "${installPath}/${headerDirectory}")
-                        set(isReplaced "yes")
-                    endif()
-                endif()
-            endforeach() 
-            
-            install(DIRECTORY ${headerDir} DESTINATION ${installPath} COMPONENT Headers)
-        endforeach()
+function(_exportHeaders)
+    CMAKE_PARSE_ARGUMENTS(headers "" "Target;HeadersDirectory;DestinationDirectory" "Headers;HeadersPathReplacement" ${ARGN})
+
+    # check if something to do
+    if(NOT DEFINED headers_Target AND 
+       NOT DEFINED headers_HeadersDirectory AND
+       NOT DEFINED headers_Headers)
+       return()
     endif()
     
     # process headers
     set(publicHeaders "")
     set(containsDeclspec "no")
+    
+    # setup target that needs to export headers
+    set(headersTarget "")
+    if(headers_Target)
+        set(headersTarget ${headers_Target})
+    else()
+        set(headersTarget export-headers)
+        add_custom_target(${headersTarget} ALL)
+    endif()
+                
+    # get all headers from headers Directories
+    if(DEFINED headers_HeadersDirectory)
+        foreach(headerDir ${headers_HeadersDirectory})
+            file(GLOB_RECURSE headers *.h)
+            list(APPEND publicHeaders ${headers})
+        endforeach()
+    endif()
     
     if (NOT "" STREQUAL "${headers_Headers}")
         set(publicHeaders ${headers_Headers})
@@ -417,44 +434,56 @@ function(_installHeaders)
     
         get_property(containsDeclspec TARGET ${headers_Target} PROPERTY SBE_CONTAINS_DECLSPEC)
     endif()
-    
-    set(generatedPublicHeaders "")
+
+    set(exportedHeaders "")
     foreach(header ${publicHeaders})
+        set(exportPath "${headers_DestinationDirectory}")
+        
         set(isReplaced "no")
-        set(installPath "include")
         foreach(replacement ${headers_HeadersPathReplacement})
             if(NOT isReplaced)
                 string(REGEX REPLACE "[ \t]*->[ \t]*" ";" replacements "${replacement}")
                 list(GET replacements 0 matchExpression)
                 list(GET replacements 1 headerDirectory)
                 if("${header}" MATCHES "^${matchExpression}$")
-                    set(installPath "${installPath}/${headerDirectory}")
+                    set(exportPath "${exportPath}/${headerDirectory}")
                     set(isReplaced "yes")
                 endif()
             endif()
         endforeach() 
-        
-        if(containsDeclspec)
-            GET_FILENAME_COMPONENT(headerFile "${header}" NAME)
-            
-            set(generatedHeaderFile "${PROJECT_BINARY_DIR}/GeneratedSources/${installPath}/${headerFile}")
-            
-            add_custom_command(OUTPUT ${generatedHeaderFile}
-                COMMAND ${CMAKE_COMMAND} -DSOURCE=${PROJECT_SOURCE_DIR}/${header} -DDESTINATION=${generatedHeaderFile} -P ${CMAKE_ROOT}/Modules/SBE/helpers/ChangeExportToImport.cmake 
-                DEPENDS ${PROJECT_SOURCE_DIR}/${header})
 
-            install(FILES ${generatedHeaderFile} DESTINATION ${installPath} COMPONENT Headers OPTIONAL)
-                
-            list(APPEND generatedPublicHeaders ${generatedHeaderFile})
+        GET_FILENAME_COMPONENT(headerFile "${header}" NAME)
+        if(IS_ABSOLUTE ${header})
+            set(sourceHeaderFile "${header}")
         else()
-            install(FILES ${header} DESTINATION ${installPath} COMPONENT Headers)
-        endif()  
+            set(sourceHeaderFile "${PROJECT_SOURCE_DIR}/${header}")
+        endif()
+            
+        set(exportedHeaderFile "${exportPath}/${headerFile}")
+        list(APPEND exportedHeaders ${exportedHeaderFile})
+        
+        # setup command to export header. If it contains DECLSPEC then it should be modified
+        # otherwise it should be only copy
+        set(exportCommandArg "")
+        if(containsDeclspec)
+            list(APPEND exportCommandArg "-DSOURCE=${sourceHeaderFile}")
+            list(APPEND exportCommandArg "-DDESTINATION=${exportedHeaderFile}")
+            list(APPEND exportCommandArg "-DMESSAGE=Exporting ${header}")
+            list(APPEND exportCommandArg "-DTIMESTAMP_FILE=${PROJECT_BINARY_DIR}/Export/buildtimestamp")            
+            list(APPEND exportCommandArg "-P")
+            list(APPEND exportCommandArg "${CMAKE_ROOT}/Modules/SBE/helpers/ChangeExportToImport.cmake")
+        else()
+            list(APPEND exportCommandArg "-DSOURCE=${sourceHeaderFile}")
+            list(APPEND exportCommandArg "-DDESTINATION=${exportedHeaderFile}")
+            list(APPEND exportCommandArg "-DMESSAGE=Exporting ${header}")
+            list(APPEND exportCommandArg "-DTIMESTAMP_FILE=${PROJECT_BINARY_DIR}/Export/buildtimestamp")
+            list(APPEND exportCommandArg "-P")
+            list(APPEND exportCommandArg "${CMAKE_ROOT}/Modules/SBE/helpers/CopyIfNewer.cmake")
+        endif()
+       
+        add_custom_command(TARGET ${headersTarget} POST_BUILD
+            COMMAND ${CMAKE_COMMAND} ${exportCommandArg})            
     endforeach()
-    
-    if(containsDeclspec AND NOT "" STREQUAL "${generatedPublicHeaders}")
-        add_custom_target(declspecHeaders_${headers_Target} SOURCES ${generatedPublicHeaders})
-        add_dependencies(${headers_Target} declspecHeaders_${headers_Target})
-    endif()
 endfunction()
 
 function(_installConfigs)
@@ -553,17 +582,17 @@ function(_installConfigs)
     if (DEFINED INSTALL_LIBRARIES OR DEFINED INSTALL_MOCK_LIBRARIES OR DEFINED INSTALL_TEST_EXECUTABLES OR DEFINED INSTALL_EXECUTABLES)
         install(EXPORT ${PROJECT_NAME}Targets DESTINATION config COMPONENT Configs)
 
-        configure_file(${CMAKE_ROOT}/Modules/SBE/templates/PackageConfig.cmake.in "${PROJECT_BINARY_DIR}/${PROJECT_NAME}Config.cmake" @ONLY)
-        configure_file(${CMAKE_ROOT}/Modules/SBE/templates/PackageConfigVersion.cmake.in "${PROJECT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake" @ONLY)
+        configure_file(${CMAKE_ROOT}/Modules/SBE/templates/PackageConfig.cmake.in "${PROJECT_BINARY_DIR}/Export/config/${PROJECT_NAME}Config.cmake" @ONLY)
+        configure_file(${CMAKE_ROOT}/Modules/SBE/templates/PackageConfigVersion.cmake.in "${PROJECT_BINARY_DIR}/Export/config/${PROJECT_NAME}ConfigVersion.cmake" @ONLY)
     else()
-        configure_file(${CMAKE_ROOT}/Modules/SBE/templates/PackageWithoutTargetConfig.cmake.in "${PROJECT_BINARY_DIR}/${PROJECT_NAME}Config.cmake" @ONLY)
-        configure_file(${CMAKE_ROOT}/Modules/SBE/templates/PackageConfigVersion.cmake.in "${PROJECT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake" @ONLY)    
+        configure_file(${CMAKE_ROOT}/Modules/SBE/templates/PackageWithoutTargetConfig.cmake.in "${PROJECT_BINARY_DIR}/Export/config/${PROJECT_NAME}Config.cmake" @ONLY)
+        configure_file(${CMAKE_ROOT}/Modules/SBE/templates/PackageConfigVersion.cmake.in "${PROJECT_BINARY_DIR}/Export/config/${PROJECT_NAME}ConfigVersion.cmake" @ONLY)    
     endif()  
     
     # Install the Config.cmake and ConfigVersion.cmake
     install(FILES
-      "${PROJECT_BINARY_DIR}/${PROJECT_NAME}Config.cmake"
-      "${PROJECT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake"
+      "${PROJECT_BINARY_DIR}/Export/config/${PROJECT_NAME}Config.cmake"
+      "${PROJECT_BINARY_DIR}/Export/config/${PROJECT_NAME}ConfigVersion.cmake"
       DESTINATION config COMPONENT Configs) 
 
 endfunction()

@@ -28,26 +28,20 @@ function(addPackageTarget)
         COMMAND cmake -DCMAKE_INSTALL_COMPONENT=Distribution -DBUILD_TYPE=${CMAKE_BUILD_TYPE} -DCMAKE_INSTALL_PREFIX=${PROJECT_BINARY_DIR}/package/data/${SBE_DEFAULT_PACKAGE_PATH} ${DO_STRIP} -P cmake_install.cmake 
         COMMENT "Preinstalling...")
     
-    GetOverallDependencies("${DEPENDENCIES}" MyOverallDependencies)
-    
     # reinstall
-    if(NOT "${MyOverallDependencies}" STREQUAL "")
-        foreach(dep ${MyOverallDependencies})
-            set(depName ${${dep}_Name})
-            
-            if("${${dep}_Type}" STREQUAL "")
-                if(${${dep}_IsExternal})
-                    add_custom_command(TARGET package
-                        COMMENT "Skipping external dependecy ${depName}...")
-                else()
-                    add_custom_command(TARGET package
-                        COMMAND cmake -DCMAKE_INSTALL_COMPONENT=Distribution -DBUILD_TYPE=${CMAKE_BUILD_TYPE} -DCMAKE_INSTALL_PREFIX=${PROJECT_BINARY_DIR}/package/data/${SBE_DEFAULT_PACKAGE_PATH} ${DO_STRIP} -P ${${dep}_BuildPath}/build/cmake_install.cmake
-                        COMMENT "Adding dependecy ${depName} to package...")
-                endif()
+    foreach(dep ${${NAME}_OverallDependencies})
+        if("${${dep}_Type}" STREQUAL "")
+            if(${${dep}_IsExternal})
+                add_custom_command(TARGET package
+                    COMMENT "Skipping external dependecy ${dep}...")
+            else()
+                add_custom_command(TARGET package
+                    COMMAND cmake -DCMAKE_INSTALL_COMPONENT=Distribution -DBUILD_TYPE=${CMAKE_BUILD_TYPE} -DCMAKE_INSTALL_PREFIX=${PROJECT_BINARY_DIR}/package/data/${SBE_DEFAULT_PACKAGE_PATH} ${DO_STRIP} -P ${DEP_SOURCES_PATH}/${dep}/build/${TOOLCHAIN_NAME}/${CMAKE_BUILD_TYPE}/cmake_install.cmake
+                    COMMENT "Adding dependecy ${dep} to package...")
             endif()
-            
-        endforeach()
-    endif()    
+        endif()
+        
+    endforeach()
         
     set(PACKAGE_FILE_NAME "${PROJECT_NAME}-${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}-${CMAKE_BUILD_TYPE}-${SBE_ARCHITECTURE_NAME}-${SBE_SYSTEM_NAME}-${SBE_SYSTEM_EXTENSION_NAME}.tar.gz")
     

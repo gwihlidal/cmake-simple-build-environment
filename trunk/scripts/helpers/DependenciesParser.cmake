@@ -19,7 +19,7 @@ set(isDependenciesParserAlreadyIncluded "yes")
 
 include (SBE/helpers/ArgumentParser)
 
-function(ParseDependencies dependencies parsedDependencies)
+function(ParseDependencies dependencies parsedDependencies p)
     set(dependenciesIndentifiers "")
     set(dependencyProperties "")
     
@@ -28,7 +28,7 @@ function(ParseDependencies dependencies parsedDependencies)
     # parse properties for each dependency
     foreach(depProperties ${depProperties_DEPENDENCY})
         string(REPLACE "," ";" depProperties "${depProperties}")
-        _parseDependency("${depProperties}" parsedDependecy_ID)
+        _parseDependency("${depProperties}" parsedDependecy_ID "${p}")
         list(APPEND dependenciesIndentifiers ${parsedDependecy_ID})
     endforeach()
     
@@ -36,36 +36,7 @@ function(ParseDependencies dependencies parsedDependencies)
     set(${parsedDependencies} ${dependenciesIndentifiers} PARENT_SCOPE)
 endfunction()
 
-function(GetOverallDependencies dependencies parsedDependencies)
-    set(deps "")
-    
-    set(__MyOverallDeps "" CACHE INTERNAL "")
-    
-    GetOverallDependenciesRecursively("${dependencies}")
-    
-    if(NOT "" STREQUAL "${__MyOverallDeps}")
-        list(REMOVE_DUPLICATES __MyOverallDeps)
-    endif()
-    
-    set(${parsedDependencies} ${__MyOverallDeps} PARENT_SCOPE)
-    
-    unset(__MyOverallDeps CACHE)
-endfunction()
-
-function(GetOverallDependenciesRecursively dependencies)
-    ParseDependencies("${dependencies}" ids)
-    
-    foreach(dependencyId ${ids})
-        list(FIND __MyOverallDeps ${dependencyId} found)
-        if(${found} EQUAL -1)
-            list(APPEND tmpList ${__MyOverallDeps} ${dependencyId})
-            set(__MyOverallDeps "${tmpList}" CACHE INTERNAL "")
-            GetOverallDependenciesRecursively("${${dependencyId}_DependenciesDescription}")
-        endif()
-    endforeach()
-endfunction()
-
-macro(_parseDependency dependencyProperties id)
+macro(_parseDependency dependencyProperties id p)
     CMAKE_PARSE_ARGUMENTS(parsedDependecy "EXTERNAL" "URL;SCM" "" ${dependencyProperties})
     
     # set defaults
@@ -75,12 +46,24 @@ macro(_parseDependency dependencyProperties id)
     string(TOLOWER parsedDependecy_SCM "${parsedDependecy_SCM}")
         
     # create dependency identifier
-    set(dep_ID "${parsedDependecy_SCM}-${parsedDependecy_URL}")
+    if("Development" STREQUAL "${SBE_MODE}")
+        set(url "${parsedDependecy_URL}")
+        string(REGEX REPLACE "/tags/.*$" "" url "${url}")
+        string(REGEX REPLACE "/trunk$" "" url "${url}")
+        set(dep_ID "${parsedDependecy_SCM}-${url}")
+    else()
+        set(dep_ID "${parsedDependecy_SCM}-${parsedDependecy_URL}")
+    endif()
     
+    if("" STREQUAL "${p}")
+        set(prf "")
+    else()
+        set(prf "${p}_")
+    endif()
     # export dependency properties to parent scope
-    set(${dep_ID}_ScmType ${parsedDependecy_SCM} PARENT_SCOPE)
-    set(${dep_ID}_ScmPath ${parsedDependecy_URL} PARENT_SCOPE)
-    set(${dep_ID}_IsExternal ${parsedDependecy_EXTERNAL} PARENT_SCOPE)
+    set(${prf}${dep_ID}_ScmType ${parsedDependecy_SCM} PARENT_SCOPE)
+    set(${prf}${dep_ID}_ScmPath ${parsedDependecy_URL} PARENT_SCOPE)
+    set(${prf}${dep_ID}_IsExternal ${parsedDependecy_EXTERNAL} PARENT_SCOPE)
     
     # export dep id
     set(${id} ${dep_ID})

@@ -7,7 +7,7 @@ set(INSTALL_TARGETS "")
 
 include(${DEP_INFO_FILE})
 
-ParseDependencies("${DEPENDENCIES}" ownDependenciesIds)
+ParseDependencies("${DEPENDENCIES}" ownDependenciesIds "")
 
 foreach(dep ${ownDependenciesIds})
     set(depName ${${dep}_Name})
@@ -16,13 +16,13 @@ foreach(dep ${ownDependenciesIds})
  endforeach()
     
 # Create the Config.cmake and ConfigVersion files
-configure_file(${CMAKE_ROOT}/Modules/SBE/templates/ContainerPackageConfig.cmake.in "${PROJECT_BINARY_DIR}/${PROJECT_NAME}Config.cmake" @ONLY)
-configure_file(${CMAKE_ROOT}/Modules/SBE/templates/PackageConfigVersion.cmake.in "${PROJECT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake" @ONLY)
+configure_file(${CMAKE_ROOT}/Modules/SBE/templates/ContainerPackageConfig.cmake.in "${PROJECT_BINARY_DIR}/Export/config/${PROJECT_NAME}Config.cmake" @ONLY)
+configure_file(${CMAKE_ROOT}/Modules/SBE/templates/PackageConfigVersion.cmake.in "${PROJECT_BINARY_DIR}/Export/config/${PROJECT_NAME}ConfigVersion.cmake" @ONLY)
  
 # Install the Config.cmake and ConfigVersion.cmake
 install(FILES
-  "${PROJECT_BINARY_DIR}/${PROJECT_NAME}Config.cmake"
-  "${PROJECT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake"
+  "${PROJECT_BINARY_DIR}/Export/config/${PROJECT_NAME}Config.cmake"
+  "${PROJECT_BINARY_DIR}/Export/config/${PROJECT_NAME}ConfigVersion.cmake"
   DESTINATION config COMPONENT Configs) 
 
 
