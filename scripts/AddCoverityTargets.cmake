@@ -1,12 +1,10 @@
 cmake_minimum_required(VERSION 2.8)
 
-# check if this script is before DeployDependencies
-if (${DeployDependenciesIncluded})
-    message(FATAL_ERROR "AddCoverityTargets scripts has to be included before DeployDependencies to ensure that denepndencies will be installed with coverity data.")
+if(SBE_COVERITY_CONFIGURED)
+    return()
 endif()
 
-# set AddCoverityTargets script usage flag, for checking dependencies between scripts
-set(AddCoverityTargetsIncluded "yes")
+set(SBE_COVERITY_CONFIGURED "yes")
 
 find_program(COV_CONFIGURE_TOOL cov-configure)
 if(NOT COV_CONFIGURE_TOOL)
@@ -147,7 +145,13 @@ if("" STREQUAL "${COV_C_COMPTYPE}" AND "" STREQUAL "${COV_CXX_COMPTYPE}")
 endif()
      
 # coverity build command
-set(coverityBuildStarter ${COV_BUILD_TOOL} --verbose 0 --config ${COV_FILE_CONFIG} --dir ${COV_DIR_DATA})
+set(coverityBuildStarter "${COV_BUILD_TOOL} --verbose 0 --config ${COV_FILE_CONFIG} --dir ${COV_DIR_DATA}")
+configure_file(${CMAKE_ROOT}/Modules/SBE/tools/coverityLauncher.in "${PROJECT_BINARY_DIR}/coverityLauncher" @ONLY)
+if(DEFINED RULE_LAUNCH_COMPILE)
+    set(RULE_LAUNCH_COMPILE "${RULE_LAUNCH_COMPILE} ${PROJECT_BINARY_DIR}/coverityLauncher")
+else()
+    set(RULE_LAUNCH_COMPILE "${PROJECT_BINARY_DIR}/coverityLauncher")
+endif()    
 
 # create dirs
 file(MAKE_DIRECTORY ${COV_DIR_CONFIG})
@@ -180,7 +184,7 @@ endif()
 add_custom_target(coverity)
 
 add_custom_command(TARGET coverity     
-    COMMAND ${coverityBuildStarter} make
+    COMMAND make
     COMMENT "Building coverity")
 
  add_custom_command(TARGET coverity     
@@ -194,3 +198,5 @@ add_custom_command(TARGET coverity
 add_custom_command(TARGET coverity     
     COMMAND ${COV_FORMAT_ERRORS_TOOL} --dir ${COV_DIR_DATA}
     COMMENT "Formating coverity errors")
+
+

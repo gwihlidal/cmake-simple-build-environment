@@ -43,7 +43,7 @@ function(_updateDependency dependency)
     endif()
 endfunction()  
 
-ParseDependencies("${DEPENDENCIES}" dependenciesIndentifiers)
+ParseDependencies("${DEPENDENCIES}" dependenciesIndentifiers "")
 
 foreach(dependency ${dependenciesIndentifiers})
     if(NOT ${${dependency}_IsExternal})

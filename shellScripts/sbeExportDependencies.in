@@ -5,4 +5,4 @@
 #     usage:
 #         sbeExportDependencies path_to_properties_file     
  
-cmake -DDEP_SOURCE_DIR="$1" -P @CMAKE_ROOT@/Modules/SBE/ExportDependencies.cmake
+cmake -DSBE_MAIN_DEPENDANT_SOURCE_DIR="$1" -P @CMAKE_ROOT@/Modules/SBE/ExportDependencies.cmake

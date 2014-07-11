@@ -1,39 +1,32 @@
 cmake_minimum_required(VERSION 2.8)
 
-if(NOT DEP_SRC_DEPLOYMENT_PATH)
-    set(DEP_SOURCE_DIR ${PROJECT_SOURCE_DIR})
-    
-    include(SBE/ExportDependencies)
-else()
-    set(DEP_SOURCES_PATH "${DEP_SRC_DEPLOYMENT_PATH}/sources")
-    set(DEP_INFO_FILE "${DEP_SRC_DEPLOYMENT_PATH}/info/info.cmake")    
+if(NOT DEFINED SBE_MAIN_DEPENDANT_SOURCE_DIR)
+    # this project is main dependant
+    set(SBE_MAIN_DEPENDANT_SOURCE_DIR ${PROJECT_SOURCE_DIR})
+    set(SBE_MAIN_DEPENDANT ${PROJECT_NAME})
 endif()
+
+include(SBE/ExportDependencies)
     
-include(SBE/InstallDependencies)
+include(SBE/ConfigureDependencies)
     
 include(${DEP_INFO_FILE} OPTIONAL)
-include(${DEP_INST_INFO_FILE} OPTIONAL)
 
-# load variables of all dependencies
-include(SBE/helpers/DependenciesParser)
+add_custom_target(dependencies
+    COMMAND ${CMAKE_COMMAND}
+        -DPROJECT_NAME=${PROJECT_NAME}
+        -DPROJECT_TIMESTAMPFILE=${PROJECT_BINARY_DIR}/Export/buildtimestamp
+        -DDEPENDENCIES_PATH=${DEP_SOURCES_PATH} 
+        -DDEPENDENCIES_INFO=${DEP_INFO_FILE} 
+        -DDEPENDENCIES_BUILD_SUBDIRECTORY=${TOOLCHAIN_NAME}/${CMAKE_BUILD_TYPE}
+        -P 
+        ${CMAKE_ROOT}/Modules/SBE/BuildDependencies.cmake)
 
-GetOverallDependencies("${DEPENDENCIES}" MyOverallDependencies)
-
-foreach(dep ${MyOverallDependencies})
-    set(depName ${${dep}_Name})
-
-    list(APPEND depNames ${depName})
+foreach(dep ${${NAME}_OverallDependencies})
+    find_package(${dep} REQUIRED CONFIG PATHS ${DEP_SOURCES_PATH}/${dep}/build/${TOOLCHAIN_NAME}/${CMAKE_BUILD_TYPE}/Export/config NO_DEFAULT_PATH)
 endforeach()
 
-unset(MyOverallDependencies)
 
-if(DEFINED depNames)
-    foreach(depName ${depNames})
-        find_package(${depName} REQUIRED CONFIG PATHS ${DEP_INSTALL_PATH}/config NO_DEFAULT_PATH)
-    endforeach()
-    
-    unset(depNames)
-endif()
 
 
 
