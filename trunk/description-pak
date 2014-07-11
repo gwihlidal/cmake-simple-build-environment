@@ -1,0 +1,2 @@
+Simple Build Environmet addon to CMake.
+The idea of Build Environment is to tie dependency management with make system.
