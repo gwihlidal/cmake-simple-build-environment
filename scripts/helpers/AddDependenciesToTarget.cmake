@@ -2,7 +2,7 @@
 include(SBE/helpers/ArgumentParser)
 include(SBE/helpers/DependenciesParser)
 
-include(${DEP_INFO_FILE})
+include(${DEP_INFO_FILE} OPTIONAL)
     
 function(sbeAddDependencies)
     if(NOT DEFINED DEP_INFO_FILE)
