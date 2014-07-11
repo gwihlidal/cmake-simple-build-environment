@@ -1,0 +1,8 @@
+#!/bin/bash
+# sbeExportDependencies 
+#     script exports dependencies for given Properties.cmake
+#
+#     usage:
+#         sbeExportDependencies path_to_properties_file     
+ 
+cmake -DSBE_MAIN_DEPENDANT_SOURCE_DIR="$1" -P @CMAKE_ROOT@/Modules/SBE/ExportDependencies.cmake

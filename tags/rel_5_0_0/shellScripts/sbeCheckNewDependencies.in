@@ -1,0 +1,8 @@
+#!/bin/bash
+# sbeCheckNewDependencies 
+#     script checks if new dependencies releases are available svn for given Properties.cmake
+#
+#     usage:
+#         sbeCheckNewDependencies path_to_properties_file
+ 
+cmake -DPROPERTIES_PATH="$1" -P @CMAKE_ROOT@/Modules/SBE/CheckNewDependencies.cmake
