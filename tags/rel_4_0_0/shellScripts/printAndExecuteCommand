@@ -1,0 +1,9 @@
+#!/bin/bash
+# printAndExecuteCommand 
+#     script prints given argument and execute them
+#
+#     usage:
+#         sbeCheckNewDependencies args
+ 
+cmake -E cmake_echo_color --switch=1 --yellow "$*"
+$*

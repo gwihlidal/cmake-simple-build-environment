@@ -1,0 +1,39 @@
+# - Config file for the @PROJECT_NAME@ package
+# It defines the following variables
+#  @PROJECT_NAME@_INCLUDE_DIRS - include directories for @PROJECT_NAME@
+#  @PROJECT_NAME@_LIBRARIES    - libraries to link against
+
+# Compute the installation prefix relative to this file.
+GET_FILENAME_COMPONENT(_IMPORT_PREFIX "${CMAKE_CURRENT_LIST_FILE}" PATH)
+GET_FILENAME_COMPONENT(_IMPORT_PREFIX "${_IMPORT_PREFIX}" PATH)
+
+# include all package dependencies
+set(containsDeclspec "no")
+foreach(target @INSTALL_TARGETS@)
+	GET_FILENAME_COMPONENT(_IMPORT_PREFIX "${CMAKE_CURRENT_LIST_FILE}" PATH)
+    GET_FILENAME_COMPONENT(_IMPORT_PREFIX "${_IMPORT_PREFIX}" PATH)
+    
+	find_package(${target} REQUIRED CONFIG PATHS ${_IMPORT_PREFIX}/config NO_DEFAULT_PATH)
+		
+	list(APPEND libs ${${target}_LIBRARIES})
+	list(APPEND mockLibs ${${target}_MOCK_LIBRARIES})
+	list(APPEND includeDirs ${${target}_INCLUDE_DIRS})
+	list(APPEND mockIncludeDirs ${${target}_MOCK_INCLUDE_DIRS})
+	if(${target}_CONTAINS_DECLSPEC)
+		set(containsDeclspec "yes")
+	endif()
+endforeach()	
+ 
+# These are IMPORTED targets created by @PROJECT_NAME@Targets.cmake
+set(@PROJECT_NAME@_LIBRARIES ${libs})
+unset(libs)
+set(@PROJECT_NAME@_MOCK_LIBRARIES ${mockLibs})
+unset(mockLibs)
+set(@PROJECT_NAME@_INCLUDE_DIRS ${includeDirs})
+unset(includeDirs)
+set(@PROJECT_NAME@_MOCK_INCLUDE_DIRS ${mockIncludeDirs})
+unset(mockIncludeDirs)
+set(@PROJECT_NAME@_CONTAINS_DECLSPEC ${containsDeclspec})
+unset(containsDeclspec)
+
+
