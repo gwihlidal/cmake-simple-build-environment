@@ -4,6 +4,7 @@
 #
 #     usage:
 #         sbeCheckNewDependencies args
- 
-cmake -E cmake_echo_color --switch=1 --yellow "$*"
+
+textToPrint=`expr "$*" : '.*/coverityLauncher[[:space:]]*\(.*\)$'`
+cmake -E cmake_echo_color --switch=1 --yellow "${textToPrint}"
 $*
