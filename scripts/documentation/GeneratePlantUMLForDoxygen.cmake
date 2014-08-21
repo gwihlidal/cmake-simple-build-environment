@@ -33,7 +33,7 @@ foreach(line ${content})
         set(umlContent "${umlContent}${line}\n")
         file(WRITE "${IMAGE_DIR}/${imageName}.txt" ${umlContent})
         execute_process(
-            COMMAND java -jar ${CMAKE_ROOT}/Modules/SBE/tools/plantuml.jar "${IMAGE_DIR}/${imageName}.txt"
+            COMMAND plantuml "${IMAGE_DIR}/${imageName}.txt"
         RESULT_VARIABLE result)
         set(isInUMLSection no)
         set(umlSectionBegin "")
