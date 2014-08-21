@@ -640,7 +640,7 @@ function(_printDependencies projectName)
     file(WRITE ${DEP_SRC_INFO_PATH}/DependecyGraph.txt ${plantumlContent})
     
     execute_process(
-        COMMAND java -jar ${CMAKE_ROOT}/Modules/SBE/tools/plantuml.jar ${DEP_SRC_INFO_PATH}/DependecyGraph.txt
+        COMMAND plantuml ${DEP_SRC_INFO_PATH}/DependecyGraph.txt
         RESULT_VARIABLE result)
     
     file(REMOVE ${DEP_SRC_INFO_PATH}/DependecyGraph.txt)
