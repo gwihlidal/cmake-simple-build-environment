@@ -33,8 +33,11 @@ foreach(line ${content})
         set(umlContent "${umlContent}${line}\n")
         file(WRITE "${IMAGE_DIR}/${imageName}.txt" ${umlContent})
         execute_process(
-            COMMAND plantuml "${IMAGE_DIR}/${imageName}.txt"
+            COMMAND plantuml -tsvg "${IMAGE_DIR}/${imageName}.txt"
         RESULT_VARIABLE result)
+        execute_process(
+            COMMAND plantuml -teps "${IMAGE_DIR}/${imageName}.txt"
+        RESULT_VARIABLE result)        
         set(isInUMLSection no)
         set(umlSectionBegin "")
         set(umlContent "")
@@ -45,14 +48,14 @@ foreach(line ${content})
         list(INSERT content ${lineNumber} "${umlSectionBegin}")
     elseif("${line}" MATCHES ".*@startuml.*$")
         set(caption "")
-        if("${line}" MATCHES ".*@startuml[ \t]*(.*)$")
+        if("${line}" MATCHES ".*@startuml[ \t]*\"(.*)\"[ \t]*$")
             set(caption ${CMAKE_MATCH_1})
         endif()
         string(REGEX REPLACE "@startuml.*$" "" umlSectionBegin "${line}")
         set(umlContent "${umlSectionBegin}@startuml\n")
         set(imageName "${fileName}_${lineNumber}_plantuml")
         list(REMOVE_AT content ${lineNumber})
-        list(INSERT content ${lineNumber} "${umlSectionBegin}\\image html ${IMAGE_DIR}/${imageName}.png \"${caption}\"\n${umlSectionBegin}\\image latex ${IMAGE_DIR}/${imageName}.png \"${caption}\" width=\\textwidth \n${umlSectionBegin}")
+        list(INSERT content ${lineNumber} "${umlSectionBegin}\\image html ${IMAGE_DIR}/${imageName}.svg \"${caption}\"\n${umlSectionBegin}\\image latex ${IMAGE_DIR}/${imageName}.eps \"${caption}\" width=\\textwidth \n${umlSectionBegin}")
         set(isInUMLSection yes)
     endif()
     
