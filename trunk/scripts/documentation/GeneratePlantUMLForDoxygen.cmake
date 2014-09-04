@@ -55,7 +55,7 @@ foreach(line ${content})
         set(umlContent "${umlSectionBegin}@startuml\n")
         set(imageName "${fileName}_${lineNumber}_plantuml")
         list(REMOVE_AT content ${lineNumber})
-        list(INSERT content ${lineNumber} "${umlSectionBegin}\\image html ${IMAGE_DIR}/${imageName}.svg \"${caption}\"\n${umlSectionBegin}\\image latex ${IMAGE_DIR}/${imageName}.eps \"${caption}\" width=\\textwidth \n${umlSectionBegin}")
+        list(INSERT content ${lineNumber} "${umlSectionBegin}\\image html ${IMAGE_DIR}/${imageName}.svg \"${caption}\"\n${umlSectionBegin}\\image latex ${IMAGE_DIR}/${imageName}.eps \"${caption}\" \n${umlSectionBegin}")
         set(isInUMLSection yes)
     endif()
     
