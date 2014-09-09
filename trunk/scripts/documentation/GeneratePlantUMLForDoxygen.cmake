@@ -37,7 +37,7 @@ foreach(line ${content})
         RESULT_VARIABLE result)
         execute_process(
             COMMAND plantuml -teps "${IMAGE_DIR}/${imageName}.txt"
-        RESULT_VARIABLE result)        
+        RESULT_VARIABLE result)
         set(isInUMLSection no)
         set(umlSectionBegin "")
         set(umlContent "")
@@ -55,7 +55,7 @@ foreach(line ${content})
         set(umlContent "${umlSectionBegin}@startuml\n")
         set(imageName "${fileName}_${lineNumber}_plantuml")
         list(REMOVE_AT content ${lineNumber})
-        list(INSERT content ${lineNumber} "${umlSectionBegin}\\image html ${IMAGE_DIR}/${imageName}.svg \"${caption}\"\n${umlSectionBegin}\\image latex ${IMAGE_DIR}/${imageName}.eps \"${caption}\" \n${umlSectionBegin}")
+        list(INSERT content ${lineNumber} "${umlSectionBegin}\\image html ${IMAGE_DIR}/${imageName}.svg \"${caption}\"\n${umlSectionBegin}\\image latex ${IMAGE_DIR}/${imageName}.eps \"${caption}\" scale=0.5 \n${umlSectionBegin}")
         set(isInUMLSection yes)
     endif()
     
