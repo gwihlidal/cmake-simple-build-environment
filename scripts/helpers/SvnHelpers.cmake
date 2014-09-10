@@ -116,3 +116,37 @@ function(svnIsDirectoryContains item directory isThere errorReason)
     set(isThere "no" PARENT_SCOPE)
 endfunction()  
        
+function(svnGetProperty localFileOrDirectory propertyName propertyValue)
+    # get directory info 
+    execute_process(
+        COMMAND ${Subversion_SVN_EXECUTABLE} propget ${propertyName} "${localFileOrDirectory}"
+        RESULT_VARIABLE svnResult
+        ERROR_VARIABLE err
+        OUTPUT_VARIABLE out)
+        
+    if(${svnResult} GREATER 0)
+        return()
+    endif()
+
+    if(DEFINED out)
+        # remove trialing newline from command output
+        string(REGEX REPLACE "(.*)\n+$" "\\1" out "${out}")
+        set(${propertyValue} ${out} PARENT_SCOPE)
+    endif() 
+    
+endfunction()  
+
+function(svnGetLog localFileOrDirectory svnlog)
+    # get directory info 
+    execute_process(
+        COMMAND ${Subversion_SVN_EXECUTABLE} log "${localFileOrDirectory}"
+        RESULT_VARIABLE svnResult
+        ERROR_VARIABLE err
+        OUTPUT_VARIABLE out)
+        
+    if(${svnResult} GREATER 0)
+        return()
+    endif()
+
+    set(${svnlog} ${out} PARENT_SCOPE)
+endfunction()  

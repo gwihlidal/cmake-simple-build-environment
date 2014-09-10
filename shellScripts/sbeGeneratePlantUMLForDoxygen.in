@@ -1,8 +1,0 @@
-#!/bin/bash
-# sbeGeneratePlantUMLForDoxygen 
-#     script checks given file for plant uml section and changes it to image
-#
-#     usage:
-#         sbeCheckNewDependencies path_to_properties_file
-
-cmake -DFILE_TO_CHECK="$2" -DIMAGE_DIR=$1 -P @CMAKE_ROOT@/Modules/SBE/documentation/GeneratePlantUMLForDoxygen.cmake 
