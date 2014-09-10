@@ -11,11 +11,12 @@ file(GLOB TOOLS tools/*)
 list(REMOVE_ITEM TOOLS "${CMAKE_SOURCE_DIR}/tools/.svn")
 file(GLOB HELPERS_SCRIPTS scripts/helpers/*.cmake)
 file(GLOB TEMPLATES templates/*.in)
+
 configure_file(shellScripts/sbeExportDependencies.in "${PROJECT_BINARY_DIR}/sbeExportDependencies" @ONLY)
 configure_file(shellScripts/sbeUpdateToLatestDependencies.in "${PROJECT_BINARY_DIR}/sbeUpdateToLatestDependencies" @ONLY)
 configure_file(shellScripts/sbeCheckNewDependencies.in "${PROJECT_BINARY_DIR}/sbeCheckNewDependencies" @ONLY)
 configure_file(shellScripts/sbeConfigureInEclipse.in "${PROJECT_BINARY_DIR}/sbeConfigureInEclipse" @ONLY)
-configure_file(shellScripts/sbeGeneratePlantUMLForDoxygen.in "${PROJECT_BINARY_DIR}/sbeGeneratePlantUMLForDoxygen" @ONLY)
+configure_file(shellScripts/sbeDecorateDoxygen.in "${PROJECT_BINARY_DIR}/sbeDecorateDoxygen" @ONLY)
 
 
 install(FILES ${TARGETS_SCRIPTS} DESTINATION ${CMAKE_ROOT}/Modules/SBE)
@@ -41,6 +42,6 @@ install(FILES "${PROJECT_BINARY_DIR}/sbeUpdateToLatestDependencies"
 install(FILES "${PROJECT_BINARY_DIR}/sbeCheckNewDependencies" 
         DESTINATION /usr/local/bin 
         PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)        
-install(FILES "${PROJECT_BINARY_DIR}/sbeGeneratePlantUMLForDoxygen" 
+install(FILES "${PROJECT_BINARY_DIR}/sbeDecorateDoxygen" 
         DESTINATION /usr/local/bin 
         PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)        

@@ -1,0 +1,8 @@
+#!/bin/bash
+# sbeDecorateDoxygen 
+#     script preprocess files give by doxygen via INPUT_FILTER and decorate it
+#
+#     usage:
+#         sbeDecorateDoxygen imageDirectory file
+
+cmake -DFILE_TO_CHECK="$2" -DIMAGE_DIR=$1 -P @CMAKE_ROOT@/Modules/SBE/documentation/DecorateDoxygen.cmake 
