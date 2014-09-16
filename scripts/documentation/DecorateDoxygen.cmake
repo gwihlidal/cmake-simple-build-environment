@@ -16,6 +16,9 @@ include(SBE/documentation/GeneratePlantUMLForDoxygen)
 file(READ ${FILE_TO_CHECK} content)
 # make list of lines
 string(REPLACE ";" "##-##-##" content "${content}")
+# character [ and ] somhow corupts list
+string(REPLACE "[" "\\[" content "${content}")
+string(REPLACE "]" "\\]" content "${content}")
 string(REPLACE "\n" ";" content "${content}")
 # do not allow empty lines
 string(REPLACE ";;" ";ee-ee-ee;" content "${content}")
