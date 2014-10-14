@@ -15,14 +15,16 @@ function(AddPlantUMLForDoxygen file imageDir content modifiedContent)
     
     foreach(line ${content})
         if("${line}" MATCHES ".*@enduml[ \t]*$")
-            set(umlContent "${umlContent}${line}\n")
-            file(WRITE "${IMAGE_DIR}/${imageName}.txt" ${umlContent})
-            execute_process(
-                COMMAND plantuml -tsvg "${IMAGE_DIR}/${imageName}.txt"
-            RESULT_VARIABLE result)
-            execute_process(
-                COMMAND plantuml -teps "${IMAGE_DIR}/${imageName}.txt"
-            RESULT_VARIABLE result)
+            if ("${file}" IS_NEWER_THAN "${imageDir}/${imageName}.txt")
+                set(umlContent "${umlContent}${line}\n")
+                file(WRITE "${imageDir}/${imageName}.txt" ${umlContent})
+                execute_process(
+                    COMMAND plantuml -tsvg "${imageDir}/${imageName}.txt"
+                RESULT_VARIABLE result)
+                execute_process(
+                    COMMAND plantuml -teps "${imageDir}/${imageName}.txt"
+                RESULT_VARIABLE result)
+            endif()
             set(isInUMLSection no)
             set(umlSectionBegin "")
             set(umlContent "")
@@ -33,15 +35,23 @@ function(AddPlantUMLForDoxygen file imageDir content modifiedContent)
             set(umlContent "${umlContent}${umlLine}\n")
         elseif("${line}" MATCHES ".*@startuml.*$")
             set(caption "")
-            if("${line}" MATCHES ".*@startuml[ \t]*\"(.*)\"[ \t]*$")
-                set(caption ${CMAKE_MATCH_1})
+            set(anchor "")
+            if("${line}" MATCHES ".*@startuml[ \t]*([a-zA-Z0-9_]*)[ \t]*\"(.*)\"[ \t]*$")
+                set(anchor ${CMAKE_MATCH_1})
+                set(caption ${CMAKE_MATCH_2})
             endif()
             string(REGEX REPLACE "@startuml.*$" "" umlSectionBegin "${line}")
             set(umlContent "${umlSectionBegin}@startuml\n")
             set(imageName "${fileName}_${lineNumber}_plantuml")
 
+            if (NOT "" STREQUAL "${anchor}")
+                list(APPEND mc "${umlSectionBegin}\\anchor ${anchor}_Figure")
+                list(APPEND mc "${umlSectionBegin}[${anchor}]: @ref ${anchor}_Figure \"Fig. ${caption}\"")
+            endif()
+            
             list(APPEND mc "${umlSectionBegin}\\image html ${imageDir}/${imageName}.svg \"${caption}\"")
-            list(APPEND mc "${umlSectionBegin}\\image latex ${imageDir}/${imageName}.eps \"${caption}\" scale=0.5")
+            list(APPEND mc "${umlSectionBegin}\\image latex ${imageDir}/${imageName}.eps \"${caption}\" scale=0.5")          
+            
             set(isInUMLSection yes)
         else()
             list(APPEND mc "${line}")

@@ -32,6 +32,8 @@ ConvertIssuesToLinksForDoxygen(${FILE_TO_CHECK} "${modifiedContent}" modifiedCon
 string(REPLACE ";" "\n" modifiedContent "${modifiedContent}")
 string(REPLACE "ee-ee-ee"  "" modifiedContent "${modifiedContent}")
 string(REPLACE "##-##-##"  ";" modifiedContent "${modifiedContent}")
+string(REPLACE "\\[" "[" modifiedContent "${modifiedContent}")
+string(REPLACE "\\]" "]" modifiedContent "${modifiedContent}")
 execute_process(COMMAND ${CMAKE_COMMAND} -E echo "${modifiedContent}")
  
 
