@@ -46,7 +46,8 @@ function(AddPlantUMLForDoxygen file imageDir content modifiedContent)
 
             if (NOT "" STREQUAL "${anchor}")
                 list(APPEND mc "${umlSectionBegin}\\anchor ${anchor}_Figure")
-                list(APPEND mc "${umlSectionBegin}[${anchor}]: @ref ${anchor}_Figure \"Fig. ${caption}\"")
+                list(APPEND mc "${umlSectionBegin}[${anchor}]: @ref ${anchor}_Figure \"${caption}\"")
+                list(APPEND mc "${umlSectionBegin}[Fig_${anchor}]: @ref ${anchor}_Figure \"Fig. ${caption}\"")
             endif()
             
             list(APPEND mc "${umlSectionBegin}\\image html ${imageDir}/${imageName}.svg \"${caption}\"")
