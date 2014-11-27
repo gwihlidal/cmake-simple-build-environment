@@ -9,7 +9,7 @@ include(SBE/helpers/DependenciesParser)
 
 add_custom_target(package)
 
-function(addPackageTarget)
+function(sbeAddPackageTarget)
     set(isAddPackageCalled yes PARENT_SCOPE)
     
     foreach(target ${InstalledTargets})
