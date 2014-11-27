@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.8)
 
 
-function(addTestTarget)
+function(sbeAddTestTarget)
     CMAKE_PARSE_ARGUMENTS(test "" "Executable" "" ${ARGN})
     
     if(${CMAKE_CROSSCOMPILING})

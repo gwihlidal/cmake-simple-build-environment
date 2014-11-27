@@ -105,14 +105,14 @@ function(sbeInstallFrequentisVBT)
         )
 endfunction()
 
-function(addInstallTarget)
+function(sbeAddInstallTarget)
     # temporary solution. It will add only last target to project config.
     if(isAddInstallCalled)
-        message(FATAL_ERROR "Function addInstallTarget can be called only one time.\nIn current implemntation it will add only latest target to install to package config file.")
+        message(FATAL_ERROR "Function sbeAddInstallTarget can be called only one time.\nIn current implemntation it will add only latest target to install to package config file.")
     endif()
     # check install and package targets order
     if(isAddPackageCalled)
-        message(FATAL_ERROR "Function addPackageTarget has to be called after function addInstallTarget.")
+        message(FATAL_ERROR "Function sbeAddPackageTarget has to be called after function sbeAddInstallTarget.")
     endif()
     
     set(isAddInstallCalled yes PARENT_SCOPE)
