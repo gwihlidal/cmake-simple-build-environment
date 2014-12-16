@@ -12,7 +12,7 @@ set(isAddInstallCalled no)
 set(InstalledTargets "")
 
 execute_process(COMMAND ${CMAKE_COMMAND} -E remove Export/buildalltimestamp)
-            
+           
 function(sbeInstallFrequentisVBT)
     # arguments
     # Url - path and name of VBT in Svn
@@ -31,13 +31,13 @@ function(sbeInstallFrequentisVBT)
     endif()
     
     if(NOT DEFINED inst_Url AND NOT DEFINED inst_File)
-        configure_file(${CMAKE_ROOT}/Modules/SBE/templates/PackageWithoutTargetConfig.cmake.in "${PROJECT_BINARY_DIR}/${PROJECT_NAME}Config.cmake" @ONLY)
-        configure_file(${CMAKE_ROOT}/Modules/SBE/templates/PackageConfigVersion.cmake.in "${PROJECT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake" @ONLY)    
+        configure_file(${CMAKE_ROOT}/Modules/SBE/templates/PackageWithoutTargetConfig.cmake.in "${PROJECT_BINARY_DIR}/Export/config/${PROJECT_NAME}Config.cmake" @ONLY)
+        configure_file(${CMAKE_ROOT}/Modules/SBE/templates/PackageConfigVersion.cmake.in "${PROJECT_BINARY_DIR}/Export/config/${PROJECT_NAME}ConfigVersion.cmake" @ONLY)    
     
         # Install the Config.cmake and ConfigVersion.cmake
         install(FILES
-          "${PROJECT_BINARY_DIR}/${PROJECT_NAME}Config.cmake"
-          "${PROJECT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake"
+          "${PROJECT_BINARY_DIR}/Export/config/${PROJECT_NAME}Config.cmake"
+          "${PROJECT_BINARY_DIR}/Export/config/${PROJECT_NAME}ConfigVersion.cmake"
           DESTINATION config COMPONENT Configs)
           
         return()
@@ -213,6 +213,7 @@ function(_installMockTargets)
 endfunction()
 
 function(_installImportedTargets)
+    message("INSTALLING IMPORTED")
     CMAKE_PARSE_ARGUMENTS(imp "" "HeadersDirectory" "Targets;HeadersPathReplacement;Headers" ${ARGN})
     
     if(DEFINED imp_Headers OR DEFINED imp_HeadersDirectory)
@@ -275,12 +276,13 @@ function(_installImportedTargets)
     
     string(REPLACE ";" "\n" ALL_IMPORTED_TARGETS_DEFINITION "${ALL_IMPORTED_TARGETS_DEFINITION}")
     
+    message("INSTALLING IMPORTED - config")
     configure_file(${CMAKE_ROOT}/Modules/SBE/templates/ImportedTargetImportFile.cmake.in "${PROJECT_BINARY_DIR}/Export/config/${PROJECT_NAME}Targets-imported.cmake" @ONLY)
     configure_file(${CMAKE_ROOT}/Modules/SBE/templates/ImportedTargets.cmake.in "${PROJECT_BINARY_DIR}/Export/config/${PROJECT_NAME}Targets.cmake" @ONLY)
      
     install(FILES
-         "${PROJECT_BINARY_DIR}/${PROJECT_NAME}Targets.cmake"
-         "${PROJECT_BINARY_DIR}/${PROJECT_NAME}Targets-imported.cmake"
+         "${PROJECT_BINARY_DIR}/Export/config/${PROJECT_NAME}Targets.cmake"
+         "${PROJECT_BINARY_DIR}/Export/config/${PROJECT_NAME}Targets-imported.cmake"
          DESTINATION config COMPONENT Configs)
 
     set(LIBRARIES_PART "set(${PROJECT_NAME}_LIBRARIES ${imp_Targets})")
@@ -298,6 +300,7 @@ function(_installImportedTargets)
     set(INCLUDES_PART "set(${PROJECT_NAME}_INCLUDE_DIRS ${headerPaths})")
     set(MOCK_INCLUDES_PART "set(${PROJECT_NAME}_MOCK_INCLUDE_DIRS ${headerPaths})")
     
+    message("INSTALLING IMPORTED - config 2")
     if (DEFINED imp_Targets)
         configure_file(${CMAKE_ROOT}/Modules/SBE/templates/PackageConfig.cmake.in "${PROJECT_BINARY_DIR}/Export/config/${PROJECT_NAME}Config.cmake" @ONLY)
         configure_file(${CMAKE_ROOT}/Modules/SBE/templates/PackageConfigVersion.cmake.in "${PROJECT_BINARY_DIR}/Export/config/${PROJECT_NAME}ConfigVersion.cmake" @ONLY)
@@ -308,8 +311,8 @@ function(_installImportedTargets)
     
     # Install the Config.cmake and ConfigVersion.cmake
     install(FILES
-      "${PROJECT_BINARY_DIR}/${PROJECT_NAME}Config.cmake"
-      "${PROJECT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake"
+      "${PROJECT_BINARY_DIR}/Export/config/${PROJECT_NAME}Config.cmake"
+      "${PROJECT_BINARY_DIR}/Export/config/${PROJECT_NAME}ConfigVersion.cmake"
       DESTINATION config COMPONENT Configs) 
 endfunction()
 
@@ -416,11 +419,18 @@ function(_exportHeaders)
         add_custom_target(${headersTarget} ALL)
     endif()
                 
-    # get all headers from headers Directories
+    # copy directory as it is
     if(DEFINED headers_HeadersDirectory)
         foreach(headerDir ${headers_HeadersDirectory})
-            file(GLOB_RECURSE headers *.h)
-            list(APPEND publicHeaders ${headers})
+            list(APPEND exportCommandArg "-DSOURCE=${headerDir}")
+            list(APPEND exportCommandArg "-DDESTINATION=${headers_DestinationDirectory}")
+            list(APPEND exportCommandArg "-DMESSAGE=Exporting ${headerDir}")
+            list(APPEND exportCommandArg "-DTIMESTAMP_FILE=${PROJECT_BINARY_DIR}/Export/buildtimestamp")
+            list(APPEND exportCommandArg "-P")
+            list(APPEND exportCommandArg "${CMAKE_ROOT}/Modules/SBE/helpers/CopyIfNewer.cmake")
+     
+            add_custom_command(TARGET ${headersTarget} POST_BUILD
+                COMMAND ${CMAKE_COMMAND} ${exportCommandArg})
         endforeach()
     endif()
     
