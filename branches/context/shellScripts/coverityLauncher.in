@@ -1,0 +1,8 @@
+#!/bin/bash
+# coverityLauncher 
+#     script launch coverity for each compilation
+#
+#     usage:
+#         coverityLauncher args
+
+@coverityBuildStarter@ $* | sed -e '/Coverity Build Capture version/,+3 d' | sed -e '/compilation units (100%)/ d' | sed -e 's/The cov-build utility completed successfully./Coverity performed./' 

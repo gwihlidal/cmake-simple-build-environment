@@ -1,0 +1,14 @@
+#----------------------------------------------------------------
+# Generated CMake target import file for configuration "Debug".
+#----------------------------------------------------------------
+
+# Commands may need to know the format version.
+SET(CMAKE_IMPORT_FILE_VERSION 1)
+
+# Make sure the targets which have been exported in some other 
+# export set exist.
+
+@ALL_IMPORTED_TARGETS_DESCRIPTION@
+
+# Commands beyond this point should not need to know the version.
+SET(CMAKE_IMPORT_FILE_VERSION)
