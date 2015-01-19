@@ -223,73 +223,36 @@ function(svnSwitch)
     set(${svn_IsError} no PARENT_SCOPE)
 endfunction()
 
-function(svnGetRepositoryForLocalDirectory)
-    cmake_parse_arguments(svn "" "LocalDirectory;Url;IsError" "StopOnErrorWithMessage" ${ARGN})
-    
-    if(NOT DEFINED svn_LocalDirectory AND NOT DEFINED svn_Url)
-        if(DEFINED svn_IsError)
-            set(${svn_IsError} yes PARENT_SCOPE)
-        endif() 
-    endif()
-    
+function(svnGetRepositoryForLocalDirectory localDirectory url)
     execute_process(
-        COMMAND ${Subversion_SVN_EXECUTABLE} info ${svn_LocalDirectory}
+        COMMAND ${Subversion_SVN_EXECUTABLE} info ${localDirectory}
         RESULT_VARIABLE svnResult
         ERROR_VARIABLE err
         OUTPUT_VARIABLE out)
         
     if(${svnResult} GREATER 0)
-        if(DEFINED svn_IsError)
-            set(${svn_IsError} yes PARENT_SCOPE)
-        endif()     
-        if(DEFINED svn_StopOnErrorWithMessage)
-            message(FATAL_ERROR ${svn_StopOnErrorWithMessage})
-        endif()
-        
         return()
     endif()
     
     if("${out}" MATCHES "URL: ([^\n]+)")
-        set(${svn_Url} "${CMAKE_MATCH_1}" PARENT_SCOPE)
-        if(DEFINED svn_IsError)
-            set(${svn_IsError} no PARENT_SCOPE)
-        endif()                     
-    else()
-        if(DEFINED svn_IsError)
-            set(${svn_IsError} no PARENT_SCOPE)
-        endif()
-        if(DEFINED svn_StopOnErrorWithMessage)
-            message(FATAL_ERROR ${svn_StopOnErrorWithMessage})
-        endif()        
+        set(${url} "${CMAKE_MATCH_1}" PARENT_SCOPE)
     endif()
 endfunction()
 
-function(svnIsUrlTag)
-    cmake_parse_arguments(svn "" "Url;IsTag" "" ${ARGN})
-    
-    if(NOT DEFINED svn_IsTag)
-        return()
-    endif()
-    
-    if("${svn_Url}" MATCHES "tags/[^/]+$")
-        set(${svn_IsTag} yes PARENT_SCOPE)
+function(svnIsUrlTag url isTag)
+    if("${url}" MATCHES "tags/[^/]+$")
+        set(${isTag} yes PARENT_SCOPE)
     else()
-        set(${svn_IsTag} no PARENT_SCOPE)
+        set(${isTag} no PARENT_SCOPE)
     endif()
 endfunction()
 
-function(svnIsUrlTrunk)
-    cmake_parse_arguments(svn "" "Url;IsTrunk" "" ${ARGN})
-    
-    if(NOT DEFINED svn_IsTrunk)
-        return()
-    endif()
-    
-    svnIsUrlTag(Url "${svn_Url}" IsTag isTag)
+function(svnIsUrlTrunk url isTrunk)
+    svnIsUrlTag("${url}" isTag)
     
     if(isTag)
-        set(${svn_IsTrunk} no PARENT_SCOPE)
+        set(${isTrunk} no PARENT_SCOPE)
     else()
-        set(${svn_IsTrunk} yes PARENT_SCOPE)
+        set(${isTrunk} yes PARENT_SCOPE)
     endif()
 endfunction()

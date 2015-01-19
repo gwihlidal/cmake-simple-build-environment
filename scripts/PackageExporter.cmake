@@ -10,140 +10,142 @@ include(SBE/helpers/ContextParser)
 include(SBE/helpers/SvnHelpers)
 include(SBE/helpers/ArgumentParser)
 
-function(sbeExportDependencies)
-    cmake_parse_arguments(dep "" "PropertyFile;Name" "" ${ARGN})
-    
-    # context file must be loaded
-    sbeReportErrorWhenContextFileIsNotLoaded()
-
+function(sbeExportDependencies dependency propertyFile)
     # properties file must exist
-    sbeReportErrorWhenFileDoesntExists(File dep_PropertyFile Message "Properties file must exist to export dependencies.")
+    sbeReportErrorWhenFileDoesntExists(propertyFile "Properties file must exist to export dependencies.")
     
     unset(Name)
     unset(Dependencies)
-    include(${dep_PropertyFile})
+    include(${propertyFile})
     
     # if Name is given as argument then it has to be same is in ContextFile
-    if(DEFINED dep_Name AND NOT "${dep_Name}" STREQUAL "${Name}")
+    if(NOT "${dependency}" STREQUAL "${Name}")
         message(FATAL_ERROR
-            "Name in Properties file [${Name}] is different as in Context [${dep_Name}]." 
+            "Name in Properties file [${Name}] is different as in Context [${dependency}]." 
         )        
     endif()
 
     set_property(GLOBAL PROPERTY Export_${Name}_DirectDependencies ${Dependencies})
-    file(TIMESTAMP "${dep_PropertyFile}" ts "%Y-%m-%dT%H:%M:%S")
+    file(TIMESTAMP "${propertyFile}" ts "%Y-%m-%dT%H:%M:%S")
     set_property(GLOBAL PROPERTY Export_${Name}_PropertiesTimestamp ${ts})
     
     foreach(dependency ${Dependencies})
-        sbeExportDependency(Name ${dependency})
+        sbeExportDependency(${dependency})
     endforeach()
 endfunction()
 
-function(sbeExportDependency)
-    cmake_parse_arguments(dep "" "Name" "" ${ARGN})
-
-    # Name must be given
-    sbeReportErrorWhenVariablesNotDefined(Var dep_Name Message "Name must given to export dependency.")
-        
+function(sbeExportDependency name)
     # do NOT process already processed dependency
     get_property(OverallDependencies GLOBAL PROPERTY Export_OverallDependencies)
-    if("${OverallDependencies}" MATCHES "${dep_Name}")
+    if("${OverallDependencies}" MATCHES "${name}")
         return()
     endif()
     
-    set_property(GLOBAL APPEND PROPERTY Export_OverallDependencies ${dep_Name})
+    set_property(GLOBAL APPEND PROPERTY Export_OverallDependencies ${name})
     
     # context file must exist
     sbeReportErrorWhenContextFileIsNotLoaded()
     
-    sbeGetPackageLocalPath(LocalPath packagePath Name ${dep_Name})
-    sbeGetPackageUrl(Url packageUrl Name ${dep_Name})
+    sbeGetPackageLocalPath(${name} packagePath)
+    sbeGetPackageUrl(${name} packageUrl)
     
     if(NOT EXISTS ${packagePath})
         svnCheckout(LocalDirectory ${packagePath} Url ${packageUrl}
-            StartMessage "Checking out ${dep_Name} ${packageUrl}"
-            StopOnErrorWithMessage "Could NOT checkout ${packageUrl} for ${dep_Name}")
+            StartMessage "Checking out ${name} ${packageUrl}"
+            StopOnErrorWithMessage "Could NOT checkout ${packageUrl} for ${name}")
     else()
-        svnGetRepositoryForLocalDirectory(LocalDirectory ${packagePath} Url url
-            StopOnErrorWithMessage "Could NOT get repository for ${dep_Name}")
+        svnGetRepositoryForLocalDirectory(${packagePath} url)
         
-        svnIsUrlTag(Url ${url} IsTag isTag)
+        svnIsUrlTag(${url} isTag)
         
         if(isTag)
             if(NOT "${url}" STREQUAL "${packageUrl}")
                 svnSwitch(LocalDirectory ${packagePath} Url ${packageUrl}
-                    StartMessage "Switching ${dep_Name} ${packageUrl}"
-                    StopOnErrorWithMessage "Could NOT switch to ${packageUrl} for ${dep_Name}" 
+                    StartMessage "Switching ${name} ${packageUrl}"
+                    StopOnErrorWithMessage "Could NOT switch to ${packageUrl} for ${name}" 
                 )
             endif()
         else()
-            message("Ignoring ${dep_Name} due to trunk")
+            message("Ignoring ${name} due to trunk")
         endif()        
     endif()
     
-    sbeExportDependencies(PropertyFile ${packagePath}/Properties.cmake Name ${dep_Name})    
+    sbeExportDependencies(${name} ${packagePath}/Properties.cmake)    
 endfunction()
 
-function(sbeExportDependenciesInPackage)
-    cmake_parse_arguments(dep "" "PropertyFile;Name" "" ${ARGN})
-    
+function(sbeExportDependenciesInPackage name propertyFile)
     # When Context file is modified recheck all dependencies
-    getContextTimestamp(Timestamp actualContextTimestamp)
+    getContextTimestamp(actualContextTimestamp)
+    
+    set(IsExportNecessary no)
     
     if("${actualContextTimestamp}" STREQUAL "${Export_ContextTimestamp}")
         foreach(exportedDependency ${Export_OverallDependencies})
-            sbeGetPackagePropertiesTimestamp(Timestamp ts Name ${exportedDependency})
+            sbeGetPackagePropertiesTimestamp(${exportedDependency} ts)
             if("${ts}" STREQUAL "${Export_${exportedDependency}_PropertiesTimestamp}")
                 set_property(GLOBAL APPEND PROPERTY Export_OverallDependencies ${exportedDependency})
                 set_property(GLOBAL PROPERTY Export_${exportedDependency}_DirectDependencies ${Export_${exportedDependency}_DirectDependencies})
                 set_property(GLOBAL PROPERTY Export_${exportedDependency}_PropertiesTimestamp ${Export_${exportedDependency}_PropertiesTimestamp})
+            else()
+                set(IsExportNecessary yes)
             endif()
         endforeach()
+    else()
+        set(IsExportNecessary yes)
     endif()
     
-    sbeExportDependencies(PropertyFile ${dep_PropertyFile} Name ${dep_Name})
+    if(IsExportNecessary)
+        sbeExportDependencies(${name} ${propertyFile})
 
-    # set cached variables for usage in next run    
-    set(Export_ContextTimestamp ${actualContextTimestamp} CACHE "" INTERNAL FORCE)
-    
-    get_property(Export_OverallDependencies_Property GLOBAL PROPERTY Export_OverallDependencies)
-    set(Export_OverallDependencies ${Export_OverallDependencies_Property} CACHE "" INTERNAL FORCE)
-    foreach(exportedDependency ${Export_OverallDependencies})
-        get_property(deps GLOBAL PROPERTY Export_${exportedDependency}_DirectDependencies)
-        set(Export_${exportedDependency}_DirectDependencies ${deps} CACHE "" INTERNAL FORCE)
-        get_property(ts GLOBAL PROPERTY Export_${exportedDependency}_PropertiesTimestamp)
-        set(Export_${exportedDependency}_PropertiesTimestamp ${ts} CACHE "" INTERNAL FORCE)
-    endforeach()
+        # set cached variables for usage in next run    
+        set(Export_ContextTimestamp ${actualContextTimestamp} CACHE "" INTERNAL FORCE)
+        
+        get_property(Export_UnorderedOverallDependencies GLOBAL PROPERTY Export_OverallDependencies)
+
+        foreach(exportedDependency ${Export_UnorderedOverallDependencies})
+            get_property(deps GLOBAL PROPERTY Export_${exportedDependency}_DirectDependencies)
+            set(Export_${exportedDependency}_DirectDependencies ${deps} CACHE "" INTERNAL FORCE)
+            get_property(ts GLOBAL PROPERTY Export_${exportedDependency}_PropertiesTimestamp)
+            set(Export_${exportedDependency}_PropertiesTimestamp ${ts} CACHE "" INTERNAL FORCE)
+        endforeach()
+        
+        OrderDependecies("${Export_UnorderedOverallDependencies}")
+        get_property(Export_OrderedOverallDependencies GLOBAL PROPERTY Export_OrderedOverallDependencies)
+        set(Export_OverallDependencies ${Export_OrderedOverallDependencies} CACHE "" INTERNAL FORCE)
+    endif()
 endfunction()
 
-function(OrderDependecies)
-    cmake_parse_arguments(dep "" "" "Dependencies" ${ARGN})
-    
-    if("" STREQUAL "${dep_Dependencies}")
+function(OrderDependecies dependencies)
+    if("" STREQUAL "${dependencies}")
         return()
     endif()
     
     set(isLoop yes)
+    get_property(Export_OrderedOverallDependencies GLOBAL PROPERTY Export_OrderedOverallDependencies)
     
-    foreach(dependency ${dep_Dependencies})
-        list(LENGTH ${dependency}_DirectDependencies directDependenciesNumber)
-        if (${directDependenciesNumber} EQUAL 0)
+    foreach(dependency ${dependencies})
+        if("" STREQUAL "${Export_${dependency}_DirectDependencies}")
             set(isLoop no)
-            set_property(GLOBAL APPEND PROPERTY OrderedOverallDependencies ${dependency})
-            list(REMOVE_ITEM OverallDependencies ${dependency})
-            foreach(d ${OverallDependencies})
-                if (NOT "" STREQUAL "${${d}_DirectDependencies}")
-                    list(REMOVE_ITEM ${d}_DirectDependencies ${dependency})
-                endif()
-            endforeach()
-        endif()
+            set_property(GLOBAL APPEND PROPERTY Export_OrderedOverallDependencies ${dependency})
+        elseif(NOT "" STREQUAL "${Export_OrderedOverallDependencies}")
+            set(directDependencies ${Export_${dependency}_DirectDependencies})
+            list(REMOVE_ITEM directDependencies ${Export_OrderedOverallDependencies})
+            list(LENGTH directDependencies directDependenciesNumber)
+            if (${directDependenciesNumber} EQUAL 0)
+                set(isLoop no)
+                set_property(GLOBAL APPEND PROPERTY Export_OrderedOverallDependencies ${dependency})
+            endif()
+       endif()
     endforeach()
     
     if(${isLoop})
         return()
     endif()
   
-    OrderDependecies(Dependencies ${OverallDependencies})
+    set(dependenciesLeft ${dependencies})
+    get_property(Export_OrderedOverallDependencies GLOBAL PROPERTY Export_OrderedOverallDependencies)
+    list(REMOVE_ITEM dependenciesLeft ${Export_OrderedOverallDependencies})
+    OrderDependecies("${dependenciesLeft}")
 endfunction()
 
 #    

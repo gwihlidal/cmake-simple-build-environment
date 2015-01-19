@@ -24,8 +24,7 @@ include(SBE/ExportDependencies)
 function(sbeSetupPackage)
 
     # Property file is mandratory for each project
-    sbeReportErrorWhenFileDoesntExists(File PackagePropertyFile
-        Message
+    sbeReportErrorWhenFileDoesntExists(PackagePropertyFile
            "File ${PackagePropertyFile} is missing." 
            "Each project has to have Properties.cmake file on the same location as CMakeLists.txt.")
 
