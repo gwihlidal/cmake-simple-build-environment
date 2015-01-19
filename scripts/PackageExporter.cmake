@@ -10,70 +10,9 @@ include(SBE/helpers/ContextParser)
 include(SBE/helpers/SvnHelpers)
 include(SBE/helpers/ArgumentParser)
 
-function(sbeExportDependencies dependency propertyFile)
-    # properties file must exist
-    sbeReportErrorWhenFileDoesntExists(propertyFile "Properties file must exist to export dependencies.")
-    
-    unset(Name)
-    unset(Dependencies)
-    include(${propertyFile})
-    
-    # if Name is given as argument then it has to be same is in ContextFile
-    if(NOT "${dependency}" STREQUAL "${Name}")
-        message(FATAL_ERROR
-            "Name in Properties file [${Name}] is different as in Context [${dependency}]." 
-        )        
-    endif()
 
-    set_property(GLOBAL PROPERTY Export_${Name}_DirectDependencies ${Dependencies})
-    file(TIMESTAMP "${propertyFile}" ts "%Y-%m-%dT%H:%M:%S")
-    set_property(GLOBAL PROPERTY Export_${Name}_PropertiesTimestamp ${ts})
-    
-    foreach(dependency ${Dependencies})
-        sbeExportDependency(${dependency})
-    endforeach()
-endfunction()
-
-function(sbeExportDependency name)
-    # do NOT process already processed dependency
-    get_property(OverallDependencies GLOBAL PROPERTY Export_OverallDependencies)
-    if("${OverallDependencies}" MATCHES "${name}")
-        return()
-    endif()
-    
-    set_property(GLOBAL APPEND PROPERTY Export_OverallDependencies ${name})
-    
-    # context file must exist
-    sbeReportErrorWhenContextFileIsNotLoaded()
-    
-    sbeGetPackageLocalPath(${name} packagePath)
-    sbeGetPackageUrl(${name} packageUrl)
-    
-    if(NOT EXISTS ${packagePath})
-        svnCheckout(LocalDirectory ${packagePath} Url ${packageUrl}
-            StartMessage "Checking out ${name} ${packageUrl}"
-            StopOnErrorWithMessage "Could NOT checkout ${packageUrl} for ${name}")
-    else()
-        svnGetRepositoryForLocalDirectory(${packagePath} url)
-        
-        svnIsUrlTag(${url} isTag)
-        
-        if(isTag)
-            if(NOT "${url}" STREQUAL "${packageUrl}")
-                svnSwitch(LocalDirectory ${packagePath} Url ${packageUrl}
-                    StartMessage "Switching ${name} ${packageUrl}"
-                    StopOnErrorWithMessage "Could NOT switch to ${packageUrl} for ${name}" 
-                )
-            endif()
-        else()
-            message("Ignoring ${name} due to trunk")
-        endif()        
-    endif()
-    
-    sbeExportDependencies(${name} ${packagePath}/Properties.cmake)    
-endfunction()
-
-function(sbeExportDependenciesInPackage name propertyFile)
+# It exports ovearall package dependencies
+function(sbeExportPackageDependencies name propertyFile)
     # When Context file is modified recheck all dependencies
     getContextTimestamp(actualContextTimestamp)
     
@@ -113,6 +52,90 @@ function(sbeExportDependenciesInPackage name propertyFile)
         get_property(Export_OrderedOverallDependencies GLOBAL PROPERTY Export_OrderedOverallDependencies)
         set(Export_OverallDependencies ${Export_OrderedOverallDependencies} CACHE "" INTERNAL FORCE)
     endif()
+endfunction()
+
+# It exports given package and its dependencies
+# It is used in scripts 
+function(sbeExportPackage name)
+    sbeExportDependency(${name})
+    
+    get_property(Export_UnorderedOverallDependencies GLOBAL PROPERTY Export_OverallDependencies)
+
+    foreach(exportedDependency ${Export_UnorderedOverallDependencies})
+        get_property(deps GLOBAL PROPERTY Export_${exportedDependency}_DirectDependencies)
+        set(Export_${exportedDependency}_DirectDependencies ${deps} CACHE "" INTERNAL FORCE)
+        get_property(ts GLOBAL PROPERTY Export_${exportedDependency}_PropertiesTimestamp)
+        set(Export_${exportedDependency}_PropertiesTimestamp ${ts} CACHE "" INTERNAL FORCE)
+    endforeach()
+    
+    OrderDependecies("${Export_UnorderedOverallDependencies}")
+    get_property(Export_OrderedOverallDependencies GLOBAL PROPERTY Export_OrderedOverallDependencies)
+    set(Export_OverallDependencies ${Export_OrderedOverallDependencies} CACHE "" INTERNAL FORCE)
+endfunction()
+
+# it exports given dependency and its all dependencies 
+function(sbeExportDependencies dependency propertyFile)
+    # properties file must exist
+    sbeReportErrorWhenFileDoesntExists(propertyFile "Properties file must exist to export dependencies.")
+    
+    unset(Name)
+    unset(Dependencies)
+    include(${propertyFile})
+    
+    # if Name is given as argument then it has to be same is in ContextFile
+    if(NOT "${dependency}" STREQUAL "${Name}")
+        message(FATAL_ERROR
+            "Name in Properties file [${Name}] is different as in Context [${dependency}]." 
+        )        
+    endif()
+
+    set_property(GLOBAL PROPERTY Export_${Name}_DirectDependencies ${Dependencies})
+    file(TIMESTAMP "${propertyFile}" ts "%Y-%m-%dT%H:%M:%S")
+    set_property(GLOBAL PROPERTY Export_${Name}_PropertiesTimestamp ${ts})
+    
+    foreach(dependency ${Dependencies})
+        sbeExportDependency(${dependency})
+    endforeach()
+endfunction()
+
+# it exports package with given name and all its dependencies
+function(sbeExportDependency name)
+    # do NOT process already processed dependency
+    get_property(OverallDependencies GLOBAL PROPERTY Export_OverallDependencies)
+    if("${OverallDependencies}" MATCHES "${name}")
+        return()
+    endif()
+    
+    set_property(GLOBAL APPEND PROPERTY Export_OverallDependencies ${name})
+    
+    # context file must exist
+    sbeReportErrorWhenContextFileIsNotLoaded()
+    
+    sbeGetPackageLocalPath(${name} packagePath)
+    sbeGetPackageUrl(${name} packageUrl)
+    
+    if(NOT EXISTS ${packagePath})
+        svnCheckout(LocalDirectory ${packagePath} Url ${packageUrl}
+            StartMessage "Checking out ${name} ${packageUrl}"
+            StopOnErrorWithMessage "Could NOT checkout ${packageUrl} for ${name}")
+    else()
+        svnGetRepositoryForLocalDirectory(${packagePath} url)
+        
+        svnIsUrlTag(${url} isTag)
+        
+        if(isTag)
+            if(NOT "${url}" STREQUAL "${packageUrl}")
+                svnSwitch(LocalDirectory ${packagePath} Url ${packageUrl}
+                    StartMessage "Switching ${name} ${packageUrl}"
+                    StopOnErrorWithMessage "Could NOT switch to ${packageUrl} for ${name}" 
+                )
+            endif()
+        else()
+            message("Ignoring ${name} due to trunk")
+        endif()        
+    endif()
+    
+    sbeExportDependencies(${name} ${packagePath}/Properties.cmake)    
 endfunction()
 
 function(OrderDependecies dependencies)
