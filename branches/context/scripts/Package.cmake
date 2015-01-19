@@ -67,6 +67,6 @@ function(sbeSetupPackage)
     # export dependencies
     sbeFindContextFile(ContextFile contextFile Name ${Name})
     sbeLoadContextFile(ContextFile ${contextFile})
-    sbeExportDependenciesInPackage(PropertyFile ${PackagePropertyFile})
+    sbeExportPackageDependencies(${Name} ${PackagePropertyFile})
 endfunction()
 
