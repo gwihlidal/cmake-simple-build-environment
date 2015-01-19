@@ -8,15 +8,10 @@ set(ArgumentParserGuard yes)
 
 include (CMakeParseArguments)
 
-macro(sbeReportErrorWhenFileDoesntExists)
-    cmake_parse_arguments(err "" "File" "Message" ${ARGN})
-    
-    if(NOT DEFINED ${err_File} OR NOT EXISTS ${${err_File}})
-        message(FATAL_ERROR ${err_Message})
+macro(sbeReportErrorWhenFileDoesntExists file)
+    if(NOT DEFINED ${file} OR NOT EXISTS ${${file}})
+        message(FATAL_ERROR ${ARGN})
     endif()
-    
-    unset(err_File)
-    unset(err_Message)
 endmacro()
 
 macro(sbeReportErrorWhenVariablesNotDefined)

@@ -12,25 +12,19 @@ include(SBE/helpers/ArgumentParser)
 
 # It finds context file 
 # It search for in package root and in package source directory 
-function(sbeFindContextFile)
-    cmake_parse_arguments(ctx "" "ContextFile;Name" "" ${ARGN})
-    
-     # check input arguments
-     sbeReportErrorWhenVariablesNotDefined(Var ctx_ContextFile ctx_Name 
-         Message "ContextFile variable and Name has to be given.")
-        
+function(sbeFindContextFile name contextFile)
     if(DEFINED SBEContextFile)
-        set(${ctx_ContextFile} ${SBEContextFile} PARENT_SCOPE)
+        set(${contextFile} ${SBEContextFile} PARENT_SCOPE)
     else()
-        set(contextFileBaseOnName ${Name})
+        set(contextFileBaseOnName ${name})
         string(REPLACE "." "/" contextFileBaseOnName ${contextFileBaseOnName})
         string(REGEX REPLACE "[^/]+" ".." contextFileBaseOnName ${contextFileBaseOnName})
         set(contextFileBaseOnName "${contextFileBaseOnName}/../Context.cmake")
     
         if(EXISTS ${contextFileBaseOnName})
-            set(${ctx_ContextFile} ${contextFileBaseOnName} PARENT_SCOPE)
+            set(${contextFile} ${contextFileBaseOnName} PARENT_SCOPE)
         elseif(EXISTS Context.cmake)
-            set(${ctx_ContextFile} "Context.cmake" PARENT_SCOPE)
+            set(${contextFile} "Context.cmake" PARENT_SCOPE)
         else()
             message(FATAL_ERROR
                "Context.cmake file is missing." 
@@ -42,13 +36,11 @@ function(sbeFindContextFile)
 endfunction()
 
 # It loads context file into properties 
-function(sbeLoadContextFile)
-    cmake_parse_arguments(ctx "" "ContextFile" "" ${ARGN})
-    
+function(sbeLoadContextFile contextFile)
     # check input arguments
-    sbeReportErrorWhenFileDoesntExists(File ctx_ContextFile Message "Context file has to exists.")
+    sbeReportErrorWhenFileDoesntExists(contextFile "Context file has to exists.")
     
-    include(${ctx_ContextFile})
+    include(${contextFile})
     
     # wrap Project or Package (the keywords are similar) into list of project descriptions
     set(descriptions ${Context})
@@ -70,10 +62,10 @@ function(sbeLoadContextFile)
         set_property(GLOBAL PROPERTY Context_${name}_Description ${description})
     endforeach()
     
-    get_filename_component(ctx_ContextFile "${ctx_ContextFile}" ABSOLUTE)
-    set_property(GLOBAL PROPERTY ContextFile ${ctx_ContextFile})
-    get_filename_component(ContextPath "${ctx_ContextFile}" PATH)
-    set_property(GLOBAL PROPERTY ContextPath "${ContextPath}/context")
+    get_filename_component(cf "${contextFile}" ABSOLUTE)
+    set_property(GLOBAL PROPERTY ContextFile ${cf})
+    get_filename_component(cp "${cf}" PATH)
+    set_property(GLOBAL PROPERTY ContextPath "${cp}/context")
 endfunction()
 
 # It reports error when context file is not loaded
@@ -87,93 +79,48 @@ function(sbeReportErrorWhenContextFileIsNotLoaded)
 endfunction()
     
 # It gets package description for given name
-function(sbeGetPackageDescription)
-    cmake_parse_arguments(pkg "" "Description;Name" "" ${ARGN})
-    
-    # check input arguments
-    if(NOT DEFINED pkg_Description OR NOT DEFINED pkg_Name)
-        return()
-    endif()
-
-    get_property(description GLOBAL PROPERTY Context_${pkg_Name}_Description)
-    if(DEFINED description)
-        set(${pkg_Description} ${description} PARENT_SCOPE)
+function(sbeGetPackageDescription name description)
+    get_property(d GLOBAL PROPERTY Context_${name}_Description)
+    if(DEFINED d)
+        set(${description} ${d} PARENT_SCOPE)
     endif()
 endfunction()
 
 
 # It gets url package description for given name
-function(sbeGetPackageUrl)
-    cmake_parse_arguments(pkg "" "Url;Name" "" ${ARGN})
-    
-    # check input arguments
-    if(NOT DEFINED pkg_Name OR NOT DEFINED pkg_Url)
-        return()
-    endif()
-
-    sbeGetPackageDescription(Description description Name ${pkg_Name})
+function(sbeGetPackageUrl name url)
+    sbeGetPackageDescription(${name} description)
 
     if(DEFINED description)
         cmake_parse_arguments(desc "" "Url" "" ${description})
-        if(DEFINED desc_Url)
-            set(${pkg_Url} ${desc_Url} PARENT_SCOPE)
-        endif()
+        set(${url} ${desc_Url} PARENT_SCOPE)
     endif()
 endfunction()
 
 # It gets local package path for its name
-function(sbeGetPackageLocalPath)
-    cmake_parse_arguments(pkg "" "LocalPath;Name" "" ${ARGN})
-    
-    # check input arguments
-    if(NOT DEFINED pkg_LocalPath OR NOT DEFINED pkg_Name)
-        return()
-    endif()
-
+function(sbeGetPackageLocalPath name localPath)
     get_property(ContextPath GLOBAL PROPERTY ContextPath)
-    string(REPLACE "." "/" pathInContext ${pkg_Name})
+    string(REPLACE "." "/" pathInContext ${name})
     
-    set(${pkg_LocalPath} "${ContextPath}/${pathInContext}" PARENT_SCOPE)
+    set(${localPath} "${ContextPath}/${pathInContext}" PARENT_SCOPE)
 endfunction()
 
 # It gets local package properties file
-function(sbeGetPackagePropertiesFile)
-    cmake_parse_arguments(pkg "" "PropertiesFile;Name" "" ${ARGN})
-    
-    # check input arguments
-    if(NOT DEFINED pkg_PropertiesFile OR NOT DEFINED pkg_Name)
-        return()
-    endif()
-
-    sbeGetPackageLocalPath(LocalPath packagePath Name ${pkg_Name})
-    
-    
-    set(${pkg_PropertiesFile} "${packagePath}/Properties.cmake" PARENT_SCOPE)
+function(sbeGetPackagePropertiesFile name propertiesFile)
+    sbeGetPackageLocalPath(${name} packagePath)
+    set(${propertiesFile} "${packagePath}/Properties.cmake" PARENT_SCOPE)
 endfunction()
 
 # It gets local package properties file timestamp
-function(sbeGetPackagePropertiesTimestamp)
-    cmake_parse_arguments(pkg "" "Timestamp;Name" "" ${ARGN})
-    
-    # check input arguments
-    if(NOT DEFINED pkg_Timestamp OR NOT DEFINED pkg_Name)
-        return()
-    endif()
-
-    sbeGetPackagePropertiesFile(PropertiesFile propertiesFile Name ${pkg_Name})
+function(sbeGetPackagePropertiesTimestamp name timestamp)
+    sbeGetPackagePropertiesFile(${name} propertiesFile)
     
     file(TIMESTAMP "${propertiesFile}" ts "%Y-%m-%dT%H:%M:%S")
-    set(${pkg_Timestamp} ${ts} PARENT_SCOPE)
+    set(${timestamp} ${ts} PARENT_SCOPE)
 endfunction()
 
-function(getContextTimestamp)
-    cmake_parse_arguments(pkg "" "Timestamp" "" ${ARGN})
-    
-    if(NOT DEFINED pkg_Timestamp)
-        return()
-    endif()
-    
+function(getContextTimestamp timestamp)
     get_property(ContextFile GLOBAL PROPERTY ContextFile)
     file(TIMESTAMP ${ContextFile} ts "%Y-%m-%dT%H:%M:%S")
-    set(${pkg_Timestamp} ${ts} PARENT_SCOPE)
+    set(${timestamp} ${ts} PARENT_SCOPE)
 endfunction()
