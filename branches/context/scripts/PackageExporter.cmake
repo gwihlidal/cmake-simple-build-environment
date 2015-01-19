@@ -138,8 +138,10 @@ function(OrderDependecies dependencies)
        endif()
     endforeach()
     
-    if(${isLoop})
-        return()
+    if(isLoop)
+        message(FATAL_ERROR
+            "Loop detected in packages ${dependencies}"
+        )
     endif()
   
     set(dependenciesLeft ${dependencies})
