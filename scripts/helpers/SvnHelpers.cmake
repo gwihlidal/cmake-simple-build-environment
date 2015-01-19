@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 2.8)
 
+include(SBE/helpers/ArgumentParser)
+
 find_package(Subversion QUIET)
 if(NOT Subversion_SVN_EXECUTABLE)
     message(FATAL_ERROR "error: could not find svn.")
@@ -150,3 +152,144 @@ function(svnGetLog localFileOrDirectory svnlog)
 
     set(${svnlog} ${out} PARENT_SCOPE)
 endfunction()  
+
+function(svnCheckout)
+    cmake_parse_arguments(svn "" "LocalDirectory;Url;IsError" "StopOnErrorWithMessage;StartMessage" ${ARGN})
+    
+    if(DEFINED svn_StartMessage)
+        message(${svn_StartMessage})
+    endif()
+    
+    if(NOT DEFINED svn_LocalDirectory AND NOT DEFINED svn_Url)
+        if(DEFINED svn_IsError)
+            set(${svn_IsError} yes PARENT_SCOPE)
+        endif() 
+        if(DEFINED svn_StopOnErrorWithMessage)
+            message(FATAL_ERROR ${svn_StopOnErrorWithMessage})
+        endif()
+        
+        return()        
+    endif()
+    
+    execute_process(
+        COMMAND ${Subversion_SVN_EXECUTABLE} checkout ${svn_Url} ${svn_LocalDirectory}
+        RESULT_VARIABLE svnResult
+        ERROR_VARIABLE err
+        OUTPUT_VARIABLE out)
+        
+    if(${svnResult} GREATER 0)
+        set(${svn_IsError} yes PARENT_SCOPE)
+        if(DEFINED svn_StopOnErrorWithMessage)
+            message(FATAL_ERROR ${svn_StopOnErrorWithMessage})
+        endif()
+        return()
+    endif()
+    
+    set(${svn_IsError} no PARENT_SCOPE)
+endfunction()
+
+function(svnSwitch)
+    cmake_parse_arguments(svn "" "LocalDirectory;Url;IsError" "StopOnErrorWithMessage" ${ARGN})
+    
+    if(DEFINED svn_StartMessage)
+        message(${svn_StartMessage})
+    endif()
+    
+    if(NOT DEFINED svn_LocalDirectory AND NOT DEFINED svn_Url)
+        if(DEFINED svn_IsError)
+            set(${svn_IsError} yes PARENT_SCOPE)
+        endif() 
+        if(DEFINED svn_StopOnErrorWithMessage)
+            message(FATAL_ERROR ${svn_StopOnErrorWithMessage})
+        endif()
+        
+        return()        
+    endif()
+    
+    execute_process(
+        COMMAND ${Subversion_SVN_EXECUTABLE} switch ${svn_Url} ${svn_LocalDirectory}
+        RESULT_VARIABLE svnResult
+        ERROR_VARIABLE err
+        OUTPUT_VARIABLE out)
+        
+    if(${svnResult} GREATER 0)
+        set(${svn_IsError} yes PARENT_SCOPE)
+        if(DEFINED svn_StopOnErrorWithMessage)
+            message(FATAL_ERROR ${svn_StopOnErrorWithMessage})
+        endif()
+        return()
+    endif()
+    
+    set(${svn_IsError} no PARENT_SCOPE)
+endfunction()
+
+function(svnGetRepositoryForLocalDirectory)
+    cmake_parse_arguments(svn "" "LocalDirectory;Url;IsError" "StopOnErrorWithMessage" ${ARGN})
+    
+    if(NOT DEFINED svn_LocalDirectory AND NOT DEFINED svn_Url)
+        if(DEFINED svn_IsError)
+            set(${svn_IsError} yes PARENT_SCOPE)
+        endif() 
+    endif()
+    
+    execute_process(
+        COMMAND ${Subversion_SVN_EXECUTABLE} info ${svn_LocalDirectory}
+        RESULT_VARIABLE svnResult
+        ERROR_VARIABLE err
+        OUTPUT_VARIABLE out)
+        
+    if(${svnResult} GREATER 0)
+        if(DEFINED svn_IsError)
+            set(${svn_IsError} yes PARENT_SCOPE)
+        endif()     
+        if(DEFINED svn_StopOnErrorWithMessage)
+            message(FATAL_ERROR ${svn_StopOnErrorWithMessage})
+        endif()
+        
+        return()
+    endif()
+    
+    if("${out}" MATCHES "URL: ([^\n]+)")
+        set(${svn_Url} "${CMAKE_MATCH_1}" PARENT_SCOPE)
+        if(DEFINED svn_IsError)
+            set(${svn_IsError} no PARENT_SCOPE)
+        endif()                     
+    else()
+        if(DEFINED svn_IsError)
+            set(${svn_IsError} no PARENT_SCOPE)
+        endif()
+        if(DEFINED svn_StopOnErrorWithMessage)
+            message(FATAL_ERROR ${svn_StopOnErrorWithMessage})
+        endif()        
+    endif()
+endfunction()
+
+function(svnIsUrlTag)
+    cmake_parse_arguments(svn "" "Url;IsTag" "" ${ARGN})
+    
+    if(NOT DEFINED svn_IsTag)
+        return()
+    endif()
+    
+    if("${svn_Url}" MATCHES "tags/[^/]+$")
+        set(${svn_IsTag} yes PARENT_SCOPE)
+    else()
+        set(${svn_IsTag} no PARENT_SCOPE)
+    endif()
+endfunction()
+
+function(svnIsUrlTrunk)
+    cmake_parse_arguments(svn "" "Url;IsTrunk" "" ${ARGN})
+    
+    if(NOT DEFINED svn_IsTrunk)
+        return()
+    endif()
+    
+    svnIsUrlTag(Url "${svn_Url}" IsTag isTag)
+    
+    if(isTag)
+        set(${svn_IsTrunk} no PARENT_SCOPE)
+    else()
+        set(${svn_IsTrunk} yes PARENT_SCOPE)
+    endif()
+endfunction()
