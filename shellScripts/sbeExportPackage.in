@@ -1,0 +1,8 @@
+#!/bin/bash
+# sbeExportPackage 
+#     script exports given package for given context file
+#
+#     usage:
+#         sbeExportPackage name contextFile     
+ 
+cmake -DName="$1" -DContextFile=$2 -P @CMAKE_ROOT@/Modules/SBE/shellScripts/ExportPackage.cmake

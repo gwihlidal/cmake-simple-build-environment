@@ -1,14 +1,7 @@
 
 include(SBE/helpers/ArgumentParser)
-include(SBE/helpers/DependenciesParser)
 
-include(${DEP_INFO_FILE} OPTIONAL)
-    
 function(sbeAddDependencies)
-    if(NOT DEFINED DEP_INFO_FILE)
-        message(FATAL_ERROR "DEP_INFO_FILE has to be defined")
-    endif()
-
     sbeParseArguments(dep "" "Target" "DependencyTypesToAdd;ExcludeDependencies" "FromDependency" "${ARGN}")
     
     if(NOT DEFINED dep_Target)
@@ -36,20 +29,8 @@ function(sbeAddDependencies)
     # loop through over all dependencies due to include paths, but link only direct dependencies
     sbeAddDependenciesIncludes(Target ${dep_Target})
     
-    foreach(dep ${${NAME}_Dependencies})
-        # check if dependency has to be added
-        if("" STREQUAL "${${dep}_Type}" OR "Container" STREQUAL "${${dep}_Type}")
-            set(hasToBeAdded yes)
-        else()
-            list(FIND dep_DependencyTypesToAdd "${${dep}_Type}" index)
-            if(index EQUAL -1)
-                set(hasToBeAdded no)
-            else()
-                set(hasToBeAdded yes)
-            endif()
-        endif()
-        
-        if(hasToBeAdded AND DEFINED dep_ExcludeDependencies)
+    foreach(dep ${DirectDependencies})
+        if(DEFINED dep_ExcludeDependencies)
             list(FIND dep_ExcludeDependencies "${dep}" index)
             if (${index} EQUAL -1)
                 set(hasToBeAdded yes)
@@ -105,7 +86,7 @@ function(sbeAddDependenciesIncludes)
         set(useMock yes)
     endif()
             
-    foreach(dep ${${NAME}_OverallDependencies})
+    foreach(dep ${OverallDependencies})
         # add dependency includes            
         if(useMock)
             if(DEFINED ${dep}_INCLUDE_DIRS OR DEFINED ${dep}_MOCK_INCLUDE_DIRS)
@@ -126,7 +107,7 @@ endfunction()
 
 function(sbeDoesDependenciesContainsDeclSpecs containsDeclspecs)
     # check dependend packages
-    foreach(dep ${${NAME}_Dependencies})
+    foreach(dep ${DirectDependencies})
         if(${dep}_CONTAINS_DECLSPEC)
             set(depContains "yes")
             break()

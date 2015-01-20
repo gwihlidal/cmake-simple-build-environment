@@ -157,7 +157,7 @@ function(svnCheckout)
     cmake_parse_arguments(svn "" "LocalDirectory;Url;IsError" "StopOnErrorWithMessage;StartMessage" ${ARGN})
     
     if(DEFINED svn_StartMessage)
-        message(${svn_StartMessage})
+        message(STATUS ${svn_StartMessage})
     endif()
     
     if(NOT DEFINED svn_LocalDirectory AND NOT DEFINED svn_Url)
@@ -189,10 +189,10 @@ function(svnCheckout)
 endfunction()
 
 function(svnSwitch)
-    cmake_parse_arguments(svn "" "LocalDirectory;Url;IsError" "StopOnErrorWithMessage" ${ARGN})
+    cmake_parse_arguments(svn "" "LocalDirectory;Url;IsError" "StartMessage;StopOnErrorWithMessage" ${ARGN})
     
     if(DEFINED svn_StartMessage)
-        message(${svn_StartMessage})
+        message(STATUS ${svn_StartMessage})
     endif()
     
     if(NOT DEFINED svn_LocalDirectory AND NOT DEFINED svn_Url)

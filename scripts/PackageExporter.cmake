@@ -13,13 +13,14 @@ include(SBE/helpers/ArgumentParser)
 
 # It exports ovearall package dependencies
 function(sbeExportPackageDependencies name propertyFile)
+    message(STATUS "Checking exported Dependencies")
     # When Context file is modified recheck all dependencies
     getContextTimestamp(actualContextTimestamp)
     
     set(IsExportNecessary no)
     
     if("${actualContextTimestamp}" STREQUAL "${Export_ContextTimestamp}")
-        foreach(exportedDependency ${Export_OverallDependencies})
+        foreach(exportedDependency ${OverallDependencies})
             sbeGetPackagePropertiesTimestamp(${exportedDependency} ts)
             if("${ts}" STREQUAL "${${exportedDependency}_PropertiesTimestamp}")
                 set_property(GLOBAL APPEND PROPERTY Export_OverallDependencies ${exportedDependency})
@@ -116,7 +117,7 @@ function(sbeExportDependency name)
     
     if(NOT EXISTS ${packagePath})
         svnCheckout(LocalDirectory ${packagePath} Url ${packageUrl}
-            StartMessage "Checking out ${name} ${packageUrl}"
+            StartMessage "   Checking out ${name} ${packageUrl}"
             StopOnErrorWithMessage "Could NOT checkout ${packageUrl} for ${name}")
     else()
         svnGetRepositoryForLocalDirectory(${packagePath} url)
@@ -126,12 +127,12 @@ function(sbeExportDependency name)
         if(isTag)
             if(NOT "${url}" STREQUAL "${packageUrl}")
                 svnSwitch(LocalDirectory ${packagePath} Url ${packageUrl}
-                    StartMessage "Switching ${name} ${packageUrl}"
+                    StartMessage "   Switching ${name} ${packageUrl}"
                     StopOnErrorWithMessage "Could NOT switch to ${packageUrl} for ${name}" 
                 )
             endif()
         else()
-            message("Ignoring ${name} due to trunk")
+            message(STATUS "   Ignoring ${name} due to trunk")
         endif()        
     endif()
     
@@ -147,11 +148,11 @@ function(OrderDependecies dependencies)
     get_property(Export_OrderedOverallDependencies GLOBAL PROPERTY Export_OrderedOverallDependencies)
     
     foreach(dependency ${dependencies})
-        if("" STREQUAL "${Export_${dependency}_DirectDependencies}")
+        if("" STREQUAL "${${dependency}_DirectDependencies}")
             set(isLoop no)
             set_property(GLOBAL APPEND PROPERTY Export_OrderedOverallDependencies ${dependency})
         elseif(NOT "" STREQUAL "${Export_OrderedOverallDependencies}")
-            set(directDependencies ${Export_${dependency}_DirectDependencies})
+            set(directDependencies ${${dependency}_DirectDependencies})
             list(REMOVE_ITEM directDependencies ${Export_OrderedOverallDependencies})
             list(LENGTH directDependencies directDependenciesNumber)
             if (${directDependenciesNumber} EQUAL 0)

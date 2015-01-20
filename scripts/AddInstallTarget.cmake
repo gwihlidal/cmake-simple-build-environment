@@ -11,8 +11,6 @@ set(isAddInstallCalled no)
 
 set(InstalledTargets "")
 
-execute_process(COMMAND ${CMAKE_COMMAND} -E remove Export/buildalltimestamp)
-           
 function(sbeInstallFrequentisVBT)
     # arguments
     # Url - path and name of VBT in Svn
@@ -173,11 +171,25 @@ function(sbeAddInstallTarget)
     
     export(TARGETS ${inst_Targets} FILE Export/config/${PROJECT_NAME}Targets.cmake)
     
+    sbeGetPackageBuildTimestamp(${PROJECT_NAME} buildtimestamp)
     
     foreach(trg ${inst_Targets})
         add_custom_command(TARGET ${trg} POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E touch Export/buildtimestamp)
+            COMMAND ${CMAKE_COMMAND} -E touch ${buildtimestamp})
     endforeach()
+
+    # add all build timestamp for dependats
+    sbeGetPackageAllBuildTimestamp(${PROJECT_NAME} allbuildtimestamp)
+    
+    if(TARGET export-headers)
+        set(allTargetsThatAreBuild ${inst_Targets} export-headers)
+    else()
+        set(allTargetsThatAreBuild ${inst_Targets})
+    endif()
+    add_custom_target(buildtimestamp ALL 
+        COMMAND ${CMAKE_COMMAND} -E touch ${allbuildtimestamp} 
+        DEPENDS ${allTargetsThatAreBuild}
+        COMMENT "")    
 endfunction()
 
 function(_installTestTargets)
@@ -418,6 +430,8 @@ function(_exportHeaders)
         set(headersTarget export-headers)
         add_custom_target(${headersTarget} ALL)
     endif()
+
+    sbeGetPackageBuildTimestamp(${PROJECT_NAME} buildtimestamp)
                 
     # copy directory as it is
     if(DEFINED headers_HeadersDirectory)
@@ -425,7 +439,7 @@ function(_exportHeaders)
             list(APPEND exportCommandArg "-DSOURCE=${headerDir}")
             list(APPEND exportCommandArg "-DDESTINATION=${headers_DestinationDirectory}")
             list(APPEND exportCommandArg "-DMESSAGE=Exporting ${headerDir}")
-            list(APPEND exportCommandArg "-DTIMESTAMP_FILE=${PROJECT_BINARY_DIR}/Export/buildtimestamp")
+            list(APPEND exportCommandArg "-DTIMESTAMP_FILE=${buildtimestamp}")
             list(APPEND exportCommandArg "-P")
             list(APPEND exportCommandArg "${CMAKE_ROOT}/Modules/SBE/helpers/CopyIfNewer.cmake")
      
@@ -479,14 +493,14 @@ function(_exportHeaders)
             list(APPEND exportCommandArg "-DSOURCE=${sourceHeaderFile}")
             list(APPEND exportCommandArg "-DDESTINATION=${exportedHeaderFile}")
             list(APPEND exportCommandArg "-DMESSAGE=Exporting ${header}")
-            list(APPEND exportCommandArg "-DTIMESTAMP_FILE=${PROJECT_BINARY_DIR}/Export/buildtimestamp")            
+            list(APPEND exportCommandArg "-DTIMESTAMP_FILE=${buildtimestamp}")            
             list(APPEND exportCommandArg "-P")
             list(APPEND exportCommandArg "${CMAKE_ROOT}/Modules/SBE/helpers/ChangeExportToImport.cmake")
         else()
             list(APPEND exportCommandArg "-DSOURCE=${sourceHeaderFile}")
             list(APPEND exportCommandArg "-DDESTINATION=${exportedHeaderFile}")
             list(APPEND exportCommandArg "-DMESSAGE=Exporting ${header}")
-            list(APPEND exportCommandArg "-DTIMESTAMP_FILE=${PROJECT_BINARY_DIR}/Export/buildtimestamp")
+            list(APPEND exportCommandArg "-DTIMESTAMP_FILE=${buildtimestamp}")
             list(APPEND exportCommandArg "-P")
             list(APPEND exportCommandArg "${CMAKE_ROOT}/Modules/SBE/helpers/CopyIfNewer.cmake")
         endif()
