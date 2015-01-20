@@ -105,6 +105,32 @@ function(sbeGetPackageLocalPath name localPath)
     set(${localPath} "${ContextPath}/${pathInContext}" PARENT_SCOPE)
 endfunction()
 
+# It gets local package path to build directory for its name
+function(sbeGetPackageBuildPath name buildPath)
+    if(NOT DEFINED CMAKE_TOOLCHAN_FILE OR NOT DEFINED CMAKE_BUILD_TYPE)
+        return()
+    endif()
+    
+    sbeGetPackageLocalPath(${name} packagePath)
+    
+    get_filename_component(TOOLCHAIN_NAME ${CMAKE_TOOLCHAIN_FILE} NAME)
+    string(REPLACE ".cmake" "" TOOLCHAIN_NAME "${TOOLCHAIN_NAME}")
+    
+    set(${buildPath} "${packagePath}/build/${TOOLCHAIN_NAME}/${CMAKE_BUILD_TYPE}" PARENT_SCOPE)
+endfunction()
+
+# It gets local package path to config directory for its name
+function(sbeGetPackageConfigPath name configPath)
+    sbeGetPackageBuildPath(${name} buildPath)
+
+    if(NOT DEFINED buildPath)
+        return()
+    endif()
+   
+    set(${configPath} "${buildPath}/Export/config" PARENT_SCOPE)
+endfunction()
+
+
 # It gets local package properties file
 function(sbeGetPackagePropertiesFile name propertiesFile)
     sbeGetPackageLocalPath(${name} packagePath)
