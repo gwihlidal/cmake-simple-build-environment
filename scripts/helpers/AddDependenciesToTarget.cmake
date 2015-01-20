@@ -30,6 +30,8 @@ function(sbeAddDependencies)
     sbeAddDependenciesIncludes(Target ${dep_Target})
     
     foreach(dep ${DirectDependencies})
+        set(hasToBeAdded yes)
+        
         if(DEFINED dep_ExcludeDependencies)
             list(FIND dep_ExcludeDependencies "${dep}" index)
             if (${index} EQUAL -1)
@@ -117,7 +119,7 @@ endfunction()
   
 function(_AddLibraries targetName libraries)
     add_dependencies(${targetName} dependencies)
-    
+
     foreach(lib ${libraries})
         get_target_property(libType ${lib} TYPE)
         
