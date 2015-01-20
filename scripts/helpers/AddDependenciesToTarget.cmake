@@ -2,7 +2,7 @@
 include(SBE/helpers/ArgumentParser)
 
 function(sbeAddDependencies)
-    sbeParseArguments(dep "" "Target" "DependencyTypesToAdd;ExcludeDependencies" "FromDependency" "${ARGN}")
+    sbeParseArguments(dep "" "Target" "ExcludeDependencies" "FromDependency" "${ARGN}")
     
     if(NOT DEFINED dep_Target)
         return()
@@ -41,8 +41,6 @@ function(sbeAddDependencies)
 
         # add dependency            
         if(hasToBeAdded)
-            add_dependencies(${dep_Target} ${dep})
-            
             if(DEFINED ${dep}_LibrariesToLink)
                 set(tmpList ${${dep}_LibrariesToLink})
                 if(useMock)
@@ -119,6 +117,7 @@ endfunction()
   
 function(_AddLibraries targetName libraries)
     add_dependencies(${targetName} dependencies)
+    
     foreach(lib ${libraries})
         get_target_property(libType ${lib} TYPE)
         

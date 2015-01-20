@@ -57,7 +57,6 @@ function(sbeAddLibrary)
     
     sbeAddDependencies(
         Target ${prop_Name}
-        DependencyTypesToAdd "Container" 
         ExcludeDependencies ${prop_ExcludeDependencies}
         ${prop_FromDependency}) 
 
@@ -82,11 +81,7 @@ function(sbeAddMockLibrary)
         return()
     endif()
     
-    if(NOT DEFINED prop_MockedName AND NOT "${prop_Name}" MATCHES "^Mock.*$")
-        message(FATAL_ERROR "You have to set mocked name.")
-    endif()
-    
-    if(NOT DEFINED prop_MockedName)
+    if(NOT DEFINED prop_MockedName AND "${prop_Name}" MATCHES "^Mock.*$")
         string(REGEX REPLACE "^Mock(.*)$" "\\1" prop_MockedName "${prop_Name}")
     endif()
 
@@ -107,7 +102,6 @@ function(sbeAddMockLibrary)
     
     sbeAddDependencies(
         Target ${prop_Name}
-        DependencyTypesToAdd "Container" 
         ExcludeDependencies ${prop_ExcludeDependencies}
         ${prop_FromDependency}) 
 
@@ -155,7 +149,6 @@ function(sbeAddExecutable)
     
     sbeAddDependencies(
         Target ${prop_Name} 
-        DependencyTypesToAdd "Container"
         ExcludeDependencies ${prop_ExcludeDependencies}
         ${prop_FromDependency}) 
 
@@ -218,7 +211,6 @@ function(sbeAddTestExecutable)
     
     sbeAddDependencies(
         Target ${prop_Name} 
-        DependencyTypesToAdd "Container;Unit Test Framework"
         ExcludeDependencies ${prop_ExcludeDependencies}
         ${prop_FromDependency}) 
 
