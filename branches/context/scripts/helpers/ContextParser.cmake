@@ -19,17 +19,18 @@ function(sbeFindContextFile name contextFile)
         set(contextFileBaseOnName ${name})
         string(REPLACE "." "/" contextFileBaseOnName ${contextFileBaseOnName})
         string(REGEX REPLACE "[^/]+" ".." contextFileBaseOnName ${contextFileBaseOnName})
-        set(contextFileBaseOnName "${contextFileBaseOnName}/../Context.cmake")
+        set(contextFileBaseOnName "${CMAKE_CURRENT_LIST_DIR}/${contextFileBaseOnName}/../Context.cmake")
+        get_filename_component(contextFileBaseOnName "${contextFileBaseOnName}" ABSOLUTE)
     
-        if(EXISTS ${contextFileBaseOnName})
+        if(EXISTS "${contextFileBaseOnName}")
             set(${contextFile} ${contextFileBaseOnName} PARENT_SCOPE)
-        elseif(EXISTS Context.cmake)
-            set(${contextFile} "Context.cmake" PARENT_SCOPE)
+        elseif(EXISTS ${CMAKE_CURRENT_LIST_DIR}/Context.cmake)
+            set(${contextFile} "${CMAKE_CURRENT_LIST_DIR}/Context.cmake" PARENT_SCOPE)
         else()
             message(FATAL_ERROR
                "Context.cmake file is missing." 
                "It is not given on command line as variable SBEContextFile."
-               "It is not found in source directory neither in ${pathToContextFileBaseOnName}."
+               "It is not found in source directory neither in ${contextFileBaseOnName}."
                )                        
         endif()
     endif()
@@ -128,6 +129,29 @@ function(sbeGetPackageConfigPath name configPath)
     endif()
    
     set(${configPath} "${buildPath}/Export/config" PARENT_SCOPE)
+endfunction()
+
+
+# It gets package timestamp file for its name
+function(sbeGetPackageBuildTimestamp name timestampFile)
+    sbeGetPackageBuildPath(${name} buildPath)
+
+    if(NOT DEFINED buildPath)
+        return()
+    endif()
+    
+    set(${timestampFile} "${buildPath}/Export/${name}.buildtimestamp" PARENT_SCOPE)
+endfunction()
+
+# It gets package all build timestamp file for its name
+function(sbeGetPackageAllBuildTimestamp name timestampFile)
+    sbeGetPackageBuildPath(${name} buildPath)
+
+    if(NOT DEFINED buildPath)
+        return()
+    endif()
+    
+    set(${timestampFile} "${buildPath}/Export/${name}.allbuildtimestamp" PARENT_SCOPE)
 endfunction()
 
 

@@ -6,17 +6,27 @@ endif()
 
 set(PackageConfiguratorGuard yes)
 
+# suppress unused variables warning
+if(CMAKE_TOOLCHAIN_FILE)
+endif()
+if(RULE_LAUNCH_COMPILE)
+endif()
+if(RULE_LAUNCH_LINK)
+endif()
+if(SBE_CoverityIsRequested)
+endif()
+
 find_program(SED_TOOL sed)
 if(NOT SED_TOOL)
     message(FATAL_ERROR "error: could not find sed.")
 endif()
 
 # each project has to have properties.cmake file, where project is described
-set(PackagePropertyFile Properties.cmake)
+set(PackagePropertyFile ${CMAKE_SOURCE_DIR}/Properties.cmake)
 
 include(SBE/helpers/ArgumentParser)
 include(SBE/helpers/ContextParser)
-include(SBE/ExportDependencies)
+include(SBE/PackageExporter)
 
 # macro calculates mandratory variables if not given
 # - sets CMAKE_TOOLCHAN_FILE to host-linux-vcxi-default-default-default.cmake
@@ -26,7 +36,7 @@ include(SBE/ExportDependencies)
 # macro checks mandratory variables in property file
 # - Name
 # - SemanticVersion or DateVersion
-function(sbeConfigurePackage)
+macro(sbeConfigurePackage)
 
     # Property file is mandratory for each project
     sbeReportErrorWhenFileDoesntExists(PackagePropertyFile
@@ -66,7 +76,7 @@ function(sbeConfigurePackage)
         set(CMAKE_BUILD_TYPE Debug)
     endif()
 
-    # define project    
+    # define project
     project(${Name} ${projectLanguages})
     
     # export dependencies
@@ -74,62 +84,70 @@ function(sbeConfigurePackage)
     sbeLoadContextFile(${contextFile})
     sbeExportPackageDependencies(${Name} ${PackagePropertyFile})
     set(DirectDependencies ${Dependencies} CACHE "" INTERNAL FORCE)
-endfunction()
+    
+    # configure dependencies
+    sbeConfigureDependencies()
+    sbeLoadDependencies()
+endmacro()
 
 function(sbeConfigureDependencies)
     # if package has no dependencies do nothing
-    if(NOT DEFINED OverallDependencies)
+    if("" STREQUAL "${OverallDependencies}")
+        set(Configured_OverallDependencies ${OverallDependencies} CACHE "" INTERNAL FORCE)
         return()
     endif()
     
+    message(STATUS "Configuring Dependencies")
+    
     # get packages to configure
     set(dependenciesToConfigure ${OverallDependencies})
-    if(DEFINED Configured_OverallDependencies)
+    if(NOT "" STREQUAL "${Configured_OverallDependencies}")
         list(REMOVE_ITEM dependenciesToConfigure ${Configured_OverallDependencies})
     endif()
-    
+
     foreach(dep ${dependenciesToConfigure})
         sbeConfigureDependency(${dep})
     endforeach()
     set(Configured_OverallDependencies ${OverallDependencies} CACHE "" INTERNAL FORCE)
     
-    # load configured dependencies
-    foreach(dep ${OverallDependencies})
-        sbeGetPackageConfigPath(${name} configPath)
-        find_package(${dep} REQUIRED CONFIG PATHS "${configPath}" NO_DEFAULT_PATH)
-    endforeach()
-    
     # add dependecies targets that ensure dependency build
     foreach(dep ${OverallDependencies})
         sbeGetPackageBuildPath(${dep} buildPath)
         sbeGetPackageBuildTimestamp(${dep} timestamp)
+        sbeGetPackageAllBuildTimestamp(${dep} allbuildtimestamp)
         
         set(dependencyTimestamps "")
-        foreach(d (${dep}_DirectDependencies})
-            sbeGetPackageBuildTimestamp(${d} t)
+        foreach(d ${${dep}_DirectDependencies})
+            sbeGetPackageAllBuildTimestamp(${d} t)
             list(APPEND dependencyTimestamps ${t})
         endforeach()
-        
+
         add_custom_command(
             OUTPUT ${timestamp}
+            COMMENT "")
+                        
+        add_custom_command(
+            OUTPUT ${allbuildtimestamp}
             COMMAND ${CMAKE_COMMAND} --build . --use-stderr
-            DEPENDS ${dependencyTimestamps}
+            DEPENDS ${dependencyTimestamps} ${timestamp}
             WORKING_DIRECTORY ${buildPath}
-        )
+            COMMENT "Building ${dep}")
     endforeach()
     
     # setup denepdencies for own package
     set(dependencyTimestamps "")
     foreach(dep ${DirectDependencies})
-        sbeGetPackageBuildTimestamp(${d} t)
+        sbeGetPackageAllBuildTimestamp(${dep} t)
         list(APPEND dependencyTimestamps ${t})
     endforeach()
     
     add_custom_command(
-            OUTPUT dependencies.buildtimestamp
-            COMMAND ${CMAKE_COMMAND} -E touch dependencies.buildtimestamp
-            DEPENDS ${dependencyTimestamps}
-    )
+        OUTPUT dependencies.buildtimestamp
+        COMMAND ${CMAKE_COMMAND} -E touch dependencies.buildtimestamp
+        DEPENDS ${dependencyTimestamps}
+        COMMENT "")
+        
+    add_custom_target(dependencies DEPENDS dependencies.buildtimestamp COMMENT "")
  endfunction()
 
 function(sbeConfigureDependency name)
@@ -139,8 +157,8 @@ function(sbeConfigureDependency name)
     if(EXISTS "${buildPath}/Makefile")
         return()
     endif()
-    
-    message(STATUS "Configuring dependency ${name}")
+
+    message(STATUS "   ${name}")
 
     # create build directory    
     file(MAKE_DIRECTORY ${buildPath})
@@ -157,11 +175,12 @@ function(sbeConfigureDependency name)
     endif()
 
     # configure dependency
+    sbeGetPackageLocalPath(${name} packagePath)
     execute_process(
         COMMAND cmake -E chdir ${buildPath} 
             cmake ${configurationArgs}
             ${packagePath}
-        COMMAND ${SED_TOOL} -u -e "s/.*/    &/"
+        COMMAND ${SED_TOOL} -u -e "s/.*/      &/"
         RESULT_VARIABLE configureResult)
     
     # handle configuration result
@@ -169,3 +188,11 @@ function(sbeConfigureDependency name)
         message(FATAL_ERROR "Error during configuration of dependency ${name}")
     endif()
 endfunction()
+
+macro(sbeLoadDependencies)
+    # load configured dependencies
+    foreach(dep ${OverallDependencies})
+        sbeGetPackageConfigPath(${dep} configPath)
+        find_package(${dep} REQUIRED CONFIG PATHS "${configPath}" NO_DEFAULT_PATH)
+    endforeach()
+endmacro()
