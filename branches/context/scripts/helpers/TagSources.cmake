@@ -1,187 +1,237 @@
-if(NOT DEFINED PROJECT_SOURCE_DIR)
-    message(SEND_ERROR "PROJECT_SOURCE_DIR has to be defined")
+if(NOT DEFINED PackageRootDirectory)
+    message(SEND_ERROR "PackageRootDirectory has to be defined")
 endif()
 
-if(NOT DEFINED PROJECT_NAME)
-    message(SEND_ERROR "PROJECT_NAME has to be defined")
-endif()
-
-if(NOT DEFINED VERSION_MAJOR)
-    message(SEND_ERROR "VERSION_MAJOR has to be defined")
-endif()
-
-if(NOT DEFINED VERSION_MINOR)
-    message(SEND_ERROR "VERSION_MINOR has to be defined")
-endif()
-
-if(NOT DEFINED VERSION_PATCH)
-    message(SEND_ERROR "VERSION_MINOR has to be defined")
-endif()
-
-find_package(Subversion QUIET)
-if(NOT Subversion_SVN_EXECUTABLE)
-    message(SEND_ERROR "error: could not find svn.")
+if(NOT DEFINED ContextFile)
+    message(SEND_ERROR "ContextFile has to be defined")
 endif()
 
 include(SBE/helpers/SvnHelpers)
+include(SBE/helpers/ContextParser)
 
-# get working copy info
+function(UpdateReleaseNoteFile dependencies tagName releaseDate overview)
+    getUser(user)
+    list(APPEND content "${tagName} (${user} ${releaseDate})\n")
+    
+    if(NOT "" STREQUAL "${overview}" OR NOT "" STREQUAL "${dependencies}")
+        list(APPEND content "---[ALL]---\n")
+    endif()
+    
+    if(NOT "" STREQUAL "${overview}")
+        list(APPEND content "   <overview>\n")
+        string(REPLACE "\n" "\n      " overview "${overview}")
+        list(APPEND content "      ${overview}\n")
+    endif()
+    
+    if(NOT "" STREQUAL "${dependencies}")
+        list(APPEND content "   <dependencies>\n")
+        foreach(dep ${dependencies})
+            sbeGetPackageUrl(${dep} depUrl)
+            list(APPEND content "      ${dep} ${depUrl}\n")
+        endforeach()
+    endif() 
+    
+    if(EXISTS ${PackageRootDirectory}/ReleaseNotes)
+        file(READ ${PackageRootDirectory}/ReleaseNotes old)
+    endif()
+    file(WRITE ${PackageRootDirectory}/ReleaseNotes ${content} ${old})   
+endfunction()
+
+
+macro(getUser user)
+    if(WIN32)
+        set(${user} "$ENV{USERNAME}")
+    elseif(UNIX)
+        set(${user} "$ENV{USER}")
+    else()
+        set(${user} "unknown")
+    endif()
+endmacro()
+
+
+sbeLoadContextFile(${ContextFile})
+svnGetRepositoryForLocalDirectory(${PackageRootDirectory} url)
+
 message(STATUS "Checking working copy for trunk...")
-execute_process(
-    COMMAND ${Subversion_SVN_EXECUTABLE} info "${PROJECT_SOURCE_DIR}"
-    RESULT_VARIABLE svnResult
-    OUTPUT_VARIABLE out)
-if(${svnResult} GREATER 0)
-    message(STATUS "Could not get info about working copy")
-    message(SEND_ERROR "exit")
-endif()    
-
-set(SOURCES_INFO ${out})
-string(REGEX MATCH "URL: ([^ \n]+)/[0-9_a-zA-Z]+" PROJECT_SVN_ROOT "${SOURCES_INFO}")
-set(PROJECT_SVN_ROOT ${CMAKE_MATCH_1})
-string(REGEX MATCH "URL: [^ \n]+/([0-9_a-zA-Z]+)" SOURCES_TAG "${SOURCES_INFO}")
-set(SOURCES_TAG ${CMAKE_MATCH_1})
-
-if (NOT "${SOURCES_TAG}" STREQUAL "trunk")
-    message(STATUS "Currently checkouted sources are not trunk version")
-    message(SEND_ERROR "exit")
+svnIsUrlTrunk(${url} isTrunk)
+if(NOT isTrunk)
+    message(SEND_ERROR "Currently checkouted sources are not trunk version")
 endif()
 
-# fire error when working copy has modifications
 message(STATUS "Checking working copy for modifications...")
-execute_process(
-    COMMAND ${Subversion_SVN_EXECUTABLE} status ${PROJECT_SOURCE_DIR}
-    RESULT_VARIABLE svnResult
-    OUTPUT_VARIABLE out)
-
-if(${svnResult} GREATER 0)
-    message(STATUS "SVN status fails")
-    message(SEND_ERROR "exit")
+svnIsLocalDirectoryModified(${PackageRootDirectory} isModified modifications)
+if(isModified)
+    message(SEND_ERROR "Working copy has modifications\n" ${modifications})
 endif()
 
-string(LENGTH "${out}" statusLength)
-
-if (${statusLength} GREATER 0)
-    message(STATUS "Working copy has modifications\n" ${out})
-    message(SEND_ERROR "exit")
-endif()
-
-#  fire error when there are new sources in repository
 message(STATUS "Checking trunk is up to date...")
-execute_process(
-    COMMAND ${Subversion_SVN_EXECUTABLE} status --show-updates ${PROJECT_SOURCE_DIR}
-    RESULT_VARIABLE svnResult
-    OUTPUT_VARIABLE out)
-if(${svnResult} GREATER 0)
-    message(STATUS "Could not get info about trunk")
-    message(SEND_ERROR "exit")
+svnIslocalDirectoryOnLatesRevision(${PackageRootDirectory} isLatest modifications)
+if(NOT isLatest)
+    message(SEND_ERROR "New trunk in repository. Update first.\n${modifications}")
 endif()
 
-string(REGEX REPLACE "Status against revision:.*\n" "" out ${out})
+svnGetPackageRootInRepository(${url} packageUrlRoot)
 
-if (NOT "${out}" STREQUAL "")
-    message(STATUS "New trunk in repository. Update first.\n${out}")
-    message(SEND_ERROR "exit")
-endif()
-
-# when trunk is already tagged stop, it is not necessary to tag, when not forced
 if(NOT FORCE)
     message(STATUS "Checking trunk changes against last tag...")
-
-    svnIsTrunkChangedAgainstLastTags("${PROJECT_SVN_ROOT}" isChanged errorReason)
+    svnIsTrunkChangedAgainstLastTags("${packageUrlRoot}" isChanged errorReason)
 
     if (NOT "${errorReason}" STREQUAL "")
-        message(STATUS "Error when getting info about trunk or tags.\n${errorReason}")
-        message(SEND_ERROR "exit")
+        message(SEND_ERROR "Error when getting info about trunk or tags.\n${errorReason}")
     endif()
 
     if (NOT isChanged)
-        svnGetNewestSubdirectory("${PROJECT_SVN_ROOT}/tags" newestSubDirectory errorReason)
-        message(STATUS "Trunk is tagged in ${newestSubDirectory}")
+        svnGetNewestSubdirectory("${packageUrlRoot}/tags" newestSubDirectory errorReason)
+        message(STATUS "Trunk is already tagged in ${newestSubDirectory}")
         return()
     endif()
-endif()    
+endif()
 
 # calculate tag name
-if(VERSION_BUILD_NUMBER)
-    set(TAG_NAME "rel_${VERSION_MAJOR}_${VERSION_MINOR}_${VERSION_PATCH}_${VERSION_BUILD_NUMBER}")
+include(${PackageRootDirectory}/Properties.cmake)
+
+set(tagName "")
+set(version "")
+set(versionRevision "")
+string(TIMESTAMP releaseDate "%Y%m%d%H%M%S")
+string(TIMESTAMP releaseDateAsText "%d.%m.%Y %H:%M:%S")
+if(DEFINED SemanticVersion)
+    include(SBE/helpers/VersionParser)
+    sbeSplitSemanticVersion(${SemanticVersion} major minor bugfix)
+    set(version "${major}_${minor}_${bugfix}")
+    set(tagName "rel_${version}")
+    if(ADD_UNIQUE_ID)
+        svnGetRepositoryDirectoryRevision("${packageUrlRoot}/trunk" versionRevision error)
+            
+        if (NOT "${error}" STREQUAL "")
+            message(SEND_ERROR "${error}")
+        endif()
+        
+        set(tagName "${tagName}-${versionRevision}")
+    endif()    
+elseif(DEFINED DateVersion)
+    set(version ${releaseDate})
+    set(tagName "rel_${version}")
 else()
-    set(TAG_NAME "rel_${VERSION_MAJOR}_${VERSION_MINOR}_${VERSION_PATCH}")
-endif()    
+    message(SEND_ERROR "One of SemanticVersion or DateVersion has to be defined")
+endif()
 
 # check if sources are already tagged
-message(STATUS "Checking tag ${TAG_NAME} in repository...")
+message(STATUS "Checking tag ${tagName} in repository...")
 
-svnIsDirectoryContains("${TAG_NAME}/" "${PROJECT_SVN_ROOT}/tags" isThere errorReason)
+svnIsDirectoryContains("${tagName}/" "${packageUrlRoot}/tags" isThere errorReason)
 
 if(NOT "" STREQUAL "${errorReason}")
-    message(STATUS "Error accessing svn, when checking tag in repository:\n${errorReason}")
-    message(SEND_ERROR "exit")
+    message(SEND_ERROR "Error accessing svn, when checking tag in repository:\n${errorReason}")
 endif()
 
 if(isThere)
-    message(STATUS "Tag ${TAG_NAME} already exists in repository")
-    message(SEND_ERROR "exit")
+    message(SEND_ERROR "Tag ${tagName} already exists in repository")
 endif()
 
-# when sources are not tagged and working copy is on trunk
-# 1. Generate documentation for sources
-# 2. Tag sources
-message(STATUS "Generating Release notes...")
+# check dependencies
+if(DEFINED OverallDependencies)
+    message(STATUS "Checking dependencies...")
 
-include(SBE/helpers/ReleaseNoteGenerator)
+    string(REPLACE "," ";" OverallDependencies "${OverallDependencies}")
+    
+    foreach(dep ${OverallDependencies})
+        message(STATUS "   Checking ${dep}...")
+        sbeGetPackageLocalPath(${dep} packagePath)
+        sbeGetPackageUrl(${dep} packageUrl)
+        
+        svnIsLocalDirectoryModified(${packagePath} isModified modifications)
+        if(isModified)
+            message(SEND_ERROR "Dependency ${dep} is locally modified")
+        endif()
+        
+        svnGetRepositoryForLocalDirectory(${packagePath} url)
+        svnIsUrlTag(${url} isTag)
+        
+        if(isTag)
+            if(NOT "${url}" STREQUAL "${packageUrl}")
+                message(SEND_ERROR "Dependency ${dep} has checkouted different tag as in context file")
+            endif()
+        else()
+            svnGetRepositoryDirectoryRevision("${packageUrl}" tagsRevision error)
+            svnGetRepositoryDirectoryRevision("${url}" trunkRevision error)
+            if(${trunkRevision} GREATER ${tagsRevision})
+                message(SEND_ERROR "Dependency ${dep} has checkouted newer trunk as release in context file")
+            endif()
+        endif()        
+    endforeach()
+endif()
 
-GenerateReleaseNote(${PROJECT_SVN_ROOT} ${PROJECT_NAME} ${TAG_NAME} releaseNote)
 
-message(STATUS "Tagging sources, tag is ${TAG_NAME}...")
+# update version in properties file in case of date version
+if(DEFINED DateVersion)
+    message(STATUS "Updating Date version...")
+    include(SBE/helpers/PropertiesParser)
+    sbeUpdateDateVersion(${releaseDate} ${PackageRootDirectory}/Properties.cmake)
+endif()
+
+# update release notes
+message(STATUS "Updating Release notes...")
+UpdateReleaseNoteFile(
+    "${OverallDependencies}" 
+    ${tagName} 
+    "${releaseDateAsText}" 
+    "${RELEASE_NOTE_OVERVIEW}"
+)
+
+# check if ReleaseNotes has to be added before commit
+svnGetStatus(LocalDirectory ${PackageRootDirectory} IsError isError Status status)
+if(isError)
+    message(SEND_ERROR "Could not get status of package directory")
+endif()
+
+if("${status}" MATCHES "\\?[ \t].*ReleaseNotes\n")
+    # add ReleaseNotes to repository
+    execute_process(
+        COMMAND ${Subversion_SVN_EXECUTABLE} add ReleaseNotes
+        WORKING_DIRECTORY ${PackageRootDirectory}
+        RESULT_VARIABLE svnResult
+        OUTPUT_VARIABLE out)
+        
+    if(${svnResult} GREATER 0)
+        message(SEND_ERROR "Could not adding ReleaseNotes to repository")
+    endif()
+endif()
+
+# commit changed files
+execute_process(
+    COMMAND ${Subversion_SVN_EXECUTABLE} commit -m "Adding modified files for release ${tagName}"
+    WORKING_DIRECTORY ${PackageRootDirectory} 
+    RESULT_VARIABLE svnResult
+    OUTPUT_VARIABLE out)
+
+if(${svnResult} GREATER 0)
+    message(SEND_ERROR "Could not commit of modified files")
+endif()
+
+# Tag sources
+message(STATUS "Tagging sources, tag is ${tagName}...")
 
 # create commit comment
-if(VERSION_BUILD_NUMBER)
-    set(COMMIT_COMMENT "Automatic release ${PROJECT_NAME} version ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}.${VERSION_BUILD_NUMBER}")
-    set(COMMIT_RELEASE_NOTES_COMMENT "Added Release notes for ${PROJECT_NAME} version ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}.${VERSION_BUILD_NUMBER}")
-else()
-    set(COMMIT_COMMENT "Release ${PROJECT_NAME} version ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}")
-    set(COMMIT_RELEASE_NOTES_COMMENT "Added Release notes for ${PROJECT_NAME} version ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}")
+if(NOT COMMIT_COMMENT)
+    if("" STREQUAL "${versionRevision}")
+        set(COMMIT_COMMENT "Release ${Name} version ${version}")
+    else()
+        set(COMMIT_COMMENT "Release ${Name} version ${version} for trunk on revision ${versionRevision}")
+    endif()
 endif()
 
 execute_process(
-    COMMAND ${Subversion_SVN_EXECUTABLE} cp -m "${COMMIT_COMMENT}" "${PROJECT_SVN_ROOT}/trunk" "${PROJECT_SVN_ROOT}/tags/${TAG_NAME}"
+    COMMAND ${Subversion_SVN_EXECUTABLE} cp -m "${COMMIT_COMMENT}" "${packageUrlRoot}/trunk" "${packageUrlRoot}/tags/${tagName}"
     RESULT_VARIABLE svnResult
     OUTPUT_VARIABLE out)
 
 if(${svnResult} GREATER 0)
-    message(STATUS "Source tagging fails.\n${out}")
-    message(SEND_ERROR "exit")
+    message(SEND_ERROR "Source tagging fails.\n${out}")
 endif()
 
-message(STATUS "Importing documentation...")
-
-file(WRITE "ReleaseNotes" "${releaseNote}")
-
-execute_process(
-    COMMAND ${Subversion_SVN_EXECUTABLE} import -m "${COMMIT_RELEASE_NOTES_COMMENT}" "ReleaseNotes" "${PROJECT_SVN_ROOT}/tags/${TAG_NAME}/ReleaseNotes"
-    RESULT_VARIABLE svnResult
-    OUTPUT_VARIABLE out)
-
-file(REMOVE "ReleaseNotes")
-    
-if(${svnResult} GREATER 0)
-    message(ERROR "Adding documentation fails.")
-endif()
-
-# It is not possible with our SVN, hook script denies it.
-#message(STATUS "Setting lock property for ${TAG_NAME}")
-#execute_process(
-#    COMMAND ${Subversion_SVN_EXECUTABLE} propset --revprop -r HEAD -R svn:needs-lock yes "${PROJECT_SVN_ROOT}/tags/${TAG_NAME}"
-#    RESULT_VARIABLE svnResult
-#    OUTPUT_VARIABLE out)
-#
-#if(${svnResult} GREATER 0)
-#    message(ERROR "Could set needs-lock for files in ${TAG_NAME}.")
-#endif()
-
-message(STATUS "Trunk is tagged in ${TAG_NAME}")
-
+message(STATUS "Updating context file...")
+sbeUpdateUrlInContextFile(${ContextFile} ${Name} ${packageUrlRoot}/tags/${tagName})
 
 
 

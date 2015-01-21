@@ -1,22 +1,41 @@
 cmake_minimum_required(VERSION 2.8)
 
-set(versionBuildNum "")
-set(force "")
-if("Windows" STREQUAL "${CMAKE_SYSTEM_NAME}")
-    set(versionBuildNum "\$(VERSION_BUILD_NUMBER)")
-    set(force "\$(FORCE)")
-elseif("Linux" STREQUAL "${CMAKE_SYSTEM_NAME}")
-    set(versionBuildNum "\${VERSION_BUILD_NUMBER}")
-    set(force "\${FORCE}")
+if(DEFINED TagTargetGuard)
+    return()
 endif()
-        
-add_custom_target(tag
-    COMMAND ${CMAKE_COMMAND}
-        -DVERSION_PATCH=${VERSION_PATCH}
-        -DVERSION_MINOR=${VERSION_MINOR} 
-        -DVERSION_MAJOR=${VERSION_MAJOR}
-        -DVERSION_BUILD_NUMBER=${versionBuildNum}
-        -DFORCE=\${FORCE}
-        -DPROJECT_NAME=${PROJECT_NAME}
-        -DPROJECT_SOURCE_DIR=${PROJECT_SOURCE_DIR}
-        -P ${CMAKE_ROOT}/Modules/SBE/helpers/TagSources.cmake)
+
+set(TagTargetGuard yes)
+
+function(sbeAddTagTarget)
+    set(uid "")
+    set(force "")
+    set(releaseNoteOverview "")
+    set(cc "")
+    
+    if("Windows" STREQUAL "${CMAKE_HOST_SYSTEM_NAME}")
+        set(uid "\$(ADD_UNIQUE_ID)")
+        set(force "\$(FORCE)")
+        set(releaseNoteOverview "\$(RELEASE_NOTE_OVERVIEW)")
+        set(cc "\$(COMMIT_COMMENT)")
+    elseif("Linux" STREQUAL "${CMAKE_HOST_SYSTEM_NAME}")
+        set(uid "\${ADD_UNIQUE_ID}")
+        set(force "\${FORCE}")
+        set(releaseNoteOverview "\${RELEASE_NOTE_OVERVIEW}")
+        set(cc "\${COMMIT_COMMENT}")
+    endif()
+    
+    get_property(ContextFile GLOBAL PROPERTY ContextFile)
+    string(REPLACE ";" "," OverallDependenciesAsArgument "${OverallDependencies}") 
+            
+    add_custom_target(tag
+        COMMAND ${CMAKE_COMMAND}
+            -DCOMMIT_COMMENT=${cc}
+            -DRELEASE_NOTE_OVERVIEW=${releaseNoteOverview}
+            -DADD_UNIQUE_ID=${uid}
+            -DFORCE=${force}
+            -DOverallDependencies=${OverallDependenciesAsArgument}
+            -DContextFile=${ContextFile}
+            -DPackageRootDirectory=${PROJECT_SOURCE_DIR}
+            -P ${CMAKE_ROOT}/Modules/SBE/helpers/TagSources.cmake
+            )
+endfunction()            
