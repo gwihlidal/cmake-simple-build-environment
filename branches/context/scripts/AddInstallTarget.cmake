@@ -227,7 +227,6 @@ function(_installMockTargets)
 endfunction()
 
 function(_installImportedTargets)
-    message("INSTALLING IMPORTED")
     CMAKE_PARSE_ARGUMENTS(imp "" "HeadersDirectory" "Targets;HeadersPathReplacement;Headers" ${ARGN})
     
     if(DEFINED imp_Headers OR DEFINED imp_HeadersDirectory)
@@ -290,7 +289,6 @@ function(_installImportedTargets)
     
     string(REPLACE ";" "\n" ALL_IMPORTED_TARGETS_DEFINITION "${ALL_IMPORTED_TARGETS_DEFINITION}")
     
-    message("INSTALLING IMPORTED - config")
     configure_file(${CMAKE_ROOT}/Modules/SBE/templates/ImportedTargetImportFile.cmake.in "${PROJECT_BINARY_DIR}/Export/config/${PROJECT_NAME}Targets-imported.cmake" @ONLY)
     configure_file(${CMAKE_ROOT}/Modules/SBE/templates/ImportedTargets.cmake.in "${PROJECT_BINARY_DIR}/Export/config/${PROJECT_NAME}Targets.cmake" @ONLY)
      
