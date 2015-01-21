@@ -180,15 +180,17 @@ function(sbeAddInstallTarget)
 
     # add all build timestamp for dependats
     sbeGetPackageAllBuildTimestamp(${PROJECT_NAME} allbuildtimestamp)
+    sbeGetPackageBuildTimestamp(${PROJECT_NAME} buildtimestamp)
     
     if(TARGET export-headers)
-        set(allTargetsThatAreBuild ${inst_Targets} export-headers)
+        set(allTargetsThatAreInstalled ${inst_Targets} export-headers)
     else()
-        set(allTargetsThatAreBuild ${inst_Targets})
-    endif()
+        set(allTargetsThatAreInstalled ${inst_Targets})
+    endif() 
     add_custom_target(buildtimestamp ALL 
         COMMAND ${CMAKE_COMMAND} -E touch ${allbuildtimestamp} 
-        DEPENDS ${allTargetsThatAreBuild}
+        COMMAND ${CMAKE_COMMAND} -E touch ${buildtimestamp}
+        DEPENDS ${allTargetsThatAreInstalled}
         COMMENT "")    
 endfunction()
 

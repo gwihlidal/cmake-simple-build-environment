@@ -1,9 +1,0 @@
-#!/bin/bash
-# sbeConfigureInEclipse 
-#     script configure given cmake project in eclipse
-#
-#     usage:
-#         sbeConfigureInEclipse path_to_properties_file build_type toolchain_file
-
-cmake -E make_directory $1/build/$3/$2
-cmake -E chdir $1/build/$3/$2 cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=$2 -DCMAKE_TOOLCHAIN_FILE=SBE/toolchains/$3 -DRULE_LAUNCH_COMPILE=@CMAKE_ROOT@/Modules/SBE/tools/printAndExecuteCommand -DRULE_LAUNCH_LINK=@CMAKE_ROOT@/Modules/SBE/tools/printAndExecuteCommand ../../..  
