@@ -16,7 +16,7 @@ file(GLOB TEMPLATES templates/*.in)
 configure_file(shellScripts/sbeExportPackage.in "${PROJECT_BINARY_DIR}/sbeExportPackage" @ONLY)
 configure_file(shellScripts/sbeUpdateToLatestDependencies.in "${PROJECT_BINARY_DIR}/sbeUpdateToLatestDependencies" @ONLY)
 configure_file(shellScripts/sbeCheckNewDependencies.in "${PROJECT_BINARY_DIR}/sbeCheckNewDependencies" @ONLY)
-configure_file(shellScripts/sbeConfigureInEclipse.in "${PROJECT_BINARY_DIR}/sbeConfigureInEclipse" @ONLY)
+configure_file(shellScripts/sbeConfigurePackage.in "${PROJECT_BINARY_DIR}/sbeConfigurePackage" @ONLY)
 configure_file(shellScripts/sbeDecorateDoxygen.in "${PROJECT_BINARY_DIR}/sbeDecorateDoxygen" @ONLY)
 
 
@@ -32,7 +32,7 @@ install(FILES "${CMAKE_SOURCE_DIR}/shellScripts/printAndExecuteCommand"
 install(FILES "${CMAKE_SOURCE_DIR}/shellScripts/coverityLauncher.in"
         DESTINATION ${CMAKE_ROOT}/Modules/SBE/tools
         PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
-install(FILES "${PROJECT_BINARY_DIR}/sbeConfigureInEclipse" 
+install(FILES "${PROJECT_BINARY_DIR}/sbeConfigurePackage" 
         DESTINATION /usr/local/bin 
         PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
 install(FILES "${PROJECT_BINARY_DIR}/sbeExportPackage" 

@@ -1,0 +1,35 @@
+#!/bin/bash
+# sbeConfigurePackage 
+# 	script configure given cmake project
+#
+#   usage:
+#	Execute script in package source directory where CMakeLists.tx is located
+#
+#         sbeConfigurePackage [-b buildType] [-t toolchainName] [-p] 
+
+BuildType="Debug"
+ToolChainName="host-linux-vcxi-default-default-default"
+PrintExecutedCommand="no"
+
+for arg in "$@"
+do
+case $arg in
+    -b=*|--buildType=*)
+    	BuildType="${arg#*=}"
+    	shift
+    ;;
+    -t=*|--toolChainName=*)
+    	ToolChainName="${arg#*=}"
+    	shift
+    ;;
+    -p|--printExecutedCommand)
+    	PrintExecutedCommand="yes"
+    	shift
+    ;;
+    *)
+        # unknown option
+    ;;
+esac
+done
+
+cmake -DToolchainFile="$ToolChainName" -DBuildType=$BuildType -DAddToolInvocationMessage=$PrintExecutedCommand -P @CMAKE_ROOT@/Modules/SBE/shellScripts/ConfigurePackage.cmake
