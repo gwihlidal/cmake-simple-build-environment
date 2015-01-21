@@ -87,6 +87,39 @@ if(NOT FORCE)
     endif()
 endif()
 
+# check dependencies
+if(DEFINED OverallDependencies)
+    message(STATUS "Checking dependencies...")
+
+    string(REPLACE "," ";" OverallDependencies "${OverallDependencies}")
+    
+    foreach(dep ${OverallDependencies})
+        message(STATUS "   Checking ${dep}...")
+        sbeGetPackageLocalPath(${dep} packagePath)
+        sbeGetPackageUrl(${dep} packageUrl)
+        
+        svnIsLocalDirectoryModified(${packagePath} isModified modifications)
+        if(isModified)
+            message(SEND_ERROR "Dependency ${dep} is locally modified")
+        endif()
+        
+        svnGetRepositoryForLocalDirectory(${packagePath} url)
+        svnIsUrlTag(${url} isTag)
+        
+        if(isTag)
+            if(NOT "${url}" STREQUAL "${packageUrl}")
+                message(SEND_ERROR "Dependency ${dep} has checkouted different tag as in context file")
+            endif()
+        else()
+            svnGetRepositoryDirectoryRevision("${packageUrl}" tagsRevision error)
+            svnGetRepositoryDirectoryRevision("${url}" trunkRevision error)
+            if(${trunkRevision} GREATER ${tagsRevision})
+                message(SEND_ERROR "Dependency ${dep} has checkouted newer trunk as release in context file")
+            endif()
+        endif()        
+    endforeach()
+endif()
+
 # calculate tag name
 include(${PackageRootDirectory}/Properties.cmake)
 
@@ -128,40 +161,6 @@ endif()
 if(isThere)
     message(SEND_ERROR "Tag ${tagName} already exists in repository")
 endif()
-
-# check dependencies
-if(DEFINED OverallDependencies)
-    message(STATUS "Checking dependencies...")
-
-    string(REPLACE "," ";" OverallDependencies "${OverallDependencies}")
-    
-    foreach(dep ${OverallDependencies})
-        message(STATUS "   Checking ${dep}...")
-        sbeGetPackageLocalPath(${dep} packagePath)
-        sbeGetPackageUrl(${dep} packageUrl)
-        
-        svnIsLocalDirectoryModified(${packagePath} isModified modifications)
-        if(isModified)
-            message(SEND_ERROR "Dependency ${dep} is locally modified")
-        endif()
-        
-        svnGetRepositoryForLocalDirectory(${packagePath} url)
-        svnIsUrlTag(${url} isTag)
-        
-        if(isTag)
-            if(NOT "${url}" STREQUAL "${packageUrl}")
-                message(SEND_ERROR "Dependency ${dep} has checkouted different tag as in context file")
-            endif()
-        else()
-            svnGetRepositoryDirectoryRevision("${packageUrl}" tagsRevision error)
-            svnGetRepositoryDirectoryRevision("${url}" trunkRevision error)
-            if(${trunkRevision} GREATER ${tagsRevision})
-                message(SEND_ERROR "Dependency ${dep} has checkouted newer trunk as release in context file")
-            endif()
-        endif()        
-    endforeach()
-endif()
-
 
 # update version in properties file in case of date version
 if(DEFINED DateVersion)
