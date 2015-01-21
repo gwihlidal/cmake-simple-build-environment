@@ -1,3 +1,10 @@
+if(DEFINED SvnHelpersGuard)
+    return()
+endif()
+
+set(SvnHelpersGuard yes)
+
+
 cmake_minimum_required(VERSION 2.8)
 
 include(SBE/helpers/ArgumentParser)
@@ -46,45 +53,45 @@ function(svnGetNewestSubdirectory directoryToCheck newestSubDirectory errorReaso
 endfunction()  
 
 function(svnIsTrunkChangedAgainstLastTags svnProjectRootDirectory isNecessary errorReason)
-    # get trunk directory info 
-    execute_process(
-        COMMAND ${Subversion_SVN_EXECUTABLE} info "${svnProjectRootDirectory}/trunk"
-        RESULT_VARIABLE svnResult
-        ERROR_VARIABLE err
-        OUTPUT_VARIABLE out)
-        
-    if(${svnResult} GREATER 0)
-        set(${errorReason} "Could not get info about ${svnProjectRootDirectory}/trunk due to:\n${err}" PARENT_SCOPE)
+    svnGetRepositoryDirectoryRevision("${svnProjectRootDirectory}/trunk" trunkRevision error)
+       
+    if(DEFINED error)
+        set(${errorReason} "Could not get info about ${svnProjectRootDirectory}/trunk due to:\n${error}" PARENT_SCOPE)
         return()
     endif()
     
-    # get trunk revision
-    string(REGEX MATCH "Last Changed Rev: ([0-9]+)" TRUNK_REVISION "${out}")
-    set(TRUNK_REVISION ${CMAKE_MATCH_1})    
-    
-    # get tag directory info 
-    execute_process(
-        COMMAND ${Subversion_SVN_EXECUTABLE} info "${svnProjectRootDirectory}/tags"
-        RESULT_VARIABLE svnResult
-        ERROR_VARIABLE err
-        OUTPUT_VARIABLE out)
-        
-    if(${svnResult} GREATER 0)
-        set(${errorReason} "Could not get info about ${svnProjectRootDirectory}/tags due to:\n${err}" PARENT_SCOPE)
+    svnGetRepositoryDirectoryRevision("${svnProjectRootDirectory}/tags" tagsRevision error)
+       
+    if(DEFINED error)
+        set(${errorReason} "Could not get info about ${svnProjectRootDirectory}/tags due to:\n${error}" PARENT_SCOPE)
         return()
     endif()
     
-    # get tag revision
-    string(REGEX MATCH "Last Changed Rev: ([0-9]+)" TAGS_REVISION "${out}")
-    set(TAGS_REVISION ${CMAKE_MATCH_1})
-    
-    if(${TRUNK_REVISION} GREATER ${TAGS_REVISION})
+    if(${trunkRevision} GREATER ${tagsRevision})
         set(${isNecessary} yes PARENT_SCOPE)
     else()
         set(${isNecessary} no PARENT_SCOPE)
     endif()   
     
     set(${errorReason} "" PARENT_SCOPE)
+endfunction()  
+
+function(svnGetRepositoryDirectoryRevision repositoryDirectory revision error)
+    # get trunk directory info 
+    execute_process(
+        COMMAND ${Subversion_SVN_EXECUTABLE} info "${repositoryDirectory}"
+        RESULT_VARIABLE svnResult
+        ERROR_VARIABLE err
+        OUTPUT_VARIABLE out)
+        
+    if(${svnResult} GREATER 0)
+        set(${error} "Could not get info about ${repositoryDirectory}k due to:\n${err}" PARENT_SCOPE)
+        return()
+    endif()
+    
+    # get trunk revision
+    string(REGEX MATCH "Last Changed Rev: ([0-9]+)" rev "${out}")
+    set(${revision} ${CMAKE_MATCH_1} PARENT_SCOPE)    
 endfunction()  
 
 function(svnIsDirectoryContains item directory isThere errorReason)
@@ -151,6 +158,46 @@ function(svnGetLog localFileOrDirectory svnlog)
     endif()
 
     set(${svnlog} ${out} PARENT_SCOPE)
+endfunction()  
+
+function(svnGetStatus)
+    cmake_parse_arguments(svn "" "LocalDirectory;IsError;Status" "Options;StopOnErrorWithMessage" ${ARGN})
+    
+    if(NOT DEFINED svn_LocalDirectory)
+        if(DEFINED svn_IsError)
+            set(${svn_IsError} yes PARENT_SCOPE)
+        endif() 
+        if(DEFINED svn_StopOnErrorWithMessage)
+            message(FATAL_ERROR ${svn_StopOnErrorWithMessage})
+        endif()
+        
+        return()        
+    endif()
+        
+    # get directory status 
+    execute_process(
+        COMMAND ${Subversion_SVN_EXECUTABLE} status ${svn_Options} "${svn_LocalDirectory}"
+        RESULT_VARIABLE svnResult
+        ERROR_VARIABLE err
+        OUTPUT_VARIABLE out)
+        
+    if(${svnResult} GREATER 0)
+        if(DEFINED svn_IsError)
+            set(${svn_IsError} yes PARENT_SCOPE)
+        endif()
+        if(DEFINED svn_StopOnErrorWithMessage)
+            message(FATAL_ERROR ${svn_StopOnErrorWithMessage})
+        endif()
+        return()
+    endif()
+    
+    if(DEFINED svn_IsError)
+        set(${svn_IsError} no PARENT_SCOPE)
+    endif()
+
+    if(DEFINED svn_Status)
+        set(${svn_Status} ${out} PARENT_SCOPE)
+    endif()
 endfunction()  
 
 function(svnCheckout)
@@ -256,3 +303,45 @@ function(svnIsUrlTrunk url isTrunk)
         set(${isTrunk} yes PARENT_SCOPE)
     endif()
 endfunction()
+
+function(svnGetPackageRootInRepository url packageUrlRoot)
+    if("${url}" MATCHES "/trunk$")
+        string(REGEX REPLACE "/trunk$" "" root "${url}")
+        set(${packageUrlRoot} ${root} PARENT_SCOPE)
+    elseif("${url}" MATCHES "/tags/[^/]+$")
+        string(REGEX REPLACE "/tags/[^/]+$" "" root "${url}")
+        set(${packageUrlRoot} ${root} PARENT_SCOPE)
+    endif()
+endfunction()
+
+function(svnIsLocalDirectoryModified localDirectory isModified modifications)
+    svnGetStatus(LocalDirectory ${localDirectory} Status status IsError isError)
+    
+    if(isError)
+        set(${isModified} yes PARENT_SCOPE)
+        set(${modifications} "Not possible to get directory status" PARENT_SCOPE)
+    elseif("" STREQUAL "${status}")
+        set(${isModified} no PARENT_SCOPE)
+    else()
+        set(${isModified} yes PARENT_SCOPE)
+        set(${modifications} "${status}" PARENT_SCOPE)
+    endif()
+endfunction()
+
+function(svnIslocalDirectoryOnLatesRevision localDirectory isLatest modifications)
+    svnGetStatus(LocalDirectory ${localDirectory} Status status Options --show-updates IsError isError)
+    
+    if(isError)
+        set(${isLatest} no PARENT_SCOPE)
+        set(${modifications} "Not possible to get directory status" PARENT_SCOPE)
+    else()
+        string(REGEX REPLACE "Status against revision:.*\n" "" status ${status})
+        if("" STREQUAL "${status}")
+            set(${isLatest} yes PARENT_SCOPE)
+        else()
+            set(${modifications} "${status}" PARENT_SCOPE)
+            set(${isLatest} no PARENT_SCOPE)
+        endif()
+    endif()
+endfunction()
+
