@@ -96,7 +96,7 @@ function(sbeInstallFrequentisVBT)
     )
 
     # install imported targets
-    _installImportedTargets(
+    sbeAddInstallImportedTarget(
         Targets ${importedTargets} 
         HeadersDirectory ${PROJECT_BINARY_DIR}/preinstallation/include/
         HeadersPathReplacement ".* -> "
@@ -226,7 +226,7 @@ function(_installMockTargets)
     endforeach()    
 endfunction()
 
-function(_installImportedTargets)
+function(sbeAddInstallImportedTarget)
     CMAKE_PARSE_ARGUMENTS(imp "" "HeadersDirectory" "Targets;HeadersPathReplacement;Headers" ${ARGN})
     
     if(DEFINED imp_Headers OR DEFINED imp_HeadersDirectory)
@@ -324,7 +324,13 @@ function(_installImportedTargets)
     install(FILES
       "${PROJECT_BINARY_DIR}/Export/config/${PROJECT_NAME}Config.cmake"
       "${PROJECT_BINARY_DIR}/Export/config/${PROJECT_NAME}ConfigVersion.cmake"
-      DESTINATION config COMPONENT Configs) 
+      DESTINATION config COMPONENT Configs)
+
+    sbeGetPackageAllBuildTimestamp(${PROJECT_NAME} allbuildtimestamp)
+    sbeGetPackageBuildTimestamp(${PROJECT_NAME} buildtimestamp)      
+    execute_process( 
+        COMMAND ${CMAKE_COMMAND} -E touch ${allbuildtimestamp} 
+        COMMAND ${CMAKE_COMMAND} -E touch ${buildtimestamp})
 endfunction()
 
 function(_installOrdinaryTargets)
