@@ -30,8 +30,6 @@ include(SBE/PackageExporter)
 include(SBE/TargetTag)
 
 # macro calculates mandratory variables if not given
-# - sets CMAKE_TOOLCHAN_FILE to host-linux-vcxi-default-default-default.cmake
-# - sets CMAKE_BUILD_TYPE to Debug
 # - sets project laguage to C and CXX
 # - finds Context.cmake file
 # macro checks mandratory variables in property file
@@ -67,18 +65,10 @@ macro(sbeConfigurePackage)
         set(projectLanguages C CXX)
     endif()
     
-    # set CMAKE_TOOLCHAN_FILE if not given
-    if(NOT DEFINED CMAKE_TOOLCHAN_FILE)
-        set(CMAKE_TOOLCHAN_FILE SBE/toolchains/host-linux-vcxi-default-default-default.cmake)
-    endif()
-    
-    # set CMAKE_BUILD_TYPE if not given
-    if(NOT DEFINED CMAKE_BUILD_TYPE)
-        set(CMAKE_BUILD_TYPE Debug)
-    endif()
-
     # define project
     project(${Name} ${projectLanguages})
+    
+    message(STATUS "tool chain file ${CMAKE_TOOLCHAIN_FILE} ${CMAKE_BUILD_TYPE}")
     
     # export dependencies
     sbeFindContextFile(${Name} contextFile)
@@ -169,9 +159,13 @@ function(sbeConfigureDependency name)
     file(MAKE_DIRECTORY ${buildPath})
     
     # create arguments for configuring
-    list(APPEND configurationArgs "-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}")
+    if(DEFINED CMAKE_BUILD_TYPE)
+        list(APPEND configurationArgs "-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}")
+    endif()
     list(APPEND configurationArgs "-DSBE_CoverityIsRequested=${Coverity_IsConfigured}")
-    list(APPEND configurationArgs "-DCMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN_FILE}")
+    if(DEFINED CMAKE_TOOLCHAIN_FILE)
+        list(APPEND configurationArgs "-DCMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN_FILE}")
+    endif()
     if(RULE_LAUNCH_COMPILE)
         list(APPEND configurationArgs "-DRULE_LAUNCH_COMPILE=${RULE_LAUNCH_COMPILE}")
     endif()
