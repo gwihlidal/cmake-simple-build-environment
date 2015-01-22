@@ -1,8 +1,10 @@
-if(isAddImportedTargetIncluded)
+cmake_minimum_required(VERSION 2.8)
+
+if (DEFINED TargetImportedGuard)
     return()
 endif()
 
-set(isAddImportedTargetIncluded yes)
+set(TargetImportedGuard yes)
 
 function(sbeImportsFrequentisVBT)
     # arguments

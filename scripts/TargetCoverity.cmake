@@ -1,3 +1,11 @@
+cmake_minimum_required(VERSION 2.8)
+
+if (DEFINED TargetCoverityGuard)
+    return()
+endif()
+
+set(TargetCoverityGuard yes)
+
 #cmake_minimum_required(VERSION 2.8)
 #
 #if(SBE_COVERITY_CONFIGURED)

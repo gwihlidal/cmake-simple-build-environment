@@ -1,8 +1,11 @@
-if(isAddPackageTargetIncluded)
+cmake_minimum_required(VERSION 2.8)
+
+if (DEFINED TargetPackageGuard)
     return()
 endif()
 
-set(isAddPackageTargetIncluded yes)
+set(TargetPackageGuard yes)
+
 set(isAddPackageCalled no)
 
 include(SBE/helpers/PropertiesParser)

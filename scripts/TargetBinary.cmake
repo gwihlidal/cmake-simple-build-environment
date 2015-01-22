@@ -1,8 +1,10 @@
-if(isAddBinaryTargetsIncluded)
+cmake_minimum_required(VERSION 2.8)
+
+if (DEFINED TargetBinaryGuard)
     return()
 endif()
 
-set(isAddBinaryTargetsIncluded yes)
+set(TargetBinaryGuard yes)
 
 include(SBE/helpers/AddDependenciesToTarget)
 include(SBE/helpers/ArgumentParser)
