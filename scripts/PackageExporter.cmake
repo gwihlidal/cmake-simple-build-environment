@@ -7,6 +7,7 @@ endif()
 set(PackageExporterGuard yes)
 
 include(SBE/helpers/ContextParser)
+include(SBE/helpers/PropertiesParser)
 include(SBE/helpers/SvnHelpers)
 include(SBE/helpers/ArgumentParser)
 
@@ -14,18 +15,21 @@ include(SBE/helpers/ArgumentParser)
 # It exports ovearall package dependencies
 function(sbeExportPackageDependencies name propertyFile)
     message(STATUS "Checking exported Dependencies")
-    # When Context file is modified recheck all dependencies
+    # When Context file or properties file is modified recheck all dependencies
     getContextTimestamp(actualContextTimestamp)
+    sbeGetPackagePropertiesTimestamp(${name} actualPropertiesTimestamp)
     
     set(IsExportNecessary no)
     
-    if("${actualContextTimestamp}" STREQUAL "${Export_ContextTimestamp}")
+    if("${actualContextTimestamp}" STREQUAL "${Export_ContextTimestamp}" AND "${actualPropertiesTimestamp}" STREQUAL "${Export_PropertiesTimestamp}")
         foreach(exportedDependency ${OverallDependencies})
             sbeGetPackagePropertiesTimestamp(${exportedDependency} ts)
             if("${ts}" STREQUAL "${${exportedDependency}_PropertiesTimestamp}")
                 set_property(GLOBAL APPEND PROPERTY Export_OverallDependencies ${exportedDependency})
                 set_property(GLOBAL PROPERTY Export_${exportedDependency}_DirectDependencies ${${exportedDependency}_DirectDependencies})
                 set_property(GLOBAL PROPERTY Export_${exportedDependency}_PropertiesTimestamp ${${exportedDependency}_PropertiesTimestamp})
+                set_property(GLOBAL PROPERTY Export_${exportedDependency}_IsProvided ${${exportedDependency}_IsProvided})
+                set_property(GLOBAL PROPERTY Export_${exportedDependency}_IsPinned ${${exportedDependency}_IsPinned})
             else()
                 set(IsExportNecessary yes)
             endif()
@@ -39,19 +43,9 @@ function(sbeExportPackageDependencies name propertyFile)
 
         # set cached variables for usage in next run    
         set(Export_ContextTimestamp ${actualContextTimestamp} CACHE "" INTERNAL FORCE)
+        set(Export_PropertiesTimestamp ${actualPropertiesTimestamp} CACHE "" INTERNAL FORCE)
         
-        get_property(UnorderedOverallDependencies GLOBAL PROPERTY Export_OverallDependencies)
-
-        foreach(exportedDependency ${UnorderedOverallDependencies})
-            get_property(deps GLOBAL PROPERTY Export_${exportedDependency}_DirectDependencies)
-            set(${exportedDependency}_DirectDependencies ${deps} CACHE "" INTERNAL FORCE)
-            get_property(ts GLOBAL PROPERTY Export_${exportedDependency}_PropertiesTimestamp)
-            set(${exportedDependency}_PropertiesTimestamp ${ts} CACHE "" INTERNAL FORCE)
-        endforeach()
-        
-        OrderDependecies("${UnorderedOverallDependencies}")
-        get_property(Export_OrderedOverallDependencies GLOBAL PROPERTY Export_OrderedOverallDependencies)
-        set(OverallDependencies ${Export_OrderedOverallDependencies} CACHE "" INTERNAL FORCE)
+        _publishDependenciesProperties()        
     endif()
 endfunction()
 
@@ -59,7 +53,10 @@ endfunction()
 # It is used in scripts 
 function(sbeExportPackage name)
     sbeExportDependency(${name})
-    
+    _publishDependenciesProperties()
+endfunction()
+
+function(_publishDependenciesProperties)
     get_property(UnorderedOverallDependencies GLOBAL PROPERTY Export_OverallDependencies)
 
     foreach(exportedDependency ${UnorderedOverallDependencies})
@@ -67,6 +64,10 @@ function(sbeExportPackage name)
         set(${exportedDependency}_DirectDependencies ${deps} CACHE "" INTERNAL FORCE)
         get_property(ts GLOBAL PROPERTY Export_${exportedDependency}_PropertiesTimestamp)
         set(${exportedDependency}_PropertiesTimestamp ${ts} CACHE "" INTERNAL FORCE)
+        get_property(p GLOBAL PROPERTY Export_${exportedDependency}_IsProvided)
+        set(${exportedDependency}_IsProvided ${p} CACHE "" INTERNAL FORCE)
+        get_property(pi GLOBAL PROPERTY Export_${exportedDependency}_IsPinned)
+        set(${exportedDependency}_IsPinned ${pi} CACHE "" INTERNAL FORCE)         
     endforeach()
     
     OrderDependecies("${UnorderedOverallDependencies}")
@@ -89,12 +90,14 @@ function(sbeExportDependencies dependency propertyFile)
             "Name in Properties file [${Name}] is different as in Context [${dependency}]." 
         )        
     endif()
-
-    set_property(GLOBAL PROPERTY Export_${Name}_DirectDependencies ${Dependencies})
+    
+    sbeGetDependenciesNames(directDependencies)
+    set_property(GLOBAL PROPERTY Export_${Name}_DirectDependencies ${directDependencies})
+    
     file(TIMESTAMP "${propertyFile}" ts "%Y-%m-%dT%H:%M:%S")
     set_property(GLOBAL PROPERTY Export_${Name}_PropertiesTimestamp ${ts})
     
-    foreach(dependency ${Dependencies})
+    foreach(dependency ${directDependencies})
         sbeExportDependency(${dependency})
     endforeach()
 endfunction()
@@ -114,6 +117,10 @@ function(sbeExportDependency name)
     
     sbeGetPackageLocalPath(${name} packagePath)
     sbeGetPackageUrl(${name} packageUrl)
+    sbeGetProvidedFlag(${name} isProvided)
+    set_property(GLOBAL PROPERTY Export_${name}_IsProvided isProvided)
+    sbeGetPinnedFlag(${name} isPinned)
+    set_property(GLOBAL PROPERTY Export_${name}_IsPinned isPinned)
     
     if(NOT EXISTS ${packagePath})
         svnCheckout(LocalDirectory ${packagePath} Url ${packageUrl}
