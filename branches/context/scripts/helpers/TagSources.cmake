@@ -87,6 +87,44 @@ if(NOT FORCE)
     endif()
 endif()
 
+
+# calculate tag name
+include(${PackageRootDirectory}/Properties.cmake)
+
+set(tagName "")
+set(version "")
+set(versionRevision "")
+string(TIMESTAMP releaseDate "%Y%m%d%H%M%S")
+string(TIMESTAMP releaseDateAsText "%d.%m.%Y %H:%M:%S")
+if(DEFINED SemanticVersion)
+    include(SBE/helpers/VersionParser)
+    sbeSplitSemanticVersion(${SemanticVersion} major minor bugfix)
+    set(version "${major}_${minor}_${bugfix}")
+    set(tagName "rel_${version}")
+elseif(DEFINED DateVersion)
+    set(version ${releaseDate})
+    set(tagName "rel_${version}")
+else()
+    message(SEND_ERROR "One of SemanticVersion or DateVersion has to be defined")
+endif()
+
+if(TAG_ENDING)
+    set(tagName "${tagName}-${TAG_ENDING}")
+endif()
+
+# check if sources are already tagged
+message(STATUS "Checking tag ${tagName} in repository...")
+
+svnIsDirectoryContains("${tagName}/" "${packageUrlRoot}/tags" isThere errorReason)
+
+if(NOT "" STREQUAL "${errorReason}")
+    message(SEND_ERROR "Error accessing svn, when checking tag in repository:\n${errorReason}")
+endif()
+
+if(isThere)
+    message(SEND_ERROR "Tag ${tagName} already exists in repository")
+endif()
+
 # check dependencies
 if(DEFINED OverallDependencies)
     message(STATUS "Checking dependencies...")
@@ -126,43 +164,6 @@ if(DEFINED OverallDependencies)
                         
         endif()        
     endforeach()
-endif()
-
-# calculate tag name
-include(${PackageRootDirectory}/Properties.cmake)
-
-set(tagName "")
-set(version "")
-set(versionRevision "")
-string(TIMESTAMP releaseDate "%Y%m%d%H%M%S")
-string(TIMESTAMP releaseDateAsText "%d.%m.%Y %H:%M:%S")
-if(DEFINED SemanticVersion)
-    include(SBE/helpers/VersionParser)
-    sbeSplitSemanticVersion(${SemanticVersion} major minor bugfix)
-    set(version "${major}_${minor}_${bugfix}")
-    set(tagName "rel_${version}")
-elseif(DEFINED DateVersion)
-    set(version ${releaseDate})
-    set(tagName "rel_${version}")
-else()
-    message(SEND_ERROR "One of SemanticVersion or DateVersion has to be defined")
-endif()
-
-if(TAG_ENDING)
-    set(tagName "${tagName}-${TAG_ENDING}")
-endif()
-
-# check if sources are already tagged
-message(STATUS "Checking tag ${tagName} in repository...")
-
-svnIsDirectoryContains("${tagName}/" "${packageUrlRoot}/tags" isThere errorReason)
-
-if(NOT "" STREQUAL "${errorReason}")
-    message(SEND_ERROR "Error accessing svn, when checking tag in repository:\n${errorReason}")
-endif()
-
-if(isThere)
-    message(SEND_ERROR "Tag ${tagName} already exists in repository")
 endif()
 
 # update version in properties file in case of date version
