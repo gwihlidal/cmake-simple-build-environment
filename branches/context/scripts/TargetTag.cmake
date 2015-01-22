@@ -7,18 +7,18 @@ endif()
 set(TargetTagGuard yes)
 
 function(sbeAddTagTarget)
-    set(uid "")
+    set(ending "")
     set(force "")
     set(releaseNoteOverview "")
     set(cc "")
     
     if("Windows" STREQUAL "${CMAKE_HOST_SYSTEM_NAME}")
-        set(uid "\$(ADD_UNIQUE_ID)")
+        set(ending "\$(TAG_ENDING)")
         set(force "\$(FORCE)")
         set(releaseNoteOverview "\$(RELEASE_NOTE_OVERVIEW)")
         set(cc "\$(COMMIT_COMMENT)")
     elseif("Linux" STREQUAL "${CMAKE_HOST_SYSTEM_NAME}")
-        set(uid "\${ADD_UNIQUE_ID}")
+        set(ending "\${TAG_ENDING}")
         set(force "\${FORCE}")
         set(releaseNoteOverview "\${RELEASE_NOTE_OVERVIEW}")
         set(cc "\${COMMIT_COMMENT}")
@@ -31,7 +31,7 @@ function(sbeAddTagTarget)
         COMMAND ${CMAKE_COMMAND}
             -DCOMMIT_COMMENT=${cc}
             -DRELEASE_NOTE_OVERVIEW=${releaseNoteOverview}
-            -DADD_UNIQUE_ID=${uid}
+            -DTAG_ENDING=${ending}
             -DFORCE=${force}
             -DOverallDependencies=${OverallDependenciesAsArgument}
             -DContextFile=${ContextFile}
