@@ -141,20 +141,15 @@ if(DEFINED SemanticVersion)
     sbeSplitSemanticVersion(${SemanticVersion} major minor bugfix)
     set(version "${major}_${minor}_${bugfix}")
     set(tagName "rel_${version}")
-    if(ADD_UNIQUE_ID)
-        svnGetRepositoryDirectoryRevision("${packageUrlRoot}/trunk" versionRevision error)
-            
-        if (NOT "${error}" STREQUAL "")
-            message(SEND_ERROR "${error}")
-        endif()
-        
-        set(tagName "${tagName}-${versionRevision}")
-    endif()    
 elseif(DEFINED DateVersion)
     set(version ${releaseDate})
     set(tagName "rel_${version}")
 else()
     message(SEND_ERROR "One of SemanticVersion or DateVersion has to be defined")
+endif()
+
+if(TAG_ENDING)
+    set(tagName "${tagName}-${TAG_ENDING}")
 endif()
 
 # check if sources are already tagged
@@ -221,10 +216,10 @@ message(STATUS "Tagging sources, tag is ${tagName}...")
 
 # create commit comment
 if(NOT COMMIT_COMMENT)
-    if("" STREQUAL "${versionRevision}")
+    if(NOT DEFINED TAG_ENDING)
         set(COMMIT_COMMENT "Release ${Name} version ${version}")
     else()
-        set(COMMIT_COMMENT "Release ${Name} version ${version} for trunk on revision ${versionRevision}")
+        set(COMMIT_COMMENT "Release ${Name} version ${version} (${TAG_ENDING})")
     endif()
 endif()
 
