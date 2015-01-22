@@ -113,9 +113,17 @@ if(DEFINED OverallDependencies)
         else()
             svnGetRepositoryDirectoryRevision("${packageUrl}" tagsRevision error)
             svnGetRepositoryDirectoryRevision("${url}" trunkRevision error)
+            # Report error sources are different between context file and local checkout
+            # the sources are equal if tag mentioned in context file has bigger revision as trunk (tagged trunk)
+            # and revision of this lates trunk is also in local checkout
             if(${trunkRevision} GREATER ${tagsRevision})
                 message(SEND_ERROR "Dependency ${dep} has checkouted newer trunk as release in context file")
             endif()
+            svnIslocalDirectoryOnLatesRevision(${packagePath} isLatest modifications)
+            if(NOT isLatest)
+                message(SEND_ERROR "Dependency ${dep} has checkouted older trunk as released in context file")
+            endif()
+                        
         endif()        
     endforeach()
 endif()
