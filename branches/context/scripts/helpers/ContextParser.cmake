@@ -98,6 +98,34 @@ function(sbeGetPackageUrl name url)
     endif()
 endfunction()
 
+# It gets pinned flag for given name
+function(sbeGetPinnedFlag name isPinned)
+    sbeGetPackageDescription(${name} description)
+
+    if(DEFINED description)
+        cmake_parse_arguments(desc "Pinned" "" "" ${description})
+        if(DEFINED desc_Pinned)
+            set(${isPinned} yes PARENT_SCOPE)
+        else()
+            set(${isPinned} no PARENT_SCOPE)
+        endif()
+    endif()
+endfunction()
+
+# It gets provided flag for given name
+function(sbeGetProvidedFlag name isProvided)
+    sbeGetPackageDescription(${name} description)
+
+    if(DEFINED description)
+        cmake_parse_arguments(desc "Provided" "" "" ${description})
+        if(DEFINED desc_Provided)
+            set(${isProvided} yes PARENT_SCOPE)
+        else()
+            set(${isProvided} no PARENT_SCOPE)
+        endif()
+    endif()
+endfunction()
+
 # It gets local package path for its name
 function(sbeGetPackageLocalPath name localPath)
     get_property(ContextPath GLOBAL PROPERTY ContextPath)

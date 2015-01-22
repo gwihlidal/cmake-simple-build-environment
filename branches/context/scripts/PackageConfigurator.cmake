@@ -83,7 +83,8 @@ macro(sbeConfigurePackage)
     sbeFindContextFile(${Name} contextFile)
     sbeLoadContextFile(${contextFile})
     sbeExportPackageDependencies(${Name} ${PackagePropertyFile})
-    set(DirectDependencies ${Dependencies} CACHE "" INTERNAL FORCE)
+    sbeGetDependenciesNames(directDependencies)
+    set(DirectDependencies ${directDependencies} CACHE "" INTERNAL FORCE)
     
     # configure dependencies
     sbeConfigureDependencies()
