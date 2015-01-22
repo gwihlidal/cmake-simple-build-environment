@@ -27,6 +27,7 @@ set(PackagePropertyFile ${CMAKE_SOURCE_DIR}/Properties.cmake)
 include(SBE/helpers/ArgumentParser)
 include(SBE/helpers/ContextParser)
 include(SBE/PackageExporter)
+include(SBE/TargetTag)
 
 # macro calculates mandratory variables if not given
 # - sets CMAKE_TOOLCHAN_FILE to host-linux-vcxi-default-default-default.cmake
@@ -89,6 +90,9 @@ macro(sbeConfigurePackage)
     # configure dependencies
     sbeConfigureDependencies()
     sbeLoadDependencies()
+    
+    # add defalt targets
+    sbeAddTagTarget()
 endmacro()
 
 function(sbeConfigureDependencies)

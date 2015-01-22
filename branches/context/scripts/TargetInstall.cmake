@@ -1,12 +1,14 @@
-if(isAddInstallTargetIncluded)
+cmake_minimum_required(VERSION 2.8)
+
+if (DEFINED TargetInstallGuard)
     return()
 endif()
 
+set(TargetInstallGuard yes)
+
 include(CMakeParseArguments)
-include(SBE/AddImportedTarget)
+include(SBE/TargetImported)
 
-
-set(isAddInstallTargetIncluded yes)
 set(isAddInstallCalled no)
 
 set(InstalledTargets "")

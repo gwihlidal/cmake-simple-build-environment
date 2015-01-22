@@ -1,10 +1,10 @@
 cmake_minimum_required(VERSION 2.8)
 
-if(DEFINED TagTargetGuard)
+if(DEFINED TargetTagGuard)
     return()
 endif()
 
-set(TagTargetGuard yes)
+set(TargetTagGuard yes)
 
 function(sbeAddTagTarget)
     set(uid "")
