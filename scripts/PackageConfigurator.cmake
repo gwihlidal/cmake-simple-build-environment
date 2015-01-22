@@ -68,8 +68,6 @@ macro(sbeConfigurePackage)
     # define project
     project(${Name} ${projectLanguages})
     
-    message(STATUS "tool chain file ${CMAKE_TOOLCHAIN_FILE} ${CMAKE_BUILD_TYPE}")
-    
     # export dependencies
     sbeFindContextFile(${Name} contextFile)
     sbeLoadContextFile(${contextFile})
