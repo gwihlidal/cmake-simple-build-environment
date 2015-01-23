@@ -87,6 +87,14 @@ function(sbeGetPackageDescription name description)
     endif()
 endfunction()
 
+function(sbeIsDependencyInContext name isInContext)
+    get_property(d GLOBAL PROPERTY Context_${name}_Description)
+    if(DEFINED d)
+        set(${isInContext} yes PARENT_SCOPE)
+    else()
+        set(${isInContext} no PARENT_SCOPE)
+    endif()    
+endfunction()
 
 # It gets url package description for given name
 function(sbeGetPackageUrl name url)

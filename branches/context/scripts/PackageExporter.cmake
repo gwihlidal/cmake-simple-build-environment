@@ -104,6 +104,12 @@ endfunction()
 
 # it exports package with given name and all its dependencies
 function(sbeExportDependency name)
+    sbeIsDependencyInContext(${name} isInContext)
+    
+    if(NOT isInContext)
+        message(FATAL_ERROR "Dependency ${name} is not in context file")    
+    endif()
+    
     # do NOT process already processed dependency
     get_property(Export_OverallDependencies GLOBAL PROPERTY Export_OverallDependencies)
     if("${Export_OverallDependencies}" MATCHES "${name}")
