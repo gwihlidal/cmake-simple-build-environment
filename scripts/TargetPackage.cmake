@@ -18,6 +18,9 @@ function(sbeAddPackageTarget)
     cmake_parse_arguments(pkg "" "Name" "" ${ARGN})
     
     add_custom_target(package)
+    if(TARGET dependencies)
+        add_dependencies(package dependencies)
+    endif()
     
     foreach(target ${InstalledTargets})
         add_dependencies(package ${target})

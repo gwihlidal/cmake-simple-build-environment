@@ -139,7 +139,7 @@ function(sbeConfigureDependencies)
         COMMAND ${CMAKE_COMMAND} -E touch dependencies.buildtimestamp
         DEPENDS ${dependencyTimestamps}
         COMMENT "")
-        
+    
     add_custom_target(dependencies DEPENDS dependencies.buildtimestamp COMMENT "")
  endfunction()
 
