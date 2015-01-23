@@ -8,6 +8,7 @@ set(TargetBinaryGuard yes)
 
 include(SBE/helpers/AddDependenciesToTarget)
 include(SBE/helpers/ArgumentParser)
+include(SBE/helpers/VersionParser)
 
 set (CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin)
 set (CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/lib)
@@ -45,11 +46,12 @@ function(sbeAddLibrary)
     if(isSharedLibSupported AND NOT prop_Static)
         add_library(${prop_Name} SHARED ${precompilatedObjects} ${prop_Sources})
         
+        sbeSplitSemanticVersion(${SemanticVersion} major minor bugfix)
         set_target_properties(${prop_Name}
     	    PROPERTIES
     		    # create *nix style library versions + symbolic links
-    		    VERSION ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}
-    		    SOVERSION ${VERSION_MAJOR}.${VERSION_MINOR}
+    		    VERSION ${major}.${minor}.${bugfix}
+    		    SOVERSION ${major}.${minor}
     		    INSTALL_RPATH "$ORIGIN/:")
     else()
         add_library(${prop_Name} STATIC ${precompilatedObjects} ${prop_Sources})            
