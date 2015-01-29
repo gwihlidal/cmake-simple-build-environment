@@ -16,6 +16,9 @@ function(sbeFindContextFile name contextFile)
     if(DEFINED SBEContextFile)
         set(${contextFile} ${SBEContextFile} PARENT_SCOPE)
     else()
+        # perfer Context.cmake in directory above current one based on package name. E.g pmc.library.Some CURDIR/../../../../
+        # then prefer Context.cmake in current directory
+        # then traverse from current directory up to the root  
         set(contextFileBaseOnName ${name})
         string(REPLACE "." "/" contextFileBaseOnName ${contextFileBaseOnName})
         string(REGEX REPLACE "[^/]+" ".." contextFileBaseOnName ${contextFileBaseOnName})
@@ -27,11 +30,24 @@ function(sbeFindContextFile name contextFile)
         elseif(EXISTS ${CMAKE_CURRENT_LIST_DIR}/Context.cmake)
             set(${contextFile} "${CMAKE_CURRENT_LIST_DIR}/Context.cmake" PARENT_SCOPE)
         else()
-            message(FATAL_ERROR
-               "Context.cmake file is missing." 
-               "It is not given on command line as variable SBEContextFile."
-               "It is not found in source directory neither in ${contextFileBaseOnName}."
-               )                        
+            get_filename_component(searchPath "${CMAKE_CURRENT_LIST_DIR}" PATH)
+            set(isFound no)
+            while(NOT "/" STREQUAL "${searchPath}")
+                if(EXISTS ${searchPath}/Context.cmake)
+                    set(isFound yes)
+                    set(${contextFile} "${searchPath}/Context.cmake" PARENT_SCOPE)
+                    break()
+                endif()
+                get_filename_component(searchPath "${searchPath}" PATH)
+            endwhile()
+            
+            if(NOT isFound)
+                message(FATAL_ERROR
+                   "Context.cmake file is missing." 
+                   "It is not given on command line as variable SBEContextFile."
+                   "It is not found from ${CMAKE_CURRENT_LIST_DIR} up to root."
+                   )                        
+            endif()
         endif()
     endif()
 endfunction()
@@ -138,10 +154,30 @@ endfunction()
 
 # It gets local package path for its name
 function(sbeGetPackageLocalPath name localPath)
-    get_property(ContextPath GLOBAL PROPERTY ContextPath)
-    string(REPLACE "." "/" pathInContext ${name})
+    sbeGetPackageDescription(${name} description)    
+
+    if(DEFINED description)
+        cmake_parse_arguments(desc "" "Local" "" ${description})
+        if(DEFINED desc_Local)
+            get_property(cf GLOBAL PROPERTY ContextFile)
+            get_filename_component(cp "${cf}" PATH)
+            set(${localPath} "${cp}/${desc_Local}" PARENT_SCOPE)
+            return()
+        endif()
+    endif()
     
+    get_property(ContextPath GLOBAL PROPERTY ContextPath)
+    string(REPLACE "." "/" pathInContext ${name})        
     set(${localPath} "${ContextPath}/${pathInContext}" PARENT_SCOPE)
+endfunction()
+
+function(sbeGetPackageLocationType name location)
+    sbeGetPackageUrl(${name} url)
+    if(DEFINED url)
+        set(${location} "repository" PARENT_SCOPE)
+    else()
+        set(${location} "local" PARENT_SCOPE)
+    endif()
 endfunction()
 
 # It gets local package path to build directory for its name
