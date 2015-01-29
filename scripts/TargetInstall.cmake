@@ -193,7 +193,23 @@ function(sbeAddInstallTarget)
         COMMAND ${CMAKE_COMMAND} -E touch ${allbuildtimestamp} 
         COMMAND ${CMAKE_COMMAND} -E touch ${buildtimestamp}
         DEPENDS ${allTargetsThatAreInstalled}
-        COMMENT "")    
+        COMMENT "")
+
+    # consolidate headers, already exported but removed from CMakeLists.txt
+	message(STATUS "Consolidating Exported headers")
+	file(GLOB_RECURSE alreadyExportedHeaders RELATIVE ${PROJECT_BINARY_DIR} ${PROJECT_BINARY_DIR}/Export/include/*)
+	get_property(headersToExport GLOBAL PROPERTY Install_headersToExport)
+	if(NOT "" STREQUAL "${alreadyExportedHeaders}")
+		if(NOT "" STREQUAL "${headersToExport}")
+			list(REMOVE_ITEM alreadyExportedHeaders ${headersToExport})
+		endif()
+		foreach(h ${alreadyExportedHeaders})
+		    message(STATUS "   Removing ${h}")
+			file(REMOVE ${PROJECT_BINARY_DIR}/${h})
+			# touch target build timestamp to trigger rebuild of dependecies and all rebuild by dependant
+			execute_process(COMMAND ${CMAKE_COMMAND} -E touch ${buildtimestamp})
+		endforeach()
+	endif()
 endfunction()
 
 function(_installTestTargets)
@@ -431,7 +447,7 @@ function(_exportHeaders)
     
     # setup target that needs to export headers
     set(headersTarget "")
-    if(headers_Target)
+    if(DEFINED headers_Target)
         set(headersTarget ${headers_Target})
     else()
         set(headersTarget export-headers)
@@ -466,7 +482,6 @@ function(_exportHeaders)
         get_property(containsDeclspec TARGET ${headers_Target} PROPERTY SBE_CONTAINS_DECLSPEC)
     endif()
 
-    set(exportedHeaders "")
     foreach(header ${publicHeaders})
         set(exportPath "${headers_DestinationDirectory}")
         
@@ -478,10 +493,13 @@ function(_exportHeaders)
                 list(GET replacements 1 headerDirectory)
                 if("${header}" MATCHES "^${matchExpression}$")
                     set(exportPath "${exportPath}/${headerDirectory}")
-                    set(isReplaced "yes")
+                        set(isReplaced "yes")
                 endif()
             endif()
-        endforeach() 
+        endforeach()
+        
+        # remove trailing /
+        string(REGEX REPLACE "[/]+$" "" exportPath "${exportPath}")
 
         GET_FILENAME_COMPONENT(headerFile "${header}" NAME)
         if(IS_ABSOLUTE ${header})
@@ -491,7 +509,7 @@ function(_exportHeaders)
         endif()
             
         set(exportedHeaderFile "${exportPath}/${headerFile}")
-        list(APPEND exportedHeaders ${exportedHeaderFile})
+        set_property(GLOBAL APPEND PROPERTY  Install_headersToExport ${exportedHeaderFile})
         
         # setup command to export header. If it contains DECLSPEC then it should be modified
         # otherwise it should be only copy
