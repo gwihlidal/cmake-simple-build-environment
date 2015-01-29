@@ -28,6 +28,7 @@ include(SBE/helpers/ArgumentParser)
 include(SBE/helpers/ContextParser)
 include(SBE/PackageExporter)
 include(SBE/TargetTag)
+include(SBE/TargetGraph)
 
 # macro calculates mandratory variables if not given
 # - sets project laguage to C and CXX
@@ -81,6 +82,7 @@ macro(sbeConfigurePackage)
     
     # add defalt targets
     sbeAddTagTarget()
+    sbeAddGraphTarget()
 endmacro()
 
 function(sbeConfigureDependencies)

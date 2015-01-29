@@ -39,29 +39,39 @@ function(sbeExportPackageDependencies name propertyFile)
     endif()
     
     if(IsExportNecessary)
-        sbeExportDependencies(${name} ${propertyFile})
+        exportDependencies(${name} ${propertyFile})
 
         # set cached variables for usage in next run    
         set(Export_ContextTimestamp ${actualContextTimestamp} CACHE "" INTERNAL FORCE)
         set(Export_PropertiesTimestamp ${actualPropertiesTimestamp} CACHE "" INTERNAL FORCE)
         
-        _publishDependenciesProperties()        
+        publishDependenciesProperties()        
     endif()
 endfunction()
 
 # It exports given package and its dependencies
 # It is used in scripts 
 function(sbeExportPackage name)
-    sbeExportDependency(${name})
-    _publishDependenciesProperties()
+    exportDependency(${name})
+    publishDependenciesProperties()
 endfunction()
 
-function(_publishDependenciesProperties)
+# it walks through exported dependencies and get its properties
+# when package is not found then it sends error
+# it is used in scripts
+function(sbeGetPackageProperties name)
+    getDependency(${name})
+    publishDependenciesProperties()
+endfunction()
+
+function(publishDependenciesProperties)
     get_property(UnorderedOverallDependencies GLOBAL PROPERTY Export_OverallDependencies)
 
     foreach(exportedDependency ${UnorderedOverallDependencies})
         get_property(deps GLOBAL PROPERTY Export_${exportedDependency}_DirectDependencies)
         set(${exportedDependency}_DirectDependencies ${deps} CACHE "" INTERNAL FORCE)
+        get_property(v GLOBAL PROPERTY Export_${exportedDependency}_VersionText)
+        set(${exportedDependency}_VersionText ${v} CACHE "" INTERNAL FORCE)        
         get_property(ts GLOBAL PROPERTY Export_${exportedDependency}_PropertiesTimestamp)
         set(${exportedDependency}_PropertiesTimestamp ${ts} CACHE "" INTERNAL FORCE)
         get_property(p GLOBAL PROPERTY Export_${exportedDependency}_IsProvided)
@@ -76,12 +86,35 @@ function(_publishDependenciesProperties)
 endfunction()
 
 # it exports given dependency and its all dependencies 
-function(sbeExportDependencies dependency propertyFile)
+function(exportDependencies dependency propertyFile)
+    
+    storeDependencyProperties(${dependency} ${propertyFile} "Properties file must exist to export dependencies.")
+
+    # variable directDependencies is set in macro storeDependencyProperties
+    foreach(dd ${directDependencies})
+        exportDependency(${dd})
+    endforeach()
+endfunction()
+
+# function read dpendency properties
+function(getDependencies dependency propertyFile)
+    
+    storeDependencyProperties(${dependency} ${propertyFile} "Properties file must exist to export dependencies.")
+
+    # variable directDependencies is set in macro storeDependencyProperties
+    foreach(dd ${directDependencies})
+        getDependency(${dd})
+    endforeach()
+endfunction()
+
+macro(storeDependencyProperties dependency propertyFile errorTextWhenPropertyFileIsMissing)
     # properties file must exist
-    sbeReportErrorWhenFileDoesntExists(propertyFile "Properties file must exist to export dependencies.")
+    sbeReportErrorWhenFileDoesntExists(propertyFile "${errorTextWhenPropertyFileIsMissing}")
     
     unset(Name)
     unset(Dependencies)
+    unset(DateVersion)
+    unset(SemanticVersion)
     include(${propertyFile})
     
     # if Name is given as argument then it has to be same is in ContextFile
@@ -93,41 +126,18 @@ function(sbeExportDependencies dependency propertyFile)
     
     sbeGetDependenciesNames(directDependencies)
     set_property(GLOBAL PROPERTY Export_${Name}_DirectDependencies ${directDependencies})
+    set_property(GLOBAL PROPERTY Export_${Name}_VersionText "${DateVersion}${SemanticVersion}")
     
     file(TIMESTAMP "${propertyFile}" ts "%Y-%m-%dT%H:%M:%S")
-    set_property(GLOBAL PROPERTY Export_${Name}_PropertiesTimestamp ${ts})
-    
-    foreach(dependency ${directDependencies})
-        sbeExportDependency(${dependency})
-    endforeach()
-endfunction()
+    set_property(GLOBAL PROPERTY Export_${Name}_PropertiesTimestamp ${ts})    
+endmacro()
 
 # it exports package with given name and all its dependencies
-function(sbeExportDependency name)
-    sbeIsDependencyInContext(${name} isInContext)
-    
-    if(NOT isInContext)
-        message(FATAL_ERROR "Dependency ${name} is not in context file")    
-    endif()
-    
-    # do NOT process already processed dependency
-    get_property(Export_OverallDependencies GLOBAL PROPERTY Export_OverallDependencies)
-    if("${Export_OverallDependencies}" MATCHES "${name}")
-        return()
-    endif()
-    
-    set_property(GLOBAL APPEND PROPERTY Export_OverallDependencies ${name})
-    
-    # context file must exist
-    sbeReportErrorWhenContextFileIsNotLoaded()
-    
-    sbeGetPackageLocalPath(${name} packagePath)
-    sbeGetPackageUrl(${name} packageUrl)
-    sbeGetProvidedFlag(${name} isProvided)
-    set_property(GLOBAL PROPERTY Export_${name}_IsProvided isProvided)
-    sbeGetPinnedFlag(${name} isPinned)
-    set_property(GLOBAL PROPERTY Export_${name}_IsPinned isPinned)
-    
+function(exportDependency name)
+    storeDependencyContextProperties(${name})
+
+    # Variables packagePath,packageUrl is set in macro storeDependencyContextProperties
+         
     if(NOT EXISTS ${packagePath})
         svnCheckout(LocalDirectory ${packagePath} Url ${packageUrl}
             StartMessage "   Checking out ${name} ${packageUrl}"
@@ -149,8 +159,46 @@ function(sbeExportDependency name)
         endif()        
     endif()
     
-    sbeExportDependencies(${name} ${packagePath}/Properties.cmake)    
+    exportDependencies(${name} ${packagePath}/Properties.cmake)    
 endfunction()
+
+# function get dependency properties
+function(getDependency name)
+    storeDependencyContextProperties(${name})
+
+    # Variables packagePath is set in macro storeDependencyContextProperties
+    if(NOT EXISTS ${packagePath})
+        message(FATAL_ERROR "Dependency ${name} is not exported.")                    
+    endif()
+    
+    getDependencies(${name} ${packagePath}/Properties.cmake)    
+endfunction()
+
+macro(storeDependencyContextProperties name)
+    sbeIsDependencyInContext(${name} isInContext)
+    
+    if(NOT isInContext)
+        message(FATAL_ERROR "Dependency ${name} is not in context file")    
+    endif()
+    
+    # do NOT process already processed dependency
+    get_property(Export_OverallDependencies GLOBAL PROPERTY Export_OverallDependencies)
+    if("${Export_OverallDependencies}" MATCHES "${name}")
+        return()
+    endif()
+    
+    set_property(GLOBAL APPEND PROPERTY Export_OverallDependencies ${name})
+    
+    # context file must exist
+    sbeReportErrorWhenContextFileIsNotLoaded()
+    
+    sbeGetPackageLocalPath(${name} packagePath)
+    sbeGetPackageUrl(${name} packageUrl)
+    sbeGetProvidedFlag(${name} isProvided)
+    set_property(GLOBAL PROPERTY Export_${name}_IsProvided ${isProvided})
+    sbeGetPinnedFlag(${name} isPinned)
+    set_property(GLOBAL PROPERTY Export_${name}_IsPinned ${isPinned})
+endmacro()
 
 function(OrderDependecies dependencies)
     if("" STREQUAL "${dependencies}")

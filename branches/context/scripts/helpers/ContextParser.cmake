@@ -65,8 +65,10 @@ function(sbeLoadContextFile contextFile)
     
     get_filename_component(cf "${contextFile}" ABSOLUTE)
     set_property(GLOBAL PROPERTY ContextFile ${cf})
+    set(ContextFile ${cf} CACHE "" INTERNAL FORCE)
     get_filename_component(cp "${cf}" PATH)
     set_property(GLOBAL PROPERTY ContextPath "${cp}/context")
+    set(ContextPath ${cp}/context CACHE "" INTERNAL FORCE)
 endfunction()
 
 # It reports error when context file is not loaded
@@ -112,7 +114,7 @@ function(sbeGetPinnedFlag name isPinned)
 
     if(DEFINED description)
         cmake_parse_arguments(desc "Pinned" "" "" ${description})
-        if(DEFINED desc_Pinned)
+        if(desc_Pinned)
             set(${isPinned} yes PARENT_SCOPE)
         else()
             set(${isPinned} no PARENT_SCOPE)
@@ -126,7 +128,7 @@ function(sbeGetProvidedFlag name isProvided)
 
     if(DEFINED description)
         cmake_parse_arguments(desc "Provided" "" "" ${description})
-        if(DEFINED desc_Provided)
+        if(desc_Provided)
             set(${isProvided} yes PARENT_SCOPE)
         else()
             set(${isProvided} no PARENT_SCOPE)
