@@ -138,26 +138,37 @@ function(exportDependency name)
     storeDependencyContextProperties(${name})
 
     # Variables packagePath,packageUrl is set in macro storeDependencyContextProperties
-         
-    if(NOT EXISTS ${packagePath})
-        svnCheckout(LocalDirectory ${packagePath} Url ${packageUrl}
-            StartMessage "   Checking out ${name} ${packageUrl}"
-            StopOnErrorWithMessage "Could NOT checkout ${packageUrl} for ${name}")
-    else()
-        svnGetRepositoryForLocalDirectory(${packagePath} url)
-        
-        svnIsUrlTag(${url} isTag)
-        
-        if(isTag)
-            if(NOT "${url}" STREQUAL "${packageUrl}")
-                svnSwitch(LocalDirectory ${packagePath} Url ${packageUrl}
-                    StartMessage "   Switching ${name} ${packageUrl}"
-                    StopOnErrorWithMessage "Could NOT switch to ${packageUrl} for ${name}" 
-                )
-            endif()
+    sbeGetPackageLocationType(${name} locationType)
+    
+    if("repository" STREQUAL "${locationType}")     
+        if(NOT EXISTS ${packagePath})
+            svnCheckout(LocalDirectory ${packagePath} Url ${packageUrl}
+                StartMessage "   Checking out ${name} ${packageUrl}"
+                StopOnErrorWithMessage "Could NOT checkout ${packageUrl} for ${name}")
         else()
-            message(STATUS "   Ignoring ${name} due to trunk")
-        endif()        
+            svnGetRepositoryForLocalDirectory(${packagePath} url)
+            
+            svnIsUrlTag(${url} isTag)
+            
+            if(isTag)
+                if(NOT "${url}" STREQUAL "${packageUrl}")
+                    svnSwitch(LocalDirectory ${packagePath} Url ${packageUrl}
+                        StartMessage "   Switching ${name} ${packageUrl}"
+                        StopOnErrorWithMessage "Could NOT switch to ${packageUrl} for ${name}" 
+                    )
+                endif()
+            else()
+                message(STATUS "   Ignoring ${name} due to trunk")
+            endif()        
+        endif()
+    elseif("local" STREQUAL "${locationType}")
+        if(NOT EXISTS ${packagePath})
+            message(FATAL_ERROR "Local dependency ${name} could not be found")
+        else()
+            message(STATUS "   Ignoring ${name} due to local")
+        endif()
+    else()
+        message(FATAL_ERROR "Not supported location type for ${name}")
     endif()
     
     exportDependencies(${name} ${packagePath}/Properties.cmake)    

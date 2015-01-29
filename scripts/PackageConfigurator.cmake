@@ -81,7 +81,10 @@ macro(sbeConfigurePackage)
     sbeLoadDependencies()
     
     # add defalt targets
-    sbeAddTagTarget()
+    sbeGetPackageLocationType(${Name} locationType)
+    if("repository" STREQUAL "${locationType}")
+        sbeAddTagTarget()
+    endif()
     sbeAddGraphTarget()
 endmacro()
 
