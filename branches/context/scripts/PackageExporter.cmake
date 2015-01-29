@@ -52,6 +52,7 @@ endfunction()
 # It exports given package and its dependencies
 # It is used in scripts 
 function(sbeExportPackage name)
+    message(STATUS "Checking exported Dependencies")
     exportDependency(${name})
     publishDependenciesProperties()
 endfunction()
