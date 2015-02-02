@@ -29,6 +29,7 @@ include(SBE/helpers/ContextParser)
 include(SBE/PackageExporter)
 include(SBE/TargetTag)
 include(SBE/TargetGraph)
+include(SBE/TargetCoverity)
 
 # macro calculates mandratory variables if not given
 # - sets project laguage to C and CXX
@@ -84,6 +85,9 @@ macro(sbeConfigurePackage)
     sbeGetPackageLocationType(${Name} locationType)
     if("repository" STREQUAL "${locationType}")
         sbeAddTagTarget()
+    endif()
+    if(Coverity_IsRequestedByDependant)
+        sbeConfigureCoverity()
     endif()
     sbeAddGraphTarget()
 endmacro()
