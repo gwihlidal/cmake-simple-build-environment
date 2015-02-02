@@ -102,10 +102,15 @@ function(sbeConfigureDependencies)
     message(STATUS "Configuring Dependencies")
     
     # get packages to configure
-    set(dependenciesToConfigure ${OverallDependencies})
-    if(NOT "" STREQUAL "${Configured_OverallDependencies}")
-        list(REMOVE_ITEM dependenciesToConfigure ${Configured_OverallDependencies})
-    endif()
+    # remove from Configured dependencies, dependencies that have deleted build directory
+    set(dependenciesToConfigure "")
+    foreach(dep ${OverallDependencies})
+        sbeGetPackageBuildPath(${dep} buildPath)
+    
+        if(NOT EXISTS "${buildPath}/Makefile")
+            list(APPEND dependenciesToConfigure ${dep})
+        endif() 
+    endforeach()
 
     foreach(dep ${dependenciesToConfigure})
         sbeConfigureDependency(${dep})
