@@ -200,6 +200,17 @@ function(sbeGetPackageBuildPath name buildPath)
     set(${buildPath} "${packagePath}/build/${toolchainName}/${buildType}" PARENT_SCOPE)
 endfunction()
 
+# It gets local package path to coverity directory for its name
+function(sbeGetPackageCoverityPath name coverityPath)
+    sbeGetPackageBuildPath(${name} buildPath)
+
+    if(NOT DEFINED buildPath)
+        return()
+    endif()
+
+    set(${coverityPath} "${buildPath}/coverity" PARENT_SCOPE)
+endfunction()
+
 # It gets local package path to config directory for its name
 function(sbeGetPackageConfigPath name configPath)
     sbeGetPackageBuildPath(${name} buildPath)
