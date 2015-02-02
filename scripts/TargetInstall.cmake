@@ -39,7 +39,13 @@ function(sbeInstallFrequentisVBT)
           "${PROJECT_BINARY_DIR}/Export/config/${PROJECT_NAME}Config.cmake"
           "${PROJECT_BINARY_DIR}/Export/config/${PROJECT_NAME}ConfigVersion.cmake"
           DESTINATION config COMPONENT Configs)
-          
+        
+        # touch build timestamps  
+        sbeGetPackageAllBuildTimestamp(${PROJECT_NAME} allbuildtimestamp)
+        sbeGetPackageBuildTimestamp(${PROJECT_NAME} buildtimestamp)      
+        execute_process( 
+            COMMAND ${CMAKE_COMMAND} -E touch ${allbuildtimestamp} 
+            COMMAND ${CMAKE_COMMAND} -E touch ${buildtimestamp})          
         return()
     endif()
 
@@ -50,7 +56,7 @@ function(sbeInstallFrequentisVBT)
         set(vbtFile ${inst_Url})
     else()
         set(isSvn no)
-        set(vbtFile ${inst_File})
+        set(vbtFile ${CMAKE_SOURCE_DIR}/${inst_File})
     endif()
 
     get_filename_component(tarFileName "${vbtFile}" NAME)
@@ -344,11 +350,20 @@ function(sbeAddInstallImportedTarget)
       "${PROJECT_BINARY_DIR}/Export/config/${PROJECT_NAME}ConfigVersion.cmake"
       DESTINATION config COMPONENT Configs)
 
+    # add all build timestamp for dependats
     sbeGetPackageAllBuildTimestamp(${PROJECT_NAME} allbuildtimestamp)
-    sbeGetPackageBuildTimestamp(${PROJECT_NAME} buildtimestamp)      
-    execute_process( 
+    sbeGetPackageBuildTimestamp(${PROJECT_NAME} buildtimestamp)
+    
+    if(TARGET export-headers)
+        set(allTargetsThatAreInstalled ${inst_Targets} export-headers)
+    else()
+        set(allTargetsThatAreInstalled ${inst_Targets})
+    endif() 
+    add_custom_target(buildtimestamp ALL 
         COMMAND ${CMAKE_COMMAND} -E touch ${allbuildtimestamp} 
-        COMMAND ${CMAKE_COMMAND} -E touch ${buildtimestamp})
+        COMMAND ${CMAKE_COMMAND} -E touch ${buildtimestamp}
+        DEPENDS ${allTargetsThatAreInstalled}
+        COMMENT "")
 endfunction()
 
 function(_installOrdinaryTargets)
