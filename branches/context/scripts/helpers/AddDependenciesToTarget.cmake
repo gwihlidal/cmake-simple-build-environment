@@ -2,7 +2,7 @@
 include(SBE/helpers/ArgumentParser)
 
 function(sbeAddDependencies)
-    sbeParseArguments(dep "" "Target" "ExcludeDependencies" "FromDependency" "${ARGN}")
+    sbeParseArguments(dep "" "Target" "PreferHeadersFrom;ExcludeDependencies" "FromDependency" "${ARGN}")
     
     if(NOT DEFINED dep_Target)
         return()
@@ -27,7 +27,7 @@ function(sbeAddDependencies)
 
     # link all dependend libraries
     # loop through over all dependencies due to include paths, but link only direct dependencies
-    sbeAddDependenciesIncludes(Target ${dep_Target})
+    sbeAddDependenciesIncludes(Target ${dep_Target} PreferHeadersFrom ${dep_PreferHeadersFrom})
     
     foreach(dep ${DirectDependencies})
         set(hasToBeAdded yes)
@@ -72,7 +72,7 @@ function(sbeAddDependencies)
 endfunction()        
 
 function(sbeAddDependenciesIncludes)
-    sbeParseArguments(dep "" "Target" "" "" "${ARGN}")
+    sbeParseArguments(dep "" "Target" "PreferHeadersFrom" "" "${ARGN}")
     
     if(NOT DEFINED dep_Target)
         return()
@@ -85,8 +85,15 @@ function(sbeAddDependenciesIncludes)
     if(isTestTarget OR isMockTarget)
         set(useMock yes)
     endif()
+    
+    # order includes
+    set(orderedDependencies ${OverallDependencies})
+    if(DEFINED dep_PreferHeadersFrom)
+        list(REMOVE_ITEM orderedDependencies ${dep_PreferHeadersFrom})
+        set(orderedDependencies ${dep_PreferHeadersFrom} ${orderedDependencies})
+    endif()
             
-    foreach(dep ${OverallDependencies})
+    foreach(dep ${orderedDependencies})
         # add dependency includes            
         if(useMock)
             if(DEFINED ${dep}_INCLUDE_DIRS OR DEFINED ${dep}_MOCK_INCLUDE_DIRS)
