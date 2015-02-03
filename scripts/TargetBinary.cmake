@@ -24,7 +24,7 @@ if(DEFINED RULE_LAUNCH_LINK)
 endif()    
 
 function(sbeAddLibrary)
-    sbeParseArguments(prop "ContainsDeclspec;Static" "Name" "LinkOwnLibraries;Objects;Sources;PublicHeaders;ExcludeDependencies" "FromDependency" "${ARGN}")
+    sbeParseArguments(prop "ContainsDeclspec;Static" "Name" "PreferHeadersFrom;LinkOwnLibraries;Objects;Sources;PublicHeaders;ExcludeDependencies" "FromDependency" "${ARGN}")
     
     if(
         (NOT DEFINED prop_Name) OR
@@ -78,6 +78,7 @@ function(sbeAddLibrary)
     sbeAddDependencies(
         Target ${prop_Name}
         ExcludeDependencies ${prop_ExcludeDependencies}
+        PreferHeadersFrom ${prop_PreferHeadersFrom}
         ${prop_FromDependency}) 
 
     sbeDoesDependenciesContainsDeclSpecs(dependenciesContainsDeclspecs)
@@ -92,7 +93,7 @@ function(sbeAddLibrary)
 endfunction()
 
 function(sbeAddMockLibrary)
-    sbeParseArguments(prop "ContainsDeclspec;Static" "MockedName;Name" "Objects;Sources;PublicHeaders;ExcludeDependencies" "FromDependency" "${ARGN}")
+    sbeParseArguments(prop "ContainsDeclspec;Static" "MockedName;Name" "PreferHeadersFrom;Objects;Sources;PublicHeaders;ExcludeDependencies" "FromDependency" "${ARGN}")
     
     if(
         (NOT DEFINED prop_Name) OR
@@ -123,6 +124,7 @@ function(sbeAddMockLibrary)
     sbeAddDependencies(
         Target ${prop_Name}
         ExcludeDependencies ${prop_ExcludeDependencies}
+        PreferHeadersFrom ${prop_PreferHeadersFrom}
         ${prop_FromDependency}) 
 
     sbeDoesDependenciesContainsDeclSpecs(dependenciesContainsDeclspecs)
@@ -138,7 +140,7 @@ endfunction()
 
 
 function(sbeAddExecutable)
-    sbeParseArguments(prop "" "Name;Objects;ConvertToBin" "Sources;ExcludeDependencies;LinkOwnLibraries" "FromDependency" "${ARGN}")
+    sbeParseArguments(prop "" "Name;Objects;ConvertToBin" "PreferHeadersFrom;Sources;ExcludeDependencies;LinkOwnLibraries" "FromDependency" "${ARGN}")
     
     if(
         (NOT DEFINED prop_Name) OR
@@ -181,6 +183,7 @@ function(sbeAddExecutable)
     sbeAddDependencies(
         Target ${prop_Name} 
         ExcludeDependencies ${prop_ExcludeDependencies}
+        PreferHeadersFrom ${prop_PreferHeadersFrom}
         ${prop_FromDependency}) 
 
     sbeDoesDependenciesContainsDeclSpecs(dependenciesContainsDeclspecs)
@@ -203,7 +206,7 @@ function(sbeAddExecutable)
 endfunction()
 
 function(sbeAddTestExecutable)
-    sbeParseArguments(prop "" "Name;Objects" "Sources;ExcludeDependencies;LinkOwnLibraries" "FromDependency" "${ARGN}")
+    sbeParseArguments(prop "" "Name;Objects" "PreferHeadersFrom;Sources;ExcludeDependencies;LinkOwnLibraries" "FromDependency" "${ARGN}")
     
     if(
         (NOT DEFINED prop_Name) OR
@@ -243,6 +246,7 @@ function(sbeAddTestExecutable)
     sbeAddDependencies(
         Target ${prop_Name} 
         ExcludeDependencies ${prop_ExcludeDependencies}
+        PreferHeadersFrom ${prop_PreferHeadersFrom}
         ${prop_FromDependency}) 
 
     sbeDoesDependenciesContainsDeclSpecs(dependenciesContainsDeclspecs)
@@ -253,7 +257,7 @@ function(sbeAddTestExecutable)
 endfunction()
 
 function(sbeAddObjects)
-    sbeParseArguments(prop "ContainsDeclspec" "Name" "Sources" "" "${ARGN}")
+    sbeParseArguments(prop "ContainsDeclspec" "Name" "PreferHeadersFrom;Sources" "" "${ARGN}")
 
     add_library(${prop_Name} OBJECT ${prop_Sources})
     
@@ -262,7 +266,8 @@ function(sbeAddObjects)
     sbeDoesDependenciesContainsDeclSpecs(dependenciesContainsDeclspecs)
     
      sbeAddDependenciesIncludes(
-        Target ${prop_Name}) 
+        Target ${prop_Name}
+        PreferHeadersFrom ${prop_PreferHeadersFrom}) 
         
     if(prop_ContainsDeclspec OR dependenciesContainsDeclspecs)
         _handleDeclSpec(${prop_Name})
