@@ -1,0 +1,25 @@
+#
+# Cmake instructions file
+#
+cmake_minimum_required(VERSION 2.8) 
+
+if(RULE_LAUNCH_COMPILE)
+endif()
+
+if(RULE_LAUNCH_LINK)
+endif()
+
+if(CMAKE_TOOLCHAIN_FILE)
+endif()
+
+project(@genLibraryName@ C)
+
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/lib)
+set(CMAKE_STATIC_LIBRARY_PREFIX "")
+set(CMAKE_STATIC_LIBRARY_SUFFIX ".genlib")
+
+file(GLOB sources @genLibrarySourceDir@/*.c)
+add_library(@genLibraryName@ STATIC ${sources})
+include_directories(@genLibraryIncludeDirs@)
+ 
+

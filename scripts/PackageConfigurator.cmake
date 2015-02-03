@@ -188,8 +188,8 @@ function(sbeConfigureDependency name)
     # configure dependency
     sbeGetPackageLocalPath(${name} packagePath)
     execute_process(
-        COMMAND cmake -E chdir ${buildPath} 
-            cmake ${configurationArgs}
+        COMMAND ${CMAKE_COMMAND} -E chdir ${buildPath} 
+            ${CMAKE_COMMAND} ${configurationArgs}
             ${packagePath}
         COMMAND ${SED_TOOL} -u -e "s/.*/      &/"
         RESULT_VARIABLE configureResult)

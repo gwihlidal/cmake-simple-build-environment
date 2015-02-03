@@ -204,7 +204,15 @@ function(sbeAddInstallTarget)
     # consolidate headers, already exported but removed from CMakeLists.txt
 	message(STATUS "Consolidating Exported headers")
 	file(GLOB_RECURSE alreadyExportedHeaders RELATIVE ${PROJECT_BINARY_DIR} ${PROJECT_BINARY_DIR}/Export/include/*)
+	set(headersToExport "")
 	get_property(headersToExport GLOBAL PROPERTY Install_headersToExport)
+    get_property(headersDirectoriesToExport GLOBAL PROPERTY Install_headersDirectoriesToExport)
+    if(DEFINED headersDirectoriesToExport)
+        foreach(headerDir ${headersDirectoriesToExport})
+            file(GLOB_RECURSE dirHeaders RELATIVE ${PROJECT_BINARY_DIR} ${headerDir}/*)
+            list(APPEND headersToExport ${dirHeaders})
+        endforeach()
+    endif()
 	if(NOT "" STREQUAL "${alreadyExportedHeaders}")
 		if(NOT "" STREQUAL "${headersToExport}")
 			list(REMOVE_ITEM alreadyExportedHeaders ${headersToExport})
@@ -483,6 +491,8 @@ function(_exportHeaders)
      
             add_custom_command(TARGET ${headersTarget} POST_BUILD
                 COMMAND ${CMAKE_COMMAND} ${exportCommandArg})
+                
+            set_property(GLOBAL APPEND PROPERTY Install_headersDirectoriesToExport ${headerDir})
         endforeach()
     endif()
     
@@ -493,6 +503,16 @@ function(_exportHeaders)
     if (NOT "" STREQUAL "${headers_Target}")
         get_property(targetPublicHeaders TARGET ${headers_Target} PROPERTY PublicHeaders)
         list(APPEND publicHeaders ${targetPublicHeaders})
+        
+        get_property(linkGeneratedLibraries TARGET ${headers_Target} PROPERTY SBE_LINK_GENERATED_LIBRARY)
+        if(DEFINED linkGeneratedLibraries)
+            foreach(lib ${linkGeneratedLibraries})
+                get_property(exportHeaderDir TARGET ${lib} PROPERTY SBE_GENERATED_LIBRARY_EXPORT_HEADERS_DIR)
+                if(DEFINED exportHeaderDir)
+                    set_property(GLOBAL APPEND PROPERTY Install_headersDirectoriesToExport ${exportHeaderDir})
+                endif()
+            endforeach()
+        endif()
     
         get_property(containsDeclspec TARGET ${headers_Target} PROPERTY SBE_CONTAINS_DECLSPEC)
     endif()
@@ -524,7 +544,7 @@ function(_exportHeaders)
         endif()
             
         set(exportedHeaderFile "${exportPath}/${headerFile}")
-        set_property(GLOBAL APPEND PROPERTY  Install_headersToExport ${exportedHeaderFile})
+        set_property(GLOBAL APPEND PROPERTY Install_headersToExport ${exportedHeaderFile})
         
         # setup command to export header. If it contains DECLSPEC then it should be modified
         # otherwise it should be only copy
