@@ -23,6 +23,11 @@ function(sbeExportPackageDependencies name propertyFile)
     
     if("${actualContextTimestamp}" STREQUAL "${Export_ContextTimestamp}" AND "${actualPropertiesTimestamp}" STREQUAL "${Export_PropertiesTimestamp}")
         foreach(exportedDependency ${OverallDependencies})
+            sbeGetPackageLocalPath(${exportedDependency} lp)
+            if(NOT EXISTS ${lp})
+                set(IsExportNecessary yes)
+                break()    
+            endif()
             sbeGetPackagePropertiesTimestamp(${exportedDependency} ts)
             if("${ts}" STREQUAL "${${exportedDependency}_PropertiesTimestamp}")
                 set_property(GLOBAL APPEND PROPERTY Export_OverallDependencies ${exportedDependency})
@@ -32,6 +37,7 @@ function(sbeExportPackageDependencies name propertyFile)
                 set_property(GLOBAL PROPERTY Export_${exportedDependency}_IsPinned ${${exportedDependency}_IsPinned})
             else()
                 set(IsExportNecessary yes)
+                break()
             endif()
         endforeach()
     else()
@@ -39,6 +45,8 @@ function(sbeExportPackageDependencies name propertyFile)
     endif()
     
     if(IsExportNecessary)
+        set_property(GLOBAL PROPERTY Export_OverallDependencies )
+        
         exportDependencies(${name} ${propertyFile})
 
         # set cached variables for usage in next run    
