@@ -24,6 +24,8 @@ function(sbeAddAsn1Library)
     configure_file(${CMAKE_ROOT}/Modules/SBE/templates/Asn1CMakeLists.txt.in "${PROJECT_BINARY_DIR}/Asn1/${asn1_Name}/CMakeLists.txt" @ONLY)
 
     add_custom_target(${asn1_Name} DEPENDS ${PROJECT_BINARY_DIR}/Asn1/${asn1_Name}/build/lib/${asn1_Name}.genlib)
+    sbeAddHelpForTarget(Build ${asn1_Name} "Build static library for ${asn1_Source}")
+    
     set_target_properties(${asn1_Name} PROPERTIES
       SBE_GENERATED_LIBRARY TRUE
       SBE_GENERATED_LIBRARY_LOCATION "${PROJECT_BINARY_DIR}/Asn1/${asn1_Name}/build/lib/${asn1_Name}.genlib"

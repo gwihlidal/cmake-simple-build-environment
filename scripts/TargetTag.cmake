@@ -42,4 +42,5 @@ function(sbeAddTagTarget)
             -DPackageRootDirectory=${PROJECT_SOURCE_DIR}
             -P ${CMAKE_ROOT}/Modules/SBE/helpers/TagSources.cmake
             )
+    sbeAddHelpForTarget(Other tag "Tags current project")
 endfunction()            

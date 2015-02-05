@@ -29,6 +29,7 @@ include(SBE/helpers/ContextParser)
 include(SBE/PackageExporter)
 include(SBE/TargetTag)
 include(SBE/TargetGraph)
+include(SBE/TargetHelp)
 include(SBE/TargetCoverity)
 
 # macro calculates mandratory variables if not given
@@ -90,6 +91,7 @@ macro(sbeConfigurePackage)
         sbeConfigureCoverity()
     endif()
     sbeAddGraphTarget()
+    sbeAddHelpTarget()
 endmacro()
 
 function(sbeConfigureDependencies)
@@ -119,8 +121,10 @@ function(sbeConfigureDependencies)
     
     # add dependencies rebuild target
     add_custom_target(dependencies_force COMMENT "Force dependencies build")
+    sbeAddHelpForTarget(Dependencies dependencies_force "Force dependencies build")
     # add dependencies clean target
     add_custom_target(dependencies_clean COMMENT "Clean dependencies")
+    sbeAddHelpForTarget(Dependencies dependencies_clean "Clean dependencies")
     
     # add dependecies targets that ensure dependency build
     foreach(dep ${OverallDependencies})
@@ -170,6 +174,7 @@ function(sbeConfigureDependencies)
         COMMENT "")
     
     add_custom_target(dependencies DEPENDS dependencies.buildtimestamp COMMENT "")
+    sbeAddHelpForTarget(Dependencies dependencies "Build traversely dependants of changed dependency")
  endfunction()
 
 function(sbeConfigureDependency name)

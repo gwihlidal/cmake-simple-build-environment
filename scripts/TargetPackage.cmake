@@ -18,6 +18,8 @@ function(sbeAddPackageTarget)
     cmake_parse_arguments(pkg "" "Name" "" ${ARGN})
     
     add_custom_target(package)
+    sbeAddHelpForTarget(Other package "Create tar.gz")
+    
     if(TARGET dependencies)
         add_dependencies(package dependencies)
     endif()
