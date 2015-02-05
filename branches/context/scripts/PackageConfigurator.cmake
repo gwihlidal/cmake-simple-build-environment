@@ -117,6 +117,11 @@ function(sbeConfigureDependencies)
     endforeach()
     set(Configured_OverallDependencies ${OverallDependencies} CACHE "" INTERNAL FORCE)
     
+    # add dependencies rebuild target
+    add_custom_target(dependencies_force COMMENT "Force dependencies build")
+    # add dependencies clean target
+    add_custom_target(dependencies_clean COMMENT "Clean dependencies")
+    
     # add dependecies targets that ensure dependency build
     foreach(dep ${OverallDependencies})
         sbeGetPackageBuildPath(${dep} buildPath)
@@ -139,6 +144,16 @@ function(sbeConfigureDependencies)
             DEPENDS ${dependencyTimestamps} ${timestamp}
             WORKING_DIRECTORY ${buildPath}
             COMMENT "Building ${dep}")
+            
+        add_custom_command(TARGET dependencies_force
+            COMMAND ${CMAKE_COMMAND} --build . --use-stderr
+            WORKING_DIRECTORY ${buildPath}
+            COMMENT "Building ${dep}")
+
+        add_custom_command(TARGET dependencies_clean
+            COMMAND ${CMAKE_COMMAND} --build . --target clean --use-stderr
+            WORKING_DIRECTORY ${buildPath}
+            COMMENT "Cleaning ${dep}")            
     endforeach()
     
     # setup dependencies for own package
