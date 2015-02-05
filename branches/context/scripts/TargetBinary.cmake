@@ -206,7 +206,7 @@ function(sbeAddExecutable)
 endfunction()
 
 function(sbeAddTestExecutable)
-    sbeParseArguments(prop "" "Name;Objects" "PreferHeadersFrom;Sources;ExcludeDependencies;LinkOwnLibraries" "FromDependency" "${ARGN}")
+    sbeParseArguments(prop "" "Name;Objects;Main" "PreferHeadersFrom;Sources;ExcludeDependencies;LinkOwnLibraries" "FromDependency" "${ARGN}")
     
     if(
         (NOT DEFINED prop_Name) OR
@@ -218,10 +218,16 @@ function(sbeAddTestExecutable)
     if(DEFINED prop_Objects)
         set(precompilatedObjects "\$<TARGET_OBJECTS:${prop_Objects}>")
     endif()
-            
-    configure_file(${CMAKE_ROOT}/Modules/SBE/templates/CppUTestRunAllTests.cpp.in "${PROJECT_BINARY_DIR}/GeneratedSources/RunAllTests.cpp" @ONLY)
-
-    add_executable(${prop_Name} ${PROJECT_BINARY_DIR}/GeneratedSources/RunAllTests.cpp ${prop_Sources} ${precompilatedObjects})
+    
+    set(mainFileName "")
+    if(DEFINED prop_Main)
+        set(mainFileName ${prop_Main})
+    else()
+        set(mainFileName "${PROJECT_BINARY_DIR}/GeneratedSources/RunAllTests.cpp")
+        configure_file(${CMAKE_ROOT}/Modules/SBE/templates/CppUTestRunAllTests.cpp.in "${mainFileName}" @ONLY)        
+    endif()
+             
+    add_executable(${prop_Name} ${mainFileName} ${prop_Sources} ${precompilatedObjects})
                     
     get_property(isSharedLibSupported GLOBAL PROPERTY TARGET_SUPPORTS_SHARED_LIBS)
     
