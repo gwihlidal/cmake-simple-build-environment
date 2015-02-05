@@ -7,6 +7,11 @@ function(sbeAddDependencies)
     if(NOT DEFINED dep_Target)
         return()
     endif()
+    
+    if(TARGET dependencies)
+        # has to be placed here to triggr make also on dependencies that has no libraries, only header files
+        add_dependencies(${dep_Target} dependencies)
+    endif()
 
     # check if mock libraries has to be used
     get_property(isTestTarget TARGET ${dep_Target} PROPERTY SBE_TEST)
@@ -125,8 +130,6 @@ function(sbeDoesDependenciesContainsDeclSpecs containsDeclspecs)
 endfunction()
   
 function(_AddLibraries targetName libraries)
-    add_dependencies(${targetName} dependencies)
-
     foreach(lib ${libraries})
         get_target_property(libType ${lib} TYPE)
         
