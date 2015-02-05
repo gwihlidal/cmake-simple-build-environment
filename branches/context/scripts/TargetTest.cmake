@@ -29,7 +29,7 @@ function(sbeAddTestTarget)
                 COMMAND bin/${test_Executable} ${testOptions}
                 DEPENDS ${test_Executable})
         endif()
-        
-
     endif()
+    
+    sbeAddHelpForTarget(Other test "Executes unit tests")
 endfunction()        

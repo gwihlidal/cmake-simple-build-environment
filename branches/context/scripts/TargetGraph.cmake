@@ -8,6 +8,7 @@ set(TargetGraphGuard yes)
 
 function(sbeAddGraphTarget)
     add_custom_target(graph)
+    sbeAddHelpForTarget(Other graph "Create dependency picture")
     
     add_custom_command(TARGET graph
         COMMAND cmake -E remove_directory ${PROJECT_BINARY_DIR}/graph
