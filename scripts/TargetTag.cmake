@@ -11,15 +11,18 @@ function(sbeAddTagTarget)
     set(force "")
     set(releaseNoteOverview "")
     set(cc "")
+    set(sd "")
     
     if("Windows" STREQUAL "${CMAKE_HOST_SYSTEM_NAME}")
         set(ending "\$(TAG_ENDING)")
         set(force "\$(FORCE)")
+        set(sd "\$(SKIP_DEPENDENCIES)")
         set(releaseNoteOverview "\$(RELEASE_NOTE_OVERVIEW)")
         set(cc "\$(COMMIT_COMMENT)")
     elseif("Linux" STREQUAL "${CMAKE_HOST_SYSTEM_NAME}")
         set(ending "\${TAG_ENDING}")
         set(force "\${FORCE}")
+        set(sd "\${SKIP_DEPENDENCIES}")
         set(releaseNoteOverview "\${RELEASE_NOTE_OVERVIEW}")
         set(cc "\${COMMIT_COMMENT}")
     endif()
@@ -33,6 +36,7 @@ function(sbeAddTagTarget)
             -DRELEASE_NOTE_OVERVIEW=${releaseNoteOverview}
             -DTAG_ENDING=${ending}
             -DFORCE=${force}
+            -DSKIP_DEPENDENCIES=${sd}
             -DOverallDependencies=${OverallDependenciesAsArgument}
             -DContextFile=${ContextFile}
             -DPackageRootDirectory=${PROJECT_SOURCE_DIR}

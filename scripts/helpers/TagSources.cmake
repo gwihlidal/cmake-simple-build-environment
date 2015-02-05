@@ -126,7 +126,7 @@ if(isThere)
 endif()
 
 # check dependencies
-if(DEFINED OverallDependencies)
+if(DEFINED OverallDependencies AND NOT SKIP_DEPENDENCIES)
     message(STATUS "Checking dependencies...")
 
     string(REPLACE "," ";" OverallDependencies "${OverallDependencies}")
