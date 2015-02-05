@@ -141,7 +141,7 @@ function(sbeConfigureDependencies)
             COMMENT "Building ${dep}")
     endforeach()
     
-    # setup denepdencies for own package
+    # setup dependencies for own package
     set(dependencyTimestamps "")
     foreach(dep ${DirectDependencies})
         sbeGetPackageAllBuildTimestamp(${dep} t)
