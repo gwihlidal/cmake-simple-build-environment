@@ -78,6 +78,14 @@ macro(sbeConfigurePackage)
     sbeGetDependenciesNames(directDependencies)
     set(DirectDependencies ${directDependencies} CACHE "" INTERNAL FORCE)
     
+    # add target build timestamp that is used also by dependencies
+    sbeGetPackageAllBuildTimestamp(${PROJECT_NAME} allbuildtimestamp)
+    sbeGetPackageBuildTimestamp(${PROJECT_NAME} buildtimestamp)
+    add_custom_target(buildtimestamp ALL 
+        COMMAND ${CMAKE_COMMAND} -E touch ${allbuildtimestamp} 
+        COMMAND ${CMAKE_COMMAND} -E touch ${buildtimestamp}
+        COMMENT "")    
+            
     # configure dependencies
     sbeConfigureDependencies()
     sbeLoadDependencies()
@@ -87,10 +95,13 @@ macro(sbeConfigurePackage)
     if("repository" STREQUAL "${locationType}")
         sbeAddTagTarget()
     endif()
+    
     if(Coverity_IsRequestedByDependant)
         sbeConfigureCoverity()
     endif()
+    
     sbeAddGraphTarget()
+   
     sbeAddHelpTarget()
 endmacro()
 
@@ -222,8 +233,13 @@ endfunction()
 
 macro(sbeLoadDependencies)
     # load configured dependencies
+    message(STATUS "Loading Dependencies")
     foreach(dep ${OverallDependencies})
         sbeGetPackageConfigPath(${dep} configPath)
-        find_package(${dep} REQUIRED CONFIG PATHS "${configPath}" NO_DEFAULT_PATH)
+        find_package(${dep} CONFIG PATHS "${configPath}" NO_DEFAULT_PATH QUIET)
+        if(NOT ${dep}_FOUND)
+            sbeGetToolChainName(toolchainName)
+            message(STATUS "   ${dep} provides nothing for ${toolchainName}")
+        endif()
     endforeach()
 endmacro()

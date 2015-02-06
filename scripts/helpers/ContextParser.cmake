@@ -180,16 +180,21 @@ function(sbeGetPackageLocationType name location)
     endif()
 endfunction()
 
-# It gets local package path to build directory for its name
-function(sbeGetPackageBuildPath name buildPath)
-    sbeGetPackageLocalPath(${name} packagePath)
-    
+function(sbeGetToolChainName name)
     if(DEFINED CMAKE_TOOLCHAIN_FILE)
         get_filename_component(toolchainName ${CMAKE_TOOLCHAIN_FILE} NAME)
         string(REPLACE ".cmake" "" toolchainName "${toolchainName}")
     else()
         set(toolchainName "default")
     endif()
+    
+    set(${name} ${toolchainName} PARENT_SCOPE)
+endfunction()
+
+# It gets local package path to build directory for its name
+function(sbeGetPackageBuildPath name buildPath)
+    sbeGetPackageLocalPath(${name} packagePath)
+    sbeGetToolChainName(toolchainName)
     
     if(DEFINED CMAKE_BUILD_TYPE)
         set(buildType ${CMAKE_BUILD_TYPE})
