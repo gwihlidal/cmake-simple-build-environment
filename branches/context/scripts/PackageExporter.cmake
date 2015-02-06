@@ -156,18 +156,22 @@ function(exportDependency name)
         else()
             svnGetRepositoryForLocalDirectory(${packagePath} url)
             
-            svnIsUrlTag(${url} isTag)
-            
-            if(isTag)
-                if(NOT "${url}" STREQUAL "${packageUrl}")
-                    svnSwitch(LocalDirectory ${packagePath} Url ${packageUrl}
-                        StartMessage "   Switching ${name} ${packageUrl}"
-                        StopOnErrorWithMessage "Could NOT switch to ${packageUrl} for ${name}" 
-                    )
+            if(DEFINED url)
+                svnIsUrlTag(${url} isTag)
+                
+                if(isTag)
+                    if(NOT "${url}" STREQUAL "${packageUrl}")
+                        svnSwitch(LocalDirectory ${packagePath} Url ${packageUrl}
+                            StartMessage "   Switching ${name} ${packageUrl}"
+                            StopOnErrorWithMessage "Could NOT switch to ${packageUrl} for ${name}" 
+                        )
+                    endif()
+                else()
+                    message(STATUS "   Ignoring ${name} due to trunk")
                 endif()
             else()
-                message(STATUS "   Ignoring ${name} due to trunk")
-            endif()        
+                    message(STATUS "   Ignoring ${name} due to not in repository")
+            endif()
         endif()
     elseif("local" STREQUAL "${locationType}")
         if(NOT EXISTS ${packagePath})
@@ -203,8 +207,11 @@ macro(storeDependencyContextProperties name)
     
     # do NOT process already processed dependency
     get_property(Export_OverallDependencies GLOBAL PROPERTY Export_OverallDependencies)
-    if("${Export_OverallDependencies}" MATCHES "${name}")
-        return()
+    if(DEFINED Export_OverallDependencies)
+        list(FIND Export_OverallDependencies ${name} found)
+        if(${found} GREATER 0)
+            return()
+        endif()
     endif()
     
     set_property(GLOBAL APPEND PROPERTY Export_OverallDependencies ${name})
