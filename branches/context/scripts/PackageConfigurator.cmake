@@ -75,17 +75,9 @@ macro(sbeConfigurePackage)
     sbeFindContextFile(${Name} contextFile)
     sbeLoadContextFile(${contextFile})
     sbeExportPackageDependencies(${Name} ${PackagePropertyFile})
-    sbeGetDependenciesNames(directDependencies)
+    sbeGetDependenciesNames(directDependencies "${Dependencies}")
     set(DirectDependencies ${directDependencies} CACHE "" INTERNAL FORCE)
     
-    # add target build timestamp that is used also by dependencies
-    sbeGetPackageAllBuildTimestamp(${PROJECT_NAME} allbuildtimestamp)
-    sbeGetPackageBuildTimestamp(${PROJECT_NAME} buildtimestamp)
-    add_custom_target(buildtimestamp ALL 
-        COMMAND ${CMAKE_COMMAND} -E touch ${allbuildtimestamp} 
-        COMMAND ${CMAKE_COMMAND} -E touch ${buildtimestamp}
-        COMMENT "")    
-            
     # configure dependencies
     sbeConfigureDependencies()
     sbeLoadDependencies()
@@ -103,6 +95,14 @@ macro(sbeConfigurePackage)
     sbeAddGraphTarget()
    
     sbeAddHelpTarget()
+    
+    # add target build timestamp that is used also by dependencies
+    sbeGetPackageAllBuildTimestamp(${PROJECT_NAME} allbuildtimestamp)
+    sbeGetPackageBuildTimestamp(${PROJECT_NAME} buildtimestamp)
+    add_custom_target(buildtimestamp ALL 
+        COMMAND ${CMAKE_COMMAND} -E touch ${allbuildtimestamp} 
+        COMMAND ${CMAKE_COMMAND} -E touch ${buildtimestamp}
+        COMMENT "")        
 endmacro()
 
 function(sbeConfigureDependencies)

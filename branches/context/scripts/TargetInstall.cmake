@@ -70,30 +70,34 @@ function(sbeInstallFrequentisVBT)
         set(vbtFile ${PROJECT_BINARY_DIR}/${tarFileName})
     endif()
     
-    # untar VBT for further analyse
-    message(STATUS "Preinstalling ${tarFileName}...")
-    file(MAKE_DIRECTORY  ${PROJECT_BINARY_DIR}/preinstallation)
-    execute_process(COMMAND tar -xzf ${vbtFile} -C ${PROJECT_BINARY_DIR}/preinstallation
-        RESULT_VARIABLE result
-        OUTPUT_VARIABLE out
-        ERROR_VARIABLE out)
-    if(${result} GREATER 0)
-        message(FATAL_ERROR "Untar Fails:\n${out}")
-    endif()
-    
-    # get libs targets
-    sbeImportsFrequentisVBT(
-        Dir ${PROJECT_BINARY_DIR}/preinstallation
-        ExcludeLibraries ${inst_ExcludeLibraries}
-        ImportedTargets importedTargets
-    )
-
-    # install imported targets
-    sbeAddInstallImportedTarget(
-        Targets ${importedTargets} 
-        HeadersDirectory ${PROJECT_BINARY_DIR}/preinstallation/include/
-        HeadersPathReplacement ".* -> "
+    if(NOT "${Vbt_TarFileName}" STREQUAL "${tarFileName}")
+        # untar VBT for further analyse
+        message(STATUS "Preinstalling ${tarFileName}...")
+        file(REMOVE_RECURSE ${PROJECT_BINARY_DIR}/preinstallation)
+        file(MAKE_DIRECTORY  ${PROJECT_BINARY_DIR}/preinstallation)
+        execute_process(COMMAND tar -xzf ${vbtFile} -C ${PROJECT_BINARY_DIR}/preinstallation
+            RESULT_VARIABLE result
+            OUTPUT_VARIABLE out
+            ERROR_VARIABLE out)
+        if(${result} GREATER 0)
+            message(FATAL_ERROR "Untar Fails:\n${out}")
+        endif()
+        
+        # get libs targets
+        sbeImportsFrequentisVBT(
+            Dir ${PROJECT_BINARY_DIR}/preinstallation
+            ExcludeLibraries ${inst_ExcludeLibraries}
+            ImportedTargets importedTargets
         )
+    
+        # install imported targets
+        sbeAddInstallImportedTarget(
+            Targets ${importedTargets} 
+            HeadersDirectory ${PROJECT_BINARY_DIR}/preinstallation/include/
+            HeadersPathReplacement ".* -> "
+            )
+        set(Vbt_TarFileName "${tarFileName}" CACHE "" INTERNAL FORCE)
+    endif()            
 endfunction()
 
 function(sbeAddInstallTarget)

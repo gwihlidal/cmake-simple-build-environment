@@ -133,7 +133,8 @@ macro(storeDependencyProperties dependency propertyFile errorTextWhenPropertyFil
         )        
     endif()
     
-    sbeGetDependenciesNames(directDependencies)
+    unset(directDependencies)
+    sbeGetDependenciesNames(directDependencies "${Dependencies}")
     set_property(GLOBAL PROPERTY Export_${Name}_DirectDependencies ${directDependencies})
     set_property(GLOBAL PROPERTY Export_${Name}_VersionText "${DateVersion}${SemanticVersion}")
     
@@ -144,7 +145,6 @@ endmacro()
 # it exports package with given name and all its dependencies
 function(exportDependency name)
     storeDependencyContextProperties(${name})
-
     # Variables packagePath,packageUrl is set in macro storeDependencyContextProperties
     sbeGetPackageLocationType(${name} locationType)
     
@@ -209,7 +209,7 @@ macro(storeDependencyContextProperties name)
     get_property(Export_OverallDependencies GLOBAL PROPERTY Export_OverallDependencies)
     if(DEFINED Export_OverallDependencies)
         list(FIND Export_OverallDependencies ${name} found)
-        if(${found} GREATER 0)
+        if(${found} GREATER -1)
             return()
         endif()
     endif()

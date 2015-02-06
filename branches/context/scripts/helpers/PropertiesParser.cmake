@@ -6,8 +6,8 @@ set(PropertiesParserGuard yes)
 
 include(SBE/helpers/ArgumentParser)
 
-function(sbeGetDependenciesNames dependencies)
-    set(descriptions ${Dependencies})
+function(sbeGetDependenciesNames dependenciesNames dependenciesInfo)
+    set(descriptions ${dependenciesInfo})
     string(REPLACE ";" ","  descriptions "${descriptions}")
     string(REPLACE ",Project" ";Project"  descriptions "${descriptions}")
     string(REPLACE ",Package" ";Package"  descriptions "${descriptions}")
@@ -25,7 +25,7 @@ function(sbeGetDependenciesNames dependencies)
         list(APPEND names ${name})
     endforeach()
     
-    set(${dependencies} "${names}" PARENT_SCOPE)
+    set(${dependenciesNames} "${names}" PARENT_SCOPE)
 endfunction()
 
 function(sbeGetVersionText text)
