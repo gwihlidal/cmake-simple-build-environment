@@ -12,6 +12,7 @@ function(sbeAddTagTarget)
     set(releaseNoteOverview "")
     set(cc "")
     set(sd "")
+    set(st "")
     
     if("Windows" STREQUAL "${CMAKE_HOST_SYSTEM_NAME}")
         set(ending "\$(TAG_ENDING)")
@@ -19,12 +20,14 @@ function(sbeAddTagTarget)
         set(sd "\$(SKIP_DEPENDENCIES)")
         set(releaseNoteOverview "\$(RELEASE_NOTE_OVERVIEW)")
         set(cc "\$(COMMIT_COMMENT)")
+        set(st "\$(SWITCH_TO_NEW_TAG)")
     elseif("Linux" STREQUAL "${CMAKE_HOST_SYSTEM_NAME}")
         set(ending "\${TAG_ENDING}")
         set(force "\${FORCE}")
         set(sd "\${SKIP_DEPENDENCIES}")
         set(releaseNoteOverview "\${RELEASE_NOTE_OVERVIEW}")
         set(cc "\${COMMIT_COMMENT}")
+        set(st "\${SWITCH_TO_NEW_TAG}")
     endif()
     
     get_property(ContextFile GLOBAL PROPERTY ContextFile)
@@ -37,6 +40,7 @@ function(sbeAddTagTarget)
             -DTAG_ENDING=${ending}
             -DFORCE=${force}
             -DSKIP_DEPENDENCIES=${sd}
+            -DSWITCH_TO_NEW_TAG=${st}
             -DOverallDependencies=${OverallDependenciesAsArgument}
             -DContextFile=${ContextFile}
             -DPackageRootDirectory=${PROJECT_SOURCE_DIR}
