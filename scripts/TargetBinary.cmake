@@ -57,9 +57,6 @@ function(sbeAddLibrary)
         add_library(${prop_Name} STATIC ${precompilatedObjects} ${prop_Sources})            
     endif()
     
-    sbeAddHelpForTarget(Build ${prop_Name} "Build library ${prop_Name}")
-    
-    
     if(DEFINED prop_LinkOwnLibraries)
         foreach(ownLib ${prop_LinkOwnLibraries}) 
             get_target_property(isGeneratedLibrary ${ownLib} SBE_GENERATED_LIBRARY)
@@ -118,7 +115,6 @@ function(sbeAddMockLibrary)
     endif()
             
     add_library(${prop_Name} STATIC ${prop_Sources} ${precompilatedObjects})
-    sbeAddHelpForTarget(Build ${prop_Name} "Build Mock library ${prop_Name} for unit test in other packages")            
     
     set_property(TARGET ${prop_Name} PROPERTY SBE_MOCK yes)
     set_property(TARGET ${prop_Name} PROPERTY SBE_MOCKED_NAME ${prop_MockedName})
@@ -158,7 +154,6 @@ function(sbeAddExecutable)
     endif()
             
     add_executable(${prop_Name} ${prop_Sources} ${precompilatedObjects})
-    sbeAddHelpForTarget(Build ${prop_Name} "Build executable ${prop_Name}") 
                     
     get_property(isSharedLibSupported GLOBAL PROPERTY TARGET_SUPPORTS_SHARED_LIBS)
     
@@ -233,7 +228,6 @@ function(sbeAddTestExecutable)
     endif()
              
     add_executable(${prop_Name} ${mainFileName} ${prop_Sources} ${precompilatedObjects})
-    sbeAddHelpForTarget(Build ${prop_Name} "Build test executable ${prop_Name}")
                     
     get_property(isSharedLibSupported GLOBAL PROPERTY TARGET_SUPPORTS_SHARED_LIBS)
     

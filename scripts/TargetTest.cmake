@@ -30,6 +30,4 @@ function(sbeAddTestTarget)
                 DEPENDS ${test_Executable})
         endif()
     endif()
-    
-    sbeAddHelpForTarget(Other test "Executes unit tests")
 endfunction()        
