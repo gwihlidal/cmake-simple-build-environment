@@ -234,7 +234,24 @@ if(${svnResult} GREATER 0)
 endif()
 
 message(STATUS "Updating context file...")
-sbeUpdateUrlInContextFile(${ContextFile} ${Name} ${packageUrlRoot}/tags/${tagName})
+sbeUpdateUrlInContextFile(${ContextFile} ${Name} ${packageUrlRoot}/tags/${tagName} isFound)
+if(NOT isFound)
+    message("${name} is not found in context file")
+endif()
+
+if(SWITCH_TO_NEW_TAG)
+    message(STATUS "Switching to new tag ${tagName}...")
+    
+    execute_process(
+        COMMAND ${Subversion_SVN_EXECUTABLE} switch "${packageUrlRoot}/tags/${tagName}"
+        WORKING_DIRECTORY ${PackageRootDirectory}
+        RESULT_VARIABLE svnResult
+        OUTPUT_VARIABLE out)
+    
+    if(${svnResult} GREATER 0)
+        message(SEND_ERROR "Switch to new tag fails.\n${out}")
+    endif()
+endif()
 
 
 
