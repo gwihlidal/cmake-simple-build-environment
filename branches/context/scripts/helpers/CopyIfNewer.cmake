@@ -12,7 +12,11 @@ if(IS_DIRECTORY ${SOURCE})
         set(isMessagePrinted yes)
     endif()
     
-    file(GLOB_RECURSE sourceFiles RELATIVE ${SOURCE} ${SOURCE}/*)    
+    # remove trailing /
+    string(REGEX REPLACE "[/]+$" "" SOURCE "${SOURCE}")
+    string(REGEX REPLACE "[/]+$" "" DESTINATION "${DESTINATION}")
+        
+    file(GLOB_RECURSE sourceFiles RELATIVE ${SOURCE} ${SOURCE}/*)
     file(GLOB_RECURSE destinationFiles RELATIVE ${DESTINATION} ${DESTINATION}/*)
     # remove destination files that are missing in source
     if(NOT "" STREQUAL "${destinationFiles}")
@@ -20,8 +24,9 @@ if(IS_DIRECTORY ${SOURCE})
             list(REMOVE_ITEM destinationFiles ${sourceFiles}) 
         endif()
         foreach(fr ${destinationFiles})
-            if(NOT isMessagePrinted)       
+            if(NOT isMessagePrinted)
                 message(${MESSAGE})
+                set(isMessagePrinted yes)
             endif()
             file(REMOVE ${DESTINATION}/${fr})
         endforeach()

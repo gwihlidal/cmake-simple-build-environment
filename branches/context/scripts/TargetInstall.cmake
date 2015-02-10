@@ -93,7 +93,7 @@ function(sbeInstallFrequentisVBT)
         # install imported targets
         sbeAddInstallImportedTarget(
             Targets ${importedTargets} 
-            HeadersDirectory ${PROJECT_BINARY_DIR}/preinstallation/include/
+            HeadersDirectory ${PROJECT_BINARY_DIR}/preinstallation/include
             HeadersPathReplacement ".* -> "
             )
         set(Vbt_TarFileName "${tarFileName}" CACHE "" INTERNAL FORCE)
@@ -430,6 +430,8 @@ function (_installFiles)
 endfunction()
 
 function(_installHeaders)
+    # destination directory has to be relative to binary directory. Relative paths are used in printing and consolidation
+    # headers
     _exportHeaders(${ARGN} DestinationDirectory Export/include)
     
     install(DIRECTORY ${PROJECT_BINARY_DIR}/Export/include DESTINATION include COMPONENT Headers)
@@ -464,7 +466,7 @@ function(_exportHeaders)
     if(DEFINED headers_HeadersDirectory)
         foreach(headerDir ${headers_HeadersDirectory})
             list(APPEND exportCommandArg "-DSOURCE=${headerDir}")
-            list(APPEND exportCommandArg "-DDESTINATION=${headers_DestinationDirectory}")
+            list(APPEND exportCommandArg "-DDESTINATION=${PROJECT_BINARY_DIR}/${headers_DestinationDirectory}")
             list(APPEND exportCommandArg "-DMESSAGE=Exporting ${headerDir}")
             list(APPEND exportCommandArg "-DTIMESTAMP_FILE=${buildtimestamp}")
             list(APPEND exportCommandArg "-P")
