@@ -14,8 +14,6 @@ file(GLOB SHELL_SCRIPTS shellScripts/*.cmake)
 file(GLOB TEMPLATES templates/*.in)
 
 configure_file(shellScripts/sbeExportPackage.in "${PROJECT_BINARY_DIR}/sbeExportPackage" @ONLY)
-configure_file(shellScripts/sbeUpdateToLatestDependencies.in "${PROJECT_BINARY_DIR}/sbeUpdateToLatestDependencies" @ONLY)
-configure_file(shellScripts/sbeCheckNewDependencies.in "${PROJECT_BINARY_DIR}/sbeCheckNewDependencies" @ONLY)
 configure_file(shellScripts/sbeConfigurePackage.in "${PROJECT_BINARY_DIR}/sbeConfigurePackage" @ONLY)
 configure_file(shellScripts/sbeDecorateDoxygen.in "${PROJECT_BINARY_DIR}/sbeDecorateDoxygen" @ONLY)
 
@@ -38,12 +36,6 @@ install(FILES "${PROJECT_BINARY_DIR}/sbeConfigurePackage"
 install(FILES "${PROJECT_BINARY_DIR}/sbeExportPackage" 
         DESTINATION /usr/local/bin 
         PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
-install(FILES "${PROJECT_BINARY_DIR}/sbeUpdateToLatestDependencies" 
-        DESTINATION /usr/local/bin 
-        PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)        
-install(FILES "${PROJECT_BINARY_DIR}/sbeCheckNewDependencies" 
-        DESTINATION /usr/local/bin 
-        PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)        
 install(FILES "${PROJECT_BINARY_DIR}/sbeDecorateDoxygen" 
         DESTINATION /usr/local/bin 
         PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)        
