@@ -99,7 +99,10 @@ macro(sbeConfigurePackage)
     add_custom_target(buildtimestamp ALL 
         COMMAND ${CMAKE_COMMAND} -E touch ${allbuildtimestamp} 
         COMMAND ${CMAKE_COMMAND} -E touch ${buildtimestamp}
-        COMMENT "")        
+        COMMENT "")
+    
+    # directory for public files of this project    
+    file(MAKE_DIRECTORY  ${PROJECT_BINARY_DIR}/Export)        
 endmacro()
 
 function(sbeConfigureDependencies)
@@ -166,20 +169,24 @@ function(sbeConfigureDependencies)
             COMMENT "Cleaning ${dep}")            
     endforeach()
     
-    # setup dependencies for own package
-    set(dependencyTimestamps "")
-    foreach(dep ${DirectDependencies})
-        sbeGetPackageAllBuildTimestamp(${dep} t)
-        list(APPEND dependencyTimestamps ${t})
-    endforeach()
-    
-    add_custom_command(
-        OUTPUT dependencies.buildtimestamp
-        COMMAND ${CMAKE_COMMAND} -E touch dependencies.buildtimestamp
-        DEPENDS ${dependencyTimestamps}
-        COMMENT "")
-    
-    add_custom_target(dependencies DEPENDS dependencies.buildtimestamp COMMENT "")
+    if(NOT "" STREQUAL "${DirectDependencies}")
+        # setup dependencies for own package
+        set(dependencyTimestamps "")
+        foreach(dep ${DirectDependencies})
+            sbeGetPackageAllBuildTimestamp(${dep} t)
+            list(APPEND dependencyTimestamps ${t})
+        endforeach()
+        
+        add_custom_command(
+            OUTPUT dependencies.buildtimestamp
+            COMMAND ${CMAKE_COMMAND} -E touch dependencies.buildtimestamp
+            DEPENDS ${dependencyTimestamps}
+            COMMENT "")
+        
+        add_custom_target(dependencies DEPENDS dependencies.buildtimestamp COMMENT "")
+    else()
+        add_custom_target(dependencies COMMENT "")
+    endif()
  endfunction()
 
 function(sbeConfigureDependency name)

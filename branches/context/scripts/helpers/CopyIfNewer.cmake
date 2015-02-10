@@ -7,7 +7,6 @@ if(NOT DEFINED DESTINATION)
 endif()
 
 if(IS_DIRECTORY ${SOURCE})
-    message("Checking DIRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRR")
     set(isMessagePrinted no)
     if(NOT DEFINED MESSAGE)
         set(isMessagePrinted yes)
@@ -32,6 +31,7 @@ if(IS_DIRECTORY ${SOURCE})
         if(${SOURCE}/${src} IS_NEWER_THAN ${DESTINATION}/${src})
             if(NOT isMessagePrinted)       
                 message(${MESSAGE})
+                set(isMessagePrinted yes)
             endif()
             execute_process(
                 COMMAND ${CMAKE_COMMAND} -E copy ${SOURCE}/${src} ${DESTINATION}/${src}
