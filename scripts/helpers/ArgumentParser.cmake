@@ -34,6 +34,8 @@ macro(sbeReportErrorWhenVariablesNotDefined)
 endmacro()
 
 macro(sbeParseArguments prefix options oneArg multiArg multiOccurrence args)
+    cmake_policy(PUSH)
+    cmake_policy(SET CMP0054 NEW) # turn off implicit expansions in if statement
     
     set(defaultArgs ${args})
     
@@ -44,7 +46,7 @@ macro(sbeParseArguments prefix options oneArg multiArg multiOccurrence args)
             
         set(occurrenceAllOutput "")
         set(occurrenceOutput "")
-        set(add "no")
+        set(add no)
         foreach(arg ${defaultArgs})
             if ("${arg}" STREQUAL "${occurrence}")
                 if (add)
@@ -53,7 +55,7 @@ macro(sbeParseArguments prefix options oneArg multiArg multiOccurrence args)
                     list(APPEND occurrenceAllOutput ${occurrenceOutput})
                     set(occurrenceOutput "")
                 endif()
-                set(add "yes")
+                set(add yes)
             endif()
             
             list(FIND allOtherArgs ${arg} isFound)
@@ -65,7 +67,7 @@ macro(sbeParseArguments prefix options oneArg multiArg multiOccurrence args)
                     string(REPLACE "${occurrenceOutput}" "" defaultArgs "${defaultArgs}")
                     string(REPLACE ";" "," occurrenceOutput "${occurrenceOutput}")
                     list(APPEND occurrenceAllOutput ${occurrenceOutput})
-                    set(add "no")
+                    set(add no)
                     set(occurrenceOutput "")
                 endif()
             endif()
@@ -79,6 +81,8 @@ macro(sbeParseArguments prefix options oneArg multiArg multiOccurrence args)
                 
         set(${prefix}_${occurrence} ${occurrenceAllOutput})
     endforeach()
+    
+    cmake_policy(POP)
     
     CMAKE_PARSE_ARGUMENTS(${prefix} "${options}" "${oneArg}" "${multiArg}" "${defaultArgs}")
 endmacro()

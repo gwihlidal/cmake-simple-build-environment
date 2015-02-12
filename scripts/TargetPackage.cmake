@@ -30,7 +30,10 @@ function(sbeAddPackageTarget)
     
     cmake_parse_arguments(pkg "" "Name" "" ${ARGN})
     
+    cmake_policy(PUSH)
+    cmake_policy(SET CMP0037 OLD) # not warn for reserved test package
     add_custom_target(package)
+    cmake_policy(POP)
     
     if(TARGET dependencies)
         add_dependencies(package dependencies)
