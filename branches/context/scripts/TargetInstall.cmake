@@ -434,7 +434,11 @@ function(_installHeaders)
     # headers
     _exportHeaders(${ARGN} DestinationDirectory Export/include)
     
-    install(DIRECTORY ${PROJECT_BINARY_DIR}/Export/include DESTINATION include COMPONENT Headers)
+    get_property(headersToExport GLOBAL PROPERTY Install_headersToExport)
+    get_property(headersDirectoriesToExport GLOBAL PROPERTY Install_headersDirectoriesToExport)
+    if(DEFINED headersToExport OR DEFINED headersDirectoriesToExport)
+        install(DIRECTORY ${PROJECT_BINARY_DIR}/Export/include DESTINATION include COMPONENT Headers)
+    endif()
 endfunction()
 
 function(_exportHeaders)
