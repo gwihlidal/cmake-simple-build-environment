@@ -134,7 +134,7 @@ function(_AddLibraries targetName libraries)
         get_target_property(libType ${lib} TYPE)
         
         if("STATIC_LIBRARY" STREQUAL "${libType}")
-            target_link_libraries(${targetName} ${lib})
+            target_link_libraries(${targetName} LINK_PUBLIC ${lib})
         else()
             # use private to not add transitive dependencies to target when shared libraries are used 
             target_link_libraries(${targetName} LINK_PRIVATE ${lib})

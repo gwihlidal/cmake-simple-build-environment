@@ -8,7 +8,10 @@ set(TargetTestGuard yes)
 
 function(sbeAddTestTarget)
     CMAKE_PARSE_ARGUMENTS(test "" "Executable" "" ${ARGN})
-    
+
+    cmake_policy(PUSH)
+    cmake_policy(SET CMP0037 OLD) # not warn for reserved test target 
+     
     if(${CMAKE_CROSSCOMPILING})
         add_custom_target(test COMMENT "Not possible to run test because of cross-compiling." DEPENDS ${test_Executable})
     else()
@@ -30,4 +33,6 @@ function(sbeAddTestTarget)
                 DEPENDS ${test_Executable})
         endif()
     endif()
+    
+    cmake_policy(POP)
 endfunction()        
