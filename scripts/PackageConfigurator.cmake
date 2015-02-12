@@ -108,7 +108,6 @@ endmacro()
 function(sbeConfigureDependencies)
     # if package has no dependencies do nothing
     if("" STREQUAL "${OverallDependencies}")
-        set(Configured_OverallDependencies ${OverallDependencies} CACHE "" INTERNAL FORCE)
         return()
     endif()
     
@@ -121,15 +120,10 @@ function(sbeConfigureDependencies)
         sbeGetPackageBuildPath(${dep} buildPath)
     
         if(NOT EXISTS "${buildPath}/Makefile")
-            list(APPEND dependenciesToConfigure ${dep})
+            sbeConfigureDependency(${dep})
         endif() 
     endforeach()
 
-    foreach(dep ${dependenciesToConfigure})
-        sbeConfigureDependency(${dep})
-    endforeach()
-    set(Configured_OverallDependencies ${OverallDependencies} CACHE "" INTERNAL FORCE)
-    
     # add dependencies rebuild target
     add_custom_target(dependencies_force COMMENT "Force dependencies build")
     # add dependencies clean target
@@ -192,11 +186,6 @@ function(sbeConfigureDependencies)
 function(sbeConfigureDependency name)
     sbeGetPackageBuildPath(${name} buildPath)
     
-    # if dependency is configured skip dependency
-    if(EXISTS "${buildPath}/Makefile")
-        return()
-    endif()
-
     message(STATUS "   ${name}")
 
     # create build directory    
