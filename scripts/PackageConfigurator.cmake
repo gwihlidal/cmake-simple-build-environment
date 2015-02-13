@@ -120,7 +120,7 @@ function(sbeConfigureDependencies)
         sbeGetPackageBuildPath(${dep} buildPath)
     
         if(NOT EXISTS "${buildPath}/Makefile")
-            sbeConfigureDependency(${dep})
+            sbeConfigureDependency(${dep} ${buildPath})
         endif() 
     endforeach()
 
@@ -183,9 +183,7 @@ function(sbeConfigureDependencies)
     endif()
  endfunction()
 
-function(sbeConfigureDependency name)
-    sbeGetPackageBuildPath(${name} buildPath)
-    
+function(sbeConfigureDependency name buildPath)
     message(STATUS "   ${name}")
 
     # create build directory    
