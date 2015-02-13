@@ -105,10 +105,6 @@ function(sbeAddInstallTarget)
     if(isAddInstallCalled)
         message(FATAL_ERROR "Function sbeAddInstallTarget can be called only one time.\nIn current implemntation it will add only latest target to install to package config file.")
     endif()
-    # check install and package targets order
-    if(isAddPackageCalled)
-        message(FATAL_ERROR "Function sbeAddPackageTarget has to be called after function sbeAddInstallTarget.")
-    endif()
     
     set(isAddInstallCalled yes PARENT_SCOPE)
     
@@ -220,7 +216,7 @@ function(_installTestTargets)
         install(
             TARGETS ${tst_Targets} 
             EXPORT ${PROJECT_NAME}Targets
-            RUNTIME DESTINATION bin COMPONENT Distribution CONFIGURATIONS Debug | DebugWithCoverage)
+            RUNTIME DESTINATION bin COMPONENT Tests)
     endif()
 endfunction()
 
@@ -280,7 +276,7 @@ function(sbeAddInstallImportedTarget)
                 set(ALL_IMPORTED_TARGETS_DESCRIPTION "${ALL_IMPORTED_TARGETS_DESCRIPTION}    IMPORTED_LINK_INTERFACE_LANGUAGES_${buildType} \"${languages}\")\n")
             endif()
         elseif("SHARED_LIBRARY" STREQUAL "${type}")
-            set(componentIdentifier COMPONENT Distribution)
+            set(componentIdentifier COMPONENT Production)
             
             list(APPEND ALL_IMPORTED_TARGETS_DEFINITION "add_library(${target} SHARED IMPORTED)")
             
@@ -387,13 +383,13 @@ function(_installOrdinaryTargets)
         install(
             TARGETS ${ord_Targets}
             EXPORT ${PROJECT_NAME}Targets
-            RUNTIME DESTINATION bin COMPONENT Distribution
-            LIBRARY DESTINATION lib COMPONENT Distribution NAMELINK_SKIP
+            RUNTIME DESTINATION bin COMPONENT Production
+            LIBRARY DESTINATION lib COMPONENT Production NAMELINK_SKIP
             ARCHIVE DESTINATION lib)
     endif()            
         
     if(NOT "" STREQUAL "${binFiles}")
-        install(FILES ${binFiles} DESTINATION bin COMPONENT Distribution)
+        install(FILES ${binFiles} DESTINATION bin COMPONENT Production)
     endif()
     
     foreach(target ${ord_Targets})
@@ -425,7 +421,7 @@ function (_installFiles)
             endif()
         endforeach()
         
-        install(FILES ${file} DESTINATION ${installPath} COMPONENT Distribution)
+        install(FILES ${file} DESTINATION ${installPath} COMPONENT Production)
     endforeach() 
 endfunction()
 
