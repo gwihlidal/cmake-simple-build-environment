@@ -433,7 +433,7 @@ function(_installHeaders)
     get_property(headersToExport GLOBAL PROPERTY Install_headersToExport)
     get_property(headersDirectoriesToExport GLOBAL PROPERTY Install_headersDirectoriesToExport)
     if(DEFINED headersToExport OR DEFINED headersDirectoriesToExport)
-        install(DIRECTORY ${PROJECT_BINARY_DIR}/Export/include DESTINATION include COMPONENT Headers)
+        install(DIRECTORY ${PROJECT_BINARY_DIR}/Export/include/ DESTINATION include COMPONENT Headers)
     endif()
 endfunction()
 
