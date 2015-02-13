@@ -216,7 +216,7 @@ function(_installTestTargets)
         install(
             TARGETS ${tst_Targets} 
             EXPORT ${PROJECT_NAME}Targets
-            RUNTIME DESTINATION bin COMPONENT Tests)
+            RUNTIME DESTINATION bin/tests COMPONENT Tests)
     endif()
 endfunction()
 
