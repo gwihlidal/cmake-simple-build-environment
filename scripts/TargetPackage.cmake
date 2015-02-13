@@ -1,4 +1,5 @@
-cmake_minimum_required(VERSION 2.8)
+# minimal version should be 3.1.3 because in this version GTGZ target is added 
+cmake_minimum_required(VERSION 3.1.3)
 
 if (DEFINED TargetPackageGuard)
     return()
@@ -13,73 +14,18 @@ include(SBE/helpers/ContextParser)
 include(SBE/helpers/ArgumentParser)
 
 function(sbeAddPackageTarget)
-#    _CreateCPackConfig(SRE Distribution yes)
-#    
-#    add_custom_target(sre
-#        COMMAND cpack --config ${PROJECT_BINARY_DIR}/CPackConfig-SRE.cmake
-#        COMMENT "Generating SRE")
-#
-#    _CreateCPackConfig(SDK "Configs;Distribution;Mocks;Headers" no)
-#    
-#    add_custom_target(sdk
-#        COMMAND cpack --config ${PROJECT_BINARY_DIR}/CPackConfig-SDK.cmake
-#        COMMENT "Generating SDK")
+    _CreateCPackConfig(SRE Production yes)
     
-   
-    set(isAddPackageCalled yes PARENT_SCOPE)
-    
-    cmake_parse_arguments(pkg "" "Name" "" ${ARGN})
-    
-    cmake_policy(PUSH)
-    cmake_policy(SET CMP0037 OLD) # not warn for reserved test package
-    add_custom_target(package)
-    cmake_policy(POP)
-    
-    if(TARGET dependencies)
-        add_dependencies(package dependencies)
-    endif()
-    
-    foreach(target ${InstalledTargets})
-        add_dependencies(package ${target})
-    endforeach()
+    add_custom_target(sre
+        COMMAND cpack --config ${PROJECT_BINARY_DIR}/CPackConfig-SRE.cmake
+        COMMENT "Generating SRE")
 
-    set(DO_STRIP "")
-    if(${CMAKE_CROSSCOMPILING})
-       # usually we have no much space on tagret platform
-        set(DO_STRIP "-DCMAKE_INSTALL_DO_STRIP=yes") 
-    endif()
-
-    add_custom_command(TARGET package
-        COMMAND cmake -E remove_directory ${PROJECT_BINARY_DIR}/package
-        COMMAND cmake -E make_directory ${PROJECT_BINARY_DIR}/package/data/${SBE_DEFAULT_PACKAGE_PATH}
-        COMMAND cmake -DCMAKE_INSTALL_COMPONENT=Distribution -DBUILD_TYPE=${CMAKE_BUILD_TYPE} -DCMAKE_INSTALL_PREFIX=${PROJECT_BINARY_DIR}/package/data/${SBE_DEFAULT_PACKAGE_PATH} ${DO_STRIP} -P cmake_install.cmake 
-        COMMENT "Preinstalling...")
+    _CreateCPackConfig(SDK "Configs;Production;Tests;Mocks;Headers" no)
     
-   # reinstall
-    foreach(dep ${OverallDependencies})
-        if(${${dep}_IsProvided})
-            add_custom_command(TARGET package
-                COMMENT "Skipping provided dependecy ${dep}...")
-        else()
-            sbeGetPackageBuildPath(${dep} buildPath)
-            add_custom_command(TARGET package
-                COMMAND cmake -DCMAKE_INSTALL_COMPONENT=Distribution -DBUILD_TYPE=${CMAKE_BUILD_TYPE} -DCMAKE_INSTALL_PREFIX=${PROJECT_BINARY_DIR}/package/data/${SBE_DEFAULT_PACKAGE_PATH} ${DO_STRIP} -P ${buildPath}/cmake_install.cmake
-                COMMENT "Adding dependecy ${dep} to package...")
-        endif()
-        
-    endforeach()
+    add_custom_target(sdk
+        COMMAND cpack --config ${PROJECT_BINARY_DIR}/CPackConfig-SDK.cmake
+        COMMENT "Generating SDK")
     
-    sbeGetVersionText(version)    
-    if(DEFINED pkg_Name)
-        set(packageFileName "${pkg_Name}-${version}-${CMAKE_BUILD_TYPE}-${SBE_BOARD_FAMILY_NAME}-${SBE_SYSTEM_NAME}-${SBE_SYSTEM_EXTENSION_NAME}.tar.gz")
-    else()
-        set(packageFileName "${PROJECT_NAME}-${version}-${CMAKE_BUILD_TYPE}-${SBE_BOARD_FAMILY_NAME}-${SBE_SYSTEM_NAME}-${SBE_SYSTEM_EXTENSION_NAME}.tar.gz")
-    endif()
-    
-    add_custom_command(TARGET package
-        COMMAND cmake -E chdir ./package/data tar -czf ../${packageFileName} .
-        COMMENT "Tar ${packageFileName}...")
-
 endfunction()                
 
 function(_CreateCPackConfig packageType components strip)
