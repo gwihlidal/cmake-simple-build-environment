@@ -85,6 +85,8 @@ function(sbeLoadContextFile contextFile)
     get_filename_component(cp "${cf}" PATH)
     set_property(GLOBAL PROPERTY ContextPath "${cp}/context")
     set(ContextPath ${cp}/context CACHE "" INTERNAL FORCE)
+    set_property(GLOBAL PROPERTY ContextRoot "${cp}")
+    set(ContextRoot ${cp} CACHE "" INTERNAL FORCE)
 endfunction()
 
 # It reports error when context file is not loaded

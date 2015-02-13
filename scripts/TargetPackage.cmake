@@ -25,7 +25,10 @@ function(sbeAddPackageTarget)
     add_custom_target(sdk
         COMMAND cpack --config ${PROJECT_BINARY_DIR}/CPackConfig-SDK.cmake
         COMMENT "Generating SDK")
-    
+        
+    add_custom_target(src
+        COMMAND cpack --config ${PROJECT_BINARY_DIR}/CPackConfig-Source.cmake
+        COMMENT "Generating sources")        
 endfunction()                
 
 function(_CreateCPackConfig packageType components strip)
@@ -66,10 +69,24 @@ function(_CreateCPackConfig packageType components strip)
     endforeach()
     
     # setup source packaging
-    set(CPACK_SOURCE_OUTPUT_CONFIG_FILE "${CMAKE_BINARY_DIR}/CPackSourceConfig-${packageType}.cmake")
+    set(CPACK_SOURCE_OUTPUT_CONFIG_FILE "${CMAKE_BINARY_DIR}/CPackConfig-Source.cmake")
     set(CPACK_SOURCE_GENERATOR "GTGZ")
-    set(CPACK_SOURCE_IGNORE_FILES /build/ /CVS/ /\\\\.svn/ /\\\\.bzr/ /\\\\.hg/ /\\\\.git/ \\\\.swp\\\$ )
-    
+    set(CPACK_SOURCE_IGNORE_FILES /RemoteSystemsTempFiles/ /build/ /\\\\.metadata/ /CVS/ /\\\\.svn/ /\\\\.bzr/ /\\\\.hg/ /\\\\.git/ \\\\.swp\\\$ )
+    set(CPACK_SOURCE_PACKAGING_INSTALL_PREFIX "")
+    set(CPACK_SOURCE_PACKAGE_FILE_NAME "${CPACK_PACKAGE_FILE_NAME}-Source")
+    # add own application into package
+    string(REPLACE "${ContextRoot}" "" relativePathIncontext "${PROJECT_SOURCE_DIR}")
+    list(APPEND CPACK_SOURCE_INSTALLED_DIRECTORIES ${PROJECT_SOURCE_DIR} ${relativePathIncontext})
+    # add all dependencies to package
+    foreach(dep ${OverallDependencies})
+        sbeGetPackageLocalPath(${dep} sourcePath)
+        string(REPLACE "${ContextRoot}" "" relativePathIncontext "${sourcePath}")
+        list(APPEND CPACK_SOURCE_INSTALLED_DIRECTORIES "${sourcePath}" ${relativePathIncontext})
+    endforeach()
+    # copy context file
+    foreach(gen ${CPACK_SOURCE_GENERATOR})
+        set(CPACK_INSTALL_COMMANDS "${CMAKE_COMMAND} -E copy ${ContextFile} ${CPACK_PACKAGE_DIRECTORY}/_CPack_Packages/${CMAKE_SYSTEM_NAME}-Source/${gen}/${CPACK_SOURCE_PACKAGE_FILE_NAME}")
+    endforeach()    
     # create config
     include(CPack)      
 endfunction()
