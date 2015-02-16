@@ -16,7 +16,7 @@ function(sbeAddTestTarget)
         add_custom_target(test COMMENT "Not possible to run test because of cross-compiling." DEPENDS ${test_Executable})
     else()
         set(testOptions "")
-        if("Windows" STREQUAL "${CMAKE_SYSTEM_NAME}")
+        if("Windows" STREQUAL "${CMAKE_HOST_SYSTEM_NAME}")
             set(testOptions "\$(CPPUTEST_FLAGS)")
             
             add_custom_target(test
@@ -24,7 +24,7 @@ function(sbeAddTestTarget)
                 COMMAND cmake -E remove -f cpputest_*.xml 
                 COMMAND bin/${test_Executable} ${testOptions}
                 DEPENDS ${test_Executable})
-        elseif("Linux" STREQUAL "${CMAKE_SYSTEM_NAME}")
+        elseif("Linux" STREQUAL "${CMAKE_HOST_SYSTEM_NAME}")
             set(testOptions "\${CPPUTEST_FLAGS}")
             
             add_custom_target(test
