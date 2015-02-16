@@ -14,11 +14,6 @@ endif()
 if(RULE_LAUNCH_LINK)
 endif()
 
-find_program(SED_TOOL sed)
-if(NOT SED_TOOL)
-    message(FATAL_ERROR "error: could not find sed.")
-endif()
-
 # each project has to have properties.cmake file, where project is described
 set(PackagePropertyFile ${CMAKE_SOURCE_DIR}/Properties.cmake)
 
@@ -105,8 +100,6 @@ function(sbeConfigureDependencies)
         return()
     endif()
     
-    message(STATUS "Configuring Dependencies")
-    
     # get packages to configure
     # remove from Configured dependencies, dependencies that have deleted build directory
     set(dependenciesToConfigure "")
@@ -178,8 +171,8 @@ function(sbeConfigureDependencies)
  endfunction()
 
 function(sbeConfigureDependency name buildPath)
-    message(STATUS "   ${name}")
-
+    message(STATUS "Configuring ${name}")
+    
     # create build directory    
     file(MAKE_DIRECTORY ${buildPath})
     
@@ -200,16 +193,15 @@ function(sbeConfigureDependency name buildPath)
     # configure dependency
     sbeGetPackageLocalPath(${name} packagePath)
     execute_process(
-        COMMAND ${CMAKE_COMMAND} -E chdir ${buildPath} 
-            ${CMAKE_COMMAND} ${configurationArgs}
-            ${packagePath}
-        COMMAND ${SED_TOOL} -u -e "s/.*/      &/"
+        COMMAND ${CMAKE_COMMAND} -E chdir ${buildPath} ${CMAKE_COMMAND} ${configurationArgs} ${packagePath}
         RESULT_VARIABLE configureResult)
     
     # handle configuration result
     if((${configureResult} GREATER 0) OR (NOT EXISTS ${buildPath}/Makefile))
         message(FATAL_ERROR "Error during configuration of dependency ${name}")
     endif()
+    
+    message(STATUS "Configuring ${name} -- done")
 endfunction()
 
 macro(sbeLoadDependencies)
