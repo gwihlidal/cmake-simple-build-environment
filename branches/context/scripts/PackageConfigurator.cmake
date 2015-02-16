@@ -23,6 +23,7 @@ include(SBE/PackageExporter)
 include(SBE/TargetTag)
 include(SBE/TargetGraph)
 include(SBE/TargetCoverity)
+include(SBE/helpers/ColorMessage)
 
 # macro calculates mandratory variables if not given
 # - sets project laguage to C and CXX
@@ -171,7 +172,7 @@ function(sbeConfigureDependencies)
  endfunction()
 
 function(sbeConfigureDependency name buildPath)
-    message(STATUS "Configuring ${name}")
+    colormsg(HIBLUE "Configuring ${name}")
     
     # create build directory    
     file(MAKE_DIRECTORY ${buildPath})
@@ -201,7 +202,7 @@ function(sbeConfigureDependency name buildPath)
         message(FATAL_ERROR "Error during configuration of dependency ${name}")
     endif()
     
-    message(STATUS "Configuring ${name} -- done")
+    colormsg(HIBLUE "Configuring ${name} -- done")
 endfunction()
 
 macro(sbeLoadDependencies)
