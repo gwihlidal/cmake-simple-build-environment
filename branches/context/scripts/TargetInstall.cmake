@@ -24,7 +24,7 @@ function(sbeInstallFrequentisVBT)
     # Function imports libraries from VBT and install them.
     
     # Get and check arguments
-    CMAKE_PARSE_ARGUMENTS(inst "" "Url;File" "ExcludeLibraries" ${ARGN})
+    CMAKE_PARSE_ARGUMENTS(inst "" "Url;File" "ExcludeLibraries;PatchFiles" ${ARGN})
     
     if(DEFINED inst_Url AND DEFINED inst_File)
         message(FATAL_ERROR "In command sbeInstallFrequentisVBT only one of Url or File has to be speciefied.")
@@ -82,6 +82,48 @@ function(sbeInstallFrequentisVBT)
         if(${result} GREATER 0)
             message(FATAL_ERROR "Untar Fails:\n${out}")
         endif()
+        
+        # add header from other location
+        if(DEFINED inst_PatchFiles)
+            # get location of targz
+            list(GET inst_PatchFiles 0 patchLocation)
+            # get path to targz
+            list(GET inst_PatchFiles 1 patchPath)
+            # leave only headers
+            list(REMOVE_AT inst_PatchFiles 0 1)
+            
+            get_filename_component(patchFileName "${patchPath}" NAME)
+            
+            # get patch from repository if necessary
+            if("PatchUrl" STREQUAL "${patchLocation}")
+                 if(NOT EXISTS ${PROJECT_BINARY_DIR}/${patchFileName})
+                     # export patch 
+                     message(STATUS "Exporting Patch ${patchFileName}...")
+                     execute_process(COMMAND svn export ${patchPath} ${PROJECT_BINARY_DIR}/${patchFileName}
+                         RESULT_VARIABLE svnResult
+                         OUTPUT_VARIABLE out
+                         ERROR_VARIABLE out)
+                     if(${svnResult} GREATER 0)
+                         message(FATAL_ERROR "SVN Export Fails:\n${out}")
+                     endif()
+                 endif()
+                 
+                 # now patch is file
+                 set(patchPath ${PROJECT_BINARY_DIR}/${patchFileName})
+             endif()            
+                       
+             # get files to patch
+             string(REPLACE ";" " " filesToPatch "${inst_PatchFiles}")
+             message(STATUS "Patching ${filesToPatch} ...")
+             execute_process(COMMAND tar -xzf ${patchPath} -C ${PROJECT_BINARY_DIR}/preinstallation ${filesToPatch}
+                RESULT_VARIABLE result
+                OUTPUT_VARIABLE out
+                ERROR_VARIABLE out)
+             if(${result} GREATER 0)
+                message(FATAL_ERROR "Untar Fails:\n${out}")
+             endif()
+        endif()
+        
         
         # get libs targets
         sbeImportsFrequentisVBT(
