@@ -160,6 +160,21 @@ function(svnGetLog localFileOrDirectory svnlog)
     set(${svnlog} ${out} PARENT_SCOPE)
 endfunction()  
 
+function(svnGetLogBetweenRevisions localFileOrDirectory start end svnlog)
+    # get directory info 
+    execute_process(
+        COMMAND ${Subversion_SVN_EXECUTABLE} log -r ${start}:${end} "${localFileOrDirectory}"
+        RESULT_VARIABLE svnResult
+        ERROR_VARIABLE err
+        OUTPUT_VARIABLE out)
+        
+    if(${svnResult} GREATER 0)
+        return()
+    endif()
+
+    set(${svnlog} ${out} PARENT_SCOPE)
+endfunction()  
+
 function(svnGetStatus)
     cmake_parse_arguments(svn "" "LocalDirectory;IsError;Status" "Options;StopOnErrorWithMessage" ${ARGN})
     

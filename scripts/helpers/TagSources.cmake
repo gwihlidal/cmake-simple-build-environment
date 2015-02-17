@@ -255,3 +255,35 @@ endif()
 
 
 
+#    If(EXISTS ${PackageRootDirectory}/ReleaseNotes)
+#        file(READ ${PackageRootDirectory}/ReleaseNotes old LIMIT 500)
+#        string(REGEX MATCH "^([^ \t]+)" stringTag "${old}")
+#        set(lastTag ${CMAKE_MATCH_1})
+#        svnGetRepositoryForLocalDirectory(${PackageRootDirectory} url)
+#        svnGetPackageRootInRepository(${url} urlRoot)
+#        svnGetRepositoryDirectoryRevision(${urlRoot}/tags/${lastTag} revision error)
+#    endif()
+#
+#    if (DEFINED revision)
+#        svnGetLogBetweenRevisions(${PackageRootDirectory} ${revision} HEAD svnlog)
+#    else()
+#        svnGetLog(${PackageRootDirectory} svnlog)
+#    endif()
+#    
+#
+#    message ("Root ${PackageRootDirectory}")        
+#    message ("Root ${PackageRootDirectory} - logrex ${logregex}")
+#    message ("Root ${PackageRootDirectory} - log ${svnlog}")
+#
+#    string(REGEX MATCHALL "${logregex}" issues "${svnlog}")
+#   
+#    if(DEFINED issues)
+#        list(REMOVE_DUPLICATES issues)
+#        
+#        foreach(issue ${issues})
+#            message("Issue - ${issue}")
+#            getJiraIssueData(${issue} ${btUrl} d)
+#            message("Issue - ${issue} - [${d}]")
+#        endforeach()
+#    endif()
+#endfunction()
