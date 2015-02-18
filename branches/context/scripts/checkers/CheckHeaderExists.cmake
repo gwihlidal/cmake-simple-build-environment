@@ -31,9 +31,11 @@ function(CheckHeaderExists)
         endif()
         
         set(CMAKE_REQUIRED_QUIET yes)
-        check_include_file("${chk_Header}" HEADER_FOUND)
+        unset(HAVE-${chk_Header} CACHE)
+       
+        check_include_file("${chk_Header}" HAVE-${chk_Header})
         
-        if(HEADER_FOUND)
+        if(HAVE-${chk_Header})
             set(found yes)
             message(STATUS "Looking for ${chk_Header} - found in ${dep}")
             if(DEFINED chk_ExistsInDependency)
