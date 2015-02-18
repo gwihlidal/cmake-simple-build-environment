@@ -101,7 +101,7 @@ function(svnIsDirectoryContains item directory isThere errorReason)
         RESULT_VARIABLE svnResult
         ERROR_VARIABLE err
         OUTPUT_VARIABLE out)
-        
+    
     if(${svnResult} GREATER 0)
         set(${errorReason} "Could not get list for ${directory} due to:\n${err}" PARENT_SCOPE)
         return()
@@ -117,12 +117,12 @@ function(svnIsDirectoryContains item directory isThere errorReason)
         set(currentItem "${CMAKE_MATCH_1}")
         
         if("${currentItem}" STREQUAL "${item}")
-            set(isThere "yes" PARENT_SCOPE)
+            set(isThere yes PARENT_SCOPE)
             return() 
         endif() 
     endforeach()
     
-    set(isThere "no" PARENT_SCOPE)
+    set(isThere no PARENT_SCOPE)
 endfunction()  
        
 function(svnGetProperty localFileOrDirectory propertyName propertyValue)
