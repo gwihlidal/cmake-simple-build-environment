@@ -8,7 +8,7 @@ set(CheckHeaderExistsGuard yes)
 
 include(SBE/helpers/ArgumentParser)
 
-function(CheckHeader)
+function(CheckHeaderExists)
     cmake_parse_arguments(chk "Mock;Production" "Header;ExistsInDependency" "InDependencies" ${ARGN})
     
     if(NOT chk_Mock AND NOT chk_Production)
