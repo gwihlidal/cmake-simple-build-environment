@@ -46,4 +46,10 @@ function(sbeAddTagTarget)
             -DPackageRootDirectory=${PROJECT_SOURCE_DIR}
             -P ${CMAKE_ROOT}/Modules/SBE/helpers/TagSources.cmake
             )
+            
+    add_custom_target(snapshot
+        COMMAND ${CMAKE_COMMAND}
+            -DPackageRootDirectory=${PROJECT_SOURCE_DIR}
+            -P ${CMAKE_ROOT}/Modules/SBE/helpers/SnapshotSources.cmake
+            )            
 endfunction()            
