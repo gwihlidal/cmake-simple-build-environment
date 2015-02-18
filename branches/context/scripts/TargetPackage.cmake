@@ -73,7 +73,7 @@ function(_CreateCPackConfig packageType components strip)
     set(CPACK_SOURCE_GENERATOR "GTGZ")
     set(CPACK_SOURCE_IGNORE_FILES /RemoteSystemsTempFiles/ /build/ /\\\\.metadata/ /CVS/ /\\\\.svn/ /\\\\.bzr/ /\\\\.hg/ /\\\\.git/ \\\\.swp\\\$ )
     set(CPACK_SOURCE_PACKAGING_INSTALL_PREFIX "")
-    set(CPACK_SOURCE_PACKAGE_FILE_NAME "${CPACK_PACKAGE_FILE_NAME}-Source")
+    set(CPACK_SOURCE_PACKAGE_FILE_NAME "${PROJECT_NAME}-${version}-Source")
     # add own application into package
     string(REPLACE "${ContextRoot}" "" relativePathIncontext "${PROJECT_SOURCE_DIR}")
     list(APPEND CPACK_SOURCE_INSTALLED_DIRECTORIES ${PROJECT_SOURCE_DIR} ${relativePathIncontext})
