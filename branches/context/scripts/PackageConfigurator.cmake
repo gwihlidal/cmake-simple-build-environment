@@ -53,7 +53,7 @@ macro(sbeConfigurePackage)
            "Name is mandratory."
     )        
         
-    cmake_parse_arguments(prj "" "" "Languages" ${ARGN})
+    cmake_parse_arguments(prj "" "JiraUrl" "Languages;JiraProjectKeys" ${ARGN})
     
     # set Languages if not given
     set(projectLanguages ${prj_Languages})
@@ -78,7 +78,7 @@ macro(sbeConfigurePackage)
     # add defalt targets
     sbeGetPackageLocationType(${Name} locationType)
     if("repository" STREQUAL "${locationType}")
-        sbeAddTagTarget()
+        sbeAddTagTarget(JiraProjectKeys ${prj_JiraProjectKeys} JiraUrl ${prj_JiraUrl})
     endif()
     
     sbeAddGraphTarget()

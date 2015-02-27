@@ -6,7 +6,11 @@ endif()
 
 set(TargetTagGuard yes)
 
+include(SBE/helpers/ArgumentParser)
+
 function(sbeAddTagTarget)
+    cmake_parse_arguments(tag "" "JiraUrl" "JiraProjectKeys" ${ARGN})
+    
     set(ending "")
     set(force "")
     set(releaseNoteOverview "")
@@ -44,6 +48,9 @@ function(sbeAddTagTarget)
             -DOverallDependencies=${OverallDependenciesAsArgument}
             -DContextFile=${ContextFile}
             -DPackageRootDirectory=${PROJECT_SOURCE_DIR}
+            -DJiraUrl=${tag_JiraUrl}
+            -DJiraProjectKeys=${tag_JiraProjectKeys}
+            -DCMAKE_HOST_SYSTEM_NAME=${CMAKE_HOST_SYSTEM_NAME}
             -P ${CMAKE_ROOT}/Modules/SBE/helpers/TagSources.cmake
             )
             
