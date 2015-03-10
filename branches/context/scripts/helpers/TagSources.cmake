@@ -29,11 +29,10 @@ function(UpdateReleaseNoteFile dependencies tagName releaseDate overview)
         string(CONCAT content ${content} "\n${dependenciesSection}\n")
     endif()
     
-    message("${content}")
     if(EXISTS ${PackageRootDirectory}/ReleaseNotes)
         file(READ ${PackageRootDirectory}/ReleaseNotes old)
     endif()
-#    file(WRITE ${PackageRootDirectory}/ReleaseNotes ${content} ${old})   
+    file(WRITE ${PackageRootDirectory}/ReleaseNotes ${content} ${old})   
 endfunction()
 
 function(generateIssuesSection content)
@@ -42,14 +41,14 @@ function(generateIssuesSection content)
     endif()
 
     # get credentials for access jira
-    set(credentialsFile "")
+    set(configurationFile "")
     if("Windows" STREQUAL "${CMAKE_HOST_SYSTEM_NAME}")
-        set(credentialsFile "$ENV{APPDATA}\\SimpleBuildEnvironmentE\\JiraCredentials.cmake")
+        set(configurationFile "$ENV{APPDATA}\\SimpleBuildEnvironmentE\\JiraConfiguration.cmake")
     elseif("Linux" STREQUAL "${CMAKE_HOST_SYSTEM_NAME}")
-        set(credentialsFile "$ENV{HOME}/.SimpleBuildEnvironment/JiraCredentials.cmake")
+        set(configurationFile "$ENV{HOME}/.SimpleBuildEnvironment/JiraConfiguration.cmake")
     endif()
-    if(NOT EXISTS ${credentialsFile})
-        message(STATUS "   Skipping jira issues due to no credentail file [${credentialsFile}] is found")
+    if(NOT EXISTS ${configurationFile})
+        message(STATUS "   Skipping jira issues due to no configuration file [${configurationFile}] is found")
         return()
     endif()
     
@@ -72,41 +71,136 @@ function(generateIssuesSection content)
     
     message(STATUS "   Getting issues from svn ${revision}:HEAD for ${JiraProjectKeys}")
     # get issues from log
+    string(REPLACE ";" "\\;" svnlog "${svnlog}")
+    string(REGEX REPLACE "^-+\n" "" svnlog "${svnlog}")
+    string(REGEX REPLACE "\n-+\n" "\n;" svnlog "${svnlog}")
+
     set(issues "")
-    foreach(key ${JiraProjectKeys})
-        string(REGEX MATCHALL "(${key}-[0-9]+)" keyIssues "${svnlog}")
-        list(APPEND issues ${keyIssues})
+    string(REPLACE "," ";" JiraProjectKeys "${JiraProjectKeys}")
+    foreach(logEntry ${svnlog})
+        string(REGEX MATCH "^r[0-9]+ \\| ([a-z]+)" commiter "${logEntry}")
+        set(commiter "${CMAKE_MATCH_1}")
+
+        foreach(key ${JiraProjectKeys})
+            string(REGEX MATCHALL "(${key}-[0-9]+)" keyIssues "${svnlog}")
+            
+            list(APPEND issues ${keyIssues})
+            
+            foreach(entryIssue ${keyIssues})
+                set(${entryIssue}_Key ${key})
+                list(APPEND ${entryIssue}_Commiters ${commiter})
+                list(REMOVE_DUPLICATES ${entryIssue}_Commiters)
+            endforeach()
+        endforeach()
     endforeach()
     list(REMOVE_DUPLICATES issues)
     
-    include(${credentialsFile} OPTIONAL)
+    if("" STREQUAL "${issues}")
+        message(STATUS "   No issue found")
+        return()
+    endif()
     
+    include(${configurationFile} OPTIONAL)
+    
+    # get issues data
     foreach(issue ${issues})
         message(STATUS "   Exporting issue ${issue}")
-        # get project key from issue name
-        string(REGEX REPLACE "-[0-9]+" "" key "${issue}")
-        set(credentials "")
-        if(NOT "" STREQUAL "${${key}_user}" AND NOT "" STREQUAL "${${key}_pass}")
-            set(credentials -u "${${key}_user}:${${key}_pass}")
-        endif()
-        # get data from jira
-        execute_process(
-            COMMAND  curl -m 60 -s --noproxy ${JiraUrl} ${credentials} -X GET "\"Content-Type: application/json\"" ${JiraUrl}:8080/rest/api/2/issue/${issue}
-            OUTPUT_VARIABLE issueJsonData
-            )
-        sbeParseJson(issue "${issueJsonData}")
-        set(projects "")
-        foreach(labelId ${issue.fields.labels})
-            list(APPEND projects "${issue.fields.labels_${labelId}}")
-        endforeach()
-        set(inVersions "")
-        foreach(versionId ${issue.fields.fixVersions})
-            list(APPEND inVersions "${issue.fields.fixVersions_${versionId}.name}")
-        endforeach()
-        message("Subject=${issue.fields.summary}\nType=${issue.fields.issuetype.name}\nProjects=${projects}\nInVersion=${inVersions}\nIsSubTask=${issue.fields.issuetype.subtask}\nParentIssue=${issue.fields.parent.key}")
-        sbeClearJson(issue)
+        setIssueData(${issue})
     endforeach()
+    
+    # check if it is necessary to get data of parent issues
+    set(parentIssues "")
+    foreach(issue ${issues})
+        if(NOT "" STREQUAL "${${issue}_ParentIssue}")
+            list(APPEND parentIssues ${${issue}_ParentIssue})
+            list(APPEND ${${issue}_ParentIssue}_Commiters ${${issue}_Commiters})
+            set(${${issue}_ParentIssue}_Key ${${issue}_Key})
+        endif()
+    endforeach()    
+    list(REMOVE_DUPLICATES parentIssues)
+    if(NOT "" STREQUAL "${issues}")
+        list(REMOVE_ITEM parentIssues ${issues})
+        list(APPEND issues ${parentIssues})
+    endif()
+    foreach(issue ${parentIssues})
+        message(STATUS "   Exporting issue ${issue}")
+        setIssueData(${issue})
+    endforeach()
+    
+    # compose the section text
+    set(extensions "")
+    set(bugfixes "")
+    foreach(issue ${issues})
+        if(DEFINED ${${issue}_Key}_extension)
+            list(FIND ${${issue}_Key}_extension "${${issue}_Type}" isFound)
+            if(${isFound} GREATER -1)    
+                list(APPEND extensions ${issue})
+            endif()
+        endif()
+        
+        if(DEFINED ${${issue}_Key}_bugfix)
+            list(FIND ${${issue}_Key}_bugfix "${${issue}_Type}" isFound)
+            if(${isFound} GREATER -1)
+                list(APPEND bugfixes ${issue})
+            endif()
+        endif()
+    endforeach()
+    
+    set(c "")
+    if(NOT "" STREQUAL "${extensions}")
+        string(CONCAT c ${c} "${Ident}<extensions>\n")
+        foreach(ext ${extensions})
+            set(issueIdText "${Ident}${Ident}+ <jira ${ext}>")
+            string(CONCAT c ${c} "${issueIdText} ${${ext}_Subject}\n")
+            string(LENGTH "${issueIdText}" issueIdLen)
+            foreach(n RANGE ${issueIdLen})
+                string(CONCAT c ${c} " ")
+            endforeach()
+            string(REGEX REPLACE ";$" "" commiters "${${ext}_Commiters}")
+            string(REPLACE ";" ", " commiters ${commiters})
+            string(CONCAT c ${c} "${commiters}\n")
+        endforeach()            
+    endif()
+    if(NOT "" STREQUAL "${bugfixes}")
+        string(CONCAT c ${c} "${Ident}<bugfixes>\n")
+        foreach(ext ${bugfixes})
+            set(issueIdText "${Ident}${Ident}+ <jira ${ext}>")
+            string(CONCAT c ${c} "${issueIdText} ${${ext}_Subject}\n")
+            string(LENGTH "${issueIdText}" issueIdLen)
+            foreach(n RANGE ${issueIdLen})
+                string(CONCAT c ${c} " ")
+            endforeach()
+            string(REGEX REPLACE ";$" "" commiters "${${ext}_Commiters}")
+            string(REPLACE ";" ", " commiters ${commiters})
+            string(CONCAT c ${c} "${commiters}\n")
+        endforeach()            
+    endif()    
+    
+    set(${content} ${c} PARENT_SCOPE)    
 endfunction()
+
+macro(setIssueData issue)
+    # get project key from issue name
+    string(REGEX REPLACE "-[0-9]+" "" key "${issue}")
+    set(credentials "")
+    if(NOT "" STREQUAL "${${key}_user}" AND NOT "" STREQUAL "${${key}_pass}")
+        set(credentials -u "${${key}_user}:${${key}_pass}")
+    endif()
+    # get data from jira
+    execute_process(
+        COMMAND  curl -m 60 -s --noproxy "*" ${credentials} -X GET "\"Content-Type: application/json\"" ${JiraUrl}:8080/rest/api/2/issue/${issue}
+        OUTPUT_VARIABLE issueJsonData
+        )
+    sbeParseJson(issue "${issueJsonData}")
+    set(${issue}_Projects "")
+    foreach(labelId ${issue.fields.labels})
+        list(APPEND ${issue}_Projects "${issue.fields.labels_${labelId}}")
+    endforeach()
+    set(${issue}_Subject "${issue.fields.summary}")
+    set(${issue}_Type "${issue.fields.issuetype.name}")
+    set(${issue}_ParentIssue "${issue.fields.parent.key}")
+    sbeClearJson(issue)        
+endmacro()
 
 function(generateDependneciesSection content dependencies)
     if("" STREQUAL "${dependencies}")
@@ -123,7 +217,7 @@ function(generateDependneciesSection content dependencies)
         endif()
     endforeach()
     
-    set(c "${Ident}Dependencies")
+    set(c "${Ident}<dependencies>")
     foreach(dep ${dependencies})
         string(CONCAT c ${c} "\n${Ident}${Ident}${dep}")
         string(LENGTH "${dep}" len)
@@ -137,15 +231,15 @@ function(generateDependneciesSection content dependencies)
     endforeach()
     
     set(${content} ${c} PARENT_SCOPE)        
-
 endfunction()
 
 function(generateOverviewSection content overview)
     if(NOT "" STREQUAL "${overview}")
         message(STATUS "   Adding Overview")
         string(REPLACE "\n\r?" "\n${Ident}${Ident}" o "${Ident}${Ident}${overview}")
+        string(REPLACE "\\n" "\n${Ident}${Ident}" o "${o}")
         string(REPLACE "\n+$" "" o "${o}")
-        set(${content} "${Ident}Overview\n${o}" PARENT_SCOPE)
+        set(${content} "${Ident}<overview>\n${o}" PARENT_SCOPE)
     endif()
 endfunction()
 
@@ -318,15 +412,15 @@ if("${status}" MATCHES "\\?[ \t].*ReleaseNotes\n")
 endif()
 
 # commit changed files
-#execute_process(
-#    COMMAND ${Subversion_SVN_EXECUTABLE} commit -m "Adding modified files for release ${tagName}"
-#    WORKING_DIRECTORY ${PackageRootDirectory} 
-#    RESULT_VARIABLE svnResult
-#    OUTPUT_VARIABLE out)
-#
-#if(${svnResult} GREATER 0)
-#    message(SEND_ERROR "Could not commit of modified files")
-#endif()
+execute_process(
+    COMMAND ${Subversion_SVN_EXECUTABLE} commit -m "Adding modified files for release ${tagName}"
+    WORKING_DIRECTORY ${PackageRootDirectory} 
+    RESULT_VARIABLE svnResult
+    OUTPUT_VARIABLE out)
+
+if(${svnResult} GREATER 0)
+    message(SEND_ERROR "Could not commit of modified files")
+endif()
 
 # Tag sources
 message(STATUS "Tagging sources, tag is ${tagName}...")
@@ -340,14 +434,14 @@ if(NOT COMMIT_COMMENT)
     endif()
 endif()
 
-#execute_process(
-#    COMMAND ${Subversion_SVN_EXECUTABLE} cp -m "${COMMIT_COMMENT}" "${packageUrlRoot}/trunk" "${packageUrlRoot}/tags/${tagName}"
-#    RESULT_VARIABLE svnResult
-#    OUTPUT_VARIABLE out)
-#
-#if(${svnResult} GREATER 0)
-#    message(SEND_ERROR "Source tagging fails.\n${out}")
-#endif()
+execute_process(
+    COMMAND ${Subversion_SVN_EXECUTABLE} cp -m "${COMMIT_COMMENT}" "${packageUrlRoot}/trunk" "${packageUrlRoot}/tags/${tagName}"
+    RESULT_VARIABLE svnResult
+    OUTPUT_VARIABLE out)
+
+if(${svnResult} GREATER 0)
+    message(SEND_ERROR "Source tagging fails.\n${out}")
+endif()
 
 sbeGetPackageUrl(${Name} urlInContextFile)
 if(DEFINED urlInContextFile)
