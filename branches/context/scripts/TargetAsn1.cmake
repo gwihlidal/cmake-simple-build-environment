@@ -11,6 +11,8 @@ include(SBE/helpers/ArgumentParser)
 function(sbeAddAsn1Library)
     cmake_parse_arguments(asn1 "" "Name;SkeletonsDirectory;ExportHeadersDirectory" "Source;" ${ARGN})
 
+    find_program(ASN1_COMPILER asn1c HINTS /usr/local/share/cross-compilers/asn1c/*) 
+    
     file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/Asn1/${asn1_Name}/build)
     
     set(generatedHeadersDirectory "${PROJECT_BINARY_DIR}/Asn1/${asn1_Name}/inc")
@@ -42,7 +44,7 @@ function(sbeAddAsn1Library)
 	    COMMAND ${CMAKE_COMMAND} -E remove_directory  ${generatedHeadersDirectory}
 	    COMMAND ${CMAKE_COMMAND} -E make_directory  ../src
 	    COMMAND ${CMAKE_COMMAND} -E make_directory  ${generatedHeadersDirectory}
-	    COMMAND ${CMAKE_COMMAND} -E chdir ${PROJECT_BINARY_DIR}/Asn1/${asn1_Name}/src asn1c -fcompound-names -fnative-types -S ${asn1_SkeletonsDirectory} ${PROJECT_SOURCE_DIR}/${asn1_Source}
+	    COMMAND ${CMAKE_COMMAND} -E chdir ${PROJECT_BINARY_DIR}/Asn1/${asn1_Name}/src ${ASN1_COMPILER} -fcompound-names -fnative-types -S ${asn1_SkeletonsDirectory} ${PROJECT_SOURCE_DIR}/${asn1_Source}
 	    COMMAND ${CMAKE_COMMAND} -E copy_directory ../src ${generatedHeadersDirectory}
 	    COMMAND ${CMAKE_COMMAND} -E remove ${generatedHeadersDirectory}/*.c
 	    COMMAND ${CMAKE_COMMAND} -E remove ${generatedHeadersDirectory}/Makefile*
