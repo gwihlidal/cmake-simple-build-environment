@@ -112,7 +112,7 @@ function(sbeConfigureDependencies)
     endforeach()
 
     # add dependencies rebuild target
-    add_custom_target(dependencies_force COMMENT "Force dependencies build")
+    add_custom_target(dependencies_touch COMMENT "Touching dependencies")
     # add dependencies clean target
     add_custom_target(dependencies_clean COMMENT "Clean dependencies")
     
@@ -134,19 +134,16 @@ function(sbeConfigureDependencies)
                         
         add_custom_command(
             OUTPUT ${allbuildtimestamp}
-            COMMAND ${CMAKE_COMMAND} --build . --use-stderr
+            COMMAND + ${CMAKE_COMMAND} --build ${buildPath} --use-stderr
             DEPENDS ${dependencyTimestamps} ${timestamp}
-            WORKING_DIRECTORY ${buildPath}
             COMMENT "Building ${dep}")
             
-        add_custom_command(TARGET dependencies_force
-            COMMAND ${CMAKE_COMMAND} --build . --use-stderr
-            WORKING_DIRECTORY ${buildPath}
-            COMMENT "Building ${dep}")
-
+        add_custom_command(TARGET dependencies_touch
+            COMMAND ${CMAKE_COMMAND} -E remove ${allbuildtimestamp}
+            COMMENT "Touching ${dep}")
+            
         add_custom_command(TARGET dependencies_clean
-            COMMAND ${CMAKE_COMMAND} --build . --target clean --use-stderr
-            WORKING_DIRECTORY ${buildPath}
+            COMMAND + ${CMAKE_COMMAND} --build ${buildPath} --target clean --use-stderr
             COMMENT "Cleaning ${dep}")            
     endforeach()
     
