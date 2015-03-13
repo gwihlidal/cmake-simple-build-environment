@@ -124,22 +124,22 @@ function(sbeInstallFrequentisVBT)
              endif()
         endif()
         
-        
-        # get libs targets
-        sbeImportsFrequentisVBT(
-            Dir ${PROJECT_BINARY_DIR}/preinstallation
-            ExcludeLibraries ${inst_ExcludeLibraries}
-            ImportedTargets importedTargets
-        )
-    
-        # install imported targets
-        sbeAddInstallImportedTarget(
-            Targets ${importedTargets} 
-            HeadersDirectory ${PROJECT_BINARY_DIR}/preinstallation/include
-            HeadersPathReplacement ".* -> "
-            )
         set(Vbt_TarFileName "${tarFileName}" CACHE "" INTERNAL FORCE)
-    endif()            
+    endif()
+
+    # get libs targets
+    sbeImportsFrequentisVBT(
+        Dir ${PROJECT_BINARY_DIR}/preinstallation
+        ExcludeLibraries ${inst_ExcludeLibraries}
+        ImportedTargets importedTargets
+    )
+            
+    # install imported targets
+    sbeAddInstallImportedTarget(
+        Targets ${importedTargets} 
+        HeadersDirectory ${PROJECT_BINARY_DIR}/preinstallation/include
+        HeadersPathReplacement ".* -> "
+        )                
 endfunction()
 
 function(sbeAddInstallTarget)
