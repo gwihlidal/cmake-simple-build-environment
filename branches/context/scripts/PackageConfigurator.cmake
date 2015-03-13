@@ -22,7 +22,6 @@ include(SBE/helpers/ContextParser)
 include(SBE/PackageExporter)
 include(SBE/TargetTag)
 include(SBE/TargetGraph)
-include(SBE/TargetCoverity)
 include(SBE/helpers/ColorMessage)
 
 # macro calculates mandratory variables if not given

@@ -28,7 +28,7 @@ function(sbeAddCoverityTarget)
         return()
     endif()
 
-    set(coverityBuildStarter "${COV_BUILD_TOOL};--verbose;0;--config;${COV_FILE_CONFIG};--dir;${COV_DIR_DATA}")
+    set(coverityBuildStarter "${COV_BUILD_TOOL}" --verbose 0 --config ${COV_FILE_CONFIG} --dir ${COV_DIR_DATA})
     
     set(COV_ANALYZE_OPTIONS 
         --enable-callgraph-metrics
@@ -95,7 +95,7 @@ function(sbeAddCoverityTarget)
     add_custom_command(TARGET coverity
         COMMAND ${CMAKE_COMMAND} -E remove_directory ${COV_DIR_DATA}
         COMMAND ${CMAKE_COMMAND} -E make_directory ${COV_DIR_DATA} 
-        COMMENT "Cleaning coverity data")
+        COMMENT "Cleaning coverity data...")
     # build own project under coverity
     add_custom_command(TARGET coverity
         COMMAND ${CMAKE_COMMAND} --build . --target dependencies_clean --use-stderr
@@ -103,7 +103,7 @@ function(sbeAddCoverityTarget)
         COMMAND ${coverityBuildStarter} ${CMAKE_COMMAND} --build . --target dependencies_force --use-stderr
         COMMAND ${coverityBuildStarter} ${CMAKE_COMMAND} --build . --use-stderr
         WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
-        COMMENT "Building Coverity for ${PROJECT_NAME}")    
+        COMMENT "Building Coverity for ${PROJECT_NAME}...")    
     
     add_custom_command(TARGET coverity     
         COMMAND ${COV_ANALYZE_TOOL} 
@@ -114,8 +114,8 @@ function(sbeAddCoverityTarget)
         COMMENT "Analyzing coverity..")
     
     add_custom_command(TARGET coverity     
-        COMMAND ${COV_FORMAT_ERRORS_TOOL} --dir ${COV_DIR_DATA}
-        COMMENT "Formating coverity errors")        
+        COMMAND ${COV_FORMAT_ERRORS_TOOL} --dir ${COV_DIR_DATA} --html-output ${COV_DIR_DATA}/output/html
+        COMMENT "Formating coverity errors...")        
 endfunction()
 
 function(sbeConfigureCoverity isConfigured)
