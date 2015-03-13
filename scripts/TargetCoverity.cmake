@@ -98,11 +98,9 @@ function(sbeAddCoverityTarget)
         COMMENT "Cleaning coverity data...")
     # build own project under coverity
     add_custom_command(TARGET coverity
-        COMMAND ${CMAKE_COMMAND} --build . --target dependencies_clean --use-stderr
-        COMMAND ${CMAKE_COMMAND} --build . --target clean --use-stderr
-        COMMAND ${coverityBuildStarter} ${CMAKE_COMMAND} --build . --target dependencies_force --use-stderr
-        COMMAND ${coverityBuildStarter} ${CMAKE_COMMAND} --build . --use-stderr
-        WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+        COMMAND + ${CMAKE_COMMAND} --build . --target dependencies_clean --use-stderr
+        COMMAND + ${CMAKE_COMMAND} --build . --target clean --use-stderr
+        COMMAND + ${coverityBuildStarter} ${CMAKE_COMMAND} --build . --use-stderr
         COMMENT "Building Coverity for ${PROJECT_NAME}...")    
     
     add_custom_command(TARGET coverity     

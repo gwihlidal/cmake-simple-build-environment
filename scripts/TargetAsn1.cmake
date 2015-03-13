@@ -45,9 +45,8 @@ function(sbeAddAsn1Library)
           SBE_GENERATED_LIBRARY_EXPORT_HEADERS_DIR  "${generatedHeadersDirectory}"
           )
     endif()      
-    add_custom_command(OUTPUT ${PROJECT_BINARY_DIR}/Asn1/${asn1_Name}/build/lib/${asn1_Name}.genlib
+    add_custom_command(OUTPUT ${PROJECT_BINARY_DIR}/Asn1/${asn1_Name}/build/projectIsGenerated
 	    DEPENDS ${asn1_Source}
-	    COMMAND echo "asn1c -fcompound-names -fnative-types -S ${asn1_SkeletonsDirectory} ${PROJECT_SOURCE_DIR}/${asn1_Sources}"
 	    COMMAND ${CMAKE_COMMAND} -E remove_directory  ../src
 	    COMMAND ${CMAKE_COMMAND} -E remove_directory  ${generatedHeadersDirectory}
 	    COMMAND ${CMAKE_COMMAND} -E make_directory  ../src
@@ -58,7 +57,13 @@ function(sbeAddAsn1Library)
 	    COMMAND ${CMAKE_COMMAND} -E remove ${generatedHeadersDirectory}/Makefile*
 	    COMMAND ${CMAKE_COMMAND} -E remove ../src/*.h
 	    COMMAND ${CMAKE_COMMAND} -DCMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN_FILE} -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} -DRULE_LAUNCH_COMPILE=${RULE_LAUNCH_COMPILE} -DRULE_LAUNCH_LINK=${RULE_LAUNCH_LINK} ..
-	    COMMAND ${CMAKE_COMMAND} --build . --use-stderr
+	    COMMAND ${CMAKE_COMMAND} -E touch projectIsGenerated
 	    WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/Asn1/${asn1_Name}/build
+	    COMMENT "Generating Asn1 C files"
     )
+    add_custom_command(OUTPUT ${PROJECT_BINARY_DIR}/Asn1/${asn1_Name}/build/lib/${asn1_Name}.genlib
+	    DEPENDS ${PROJECT_BINARY_DIR}/Asn1/${asn1_Name}/build/projectIsGenerated
+	    COMMAND + ${CMAKE_COMMAND} --build ${PROJECT_BINARY_DIR}/Asn1/${asn1_Name}/build --use-stderr
+	    COMMENT "Compiling Asn1 C files"
+    )    
 endfunction()
