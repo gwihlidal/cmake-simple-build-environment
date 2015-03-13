@@ -11,7 +11,15 @@ include(SBE/helpers/ArgumentParser)
 function(sbeAddAsn1Library)
     cmake_parse_arguments(asn1 "" "Name;SkeletonsDirectory;ExportHeadersDirectory" "Source;" ${ARGN})
 
-    find_program(ASN1_COMPILER asn1c HINTS /usr/local/share/cross-compilers/asn1c/*) 
+    if(NOT DEFINED ASN1_COMPILER)
+        find_program(ASN1_COMPILER asn1c HINTS /usr/local/share/cross-compilers/asn1c/*)
+        
+        if(DEFINED ASN1_COMPILER-NOTFOUND)
+            message(FATAL_ERROR "Asn1 compiler is not found in PATH and /usr/local/share/cross-compilers/asn1c/*")
+        else()
+            message(STATUS "Asn1 compiler found ${ASN1_COMPILER}")
+        endif()
+    endif() 
     
     file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/Asn1/${asn1_Name}/build)
     
