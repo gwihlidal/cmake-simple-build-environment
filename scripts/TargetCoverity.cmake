@@ -146,27 +146,37 @@ function(sbeConfigureCoverity isConfigured)
     endif()     
     
     # prefere C compiler as recomended by Coverity in cov-configue help
-    set(compiler "${CMAKE_CXX_COMPILER}")
-    if(NOT "" STREQUAL "${CMAKE_C_COMPILER}")
-        set(compiler "${CMAKE_C_COMPILER}")
+    # in case of GNU compiler, Coverity itselfs configure also g++, when gcc is in C Comapiler name.
+    # if there is no gcc in C Compiler name, we should do it.
+    set(compilers "")
+    if("${CMAKE_C_COMPILER_ID}" STREQUAL "GNU" AND NOT "${CMAKE_C_COMPILER}" MATCHES ".*gcc.*")
+        list(APPEND compilers ${CMAKE_C_COMPILER})
+        list(APPEND compilers ${CMAKE_CXX_COMPILER})
+    else()
+        # prefere C Compiler if set
+        set(compilers "${CMAKE_CXX_COMPILER}")
+        if(NOT "" STREQUAL "${CMAKE_C_COMPILER}")
+            set(compilers "${CMAKE_C_COMPILER}")
+        endif() 
     endif()
-    
-    if(NOT "" STREQUAL "${compiler}")
+
+    if(NOT "" STREQUAL "${compilers}")
         file(REMOVE_RECURSE ${COV_DIR_CONFIG})
         file(MAKE_DIRECTORY ${COV_DIR_CONFIG})
-
-        get_filename_component(compilerPath "${compiler}" PATH)
+    endif()
+    
+    foreach(compiler ${compilers})
         get_filename_component(compilerName "${compiler}" NAME)
         
         # in case of gnu compiler has not default name, specify its type
         set(compType "")
-        if("${compilerName}" MATCHES ".*g\\+\\+")
-             set(compType --comptype g++)
-        endif()
-        if("${compilerName}" MATCHES ".*gcc")
+        if("${CMAKE_C_COMPILER}" STREQUAL "${compiler}" AND "${CMAKE_C_COMPILER_ID}" STREQUAL "GNU")
             set(compType --comptype gcc)
         endif()
-                        
+        if("${CMAKE_CXX_COMPILER}" STREQUAL "${compiler}" AND "${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+            set(compType --comptype g++)
+        endif()
+        
         message(STATUS "Configuring Coverity for ${compilerName} compiler...")
 
         execute_process(     
@@ -183,6 +193,6 @@ function(sbeConfigureCoverity isConfigured)
         
         set(${isConfigured} "yes" PARENT_SCOPE)
         set(Coverity_IsConfigured "yes" CACHE "" INTERNAL FORCE)
-    endif()
+    endforeach()
 endfunction()
 
