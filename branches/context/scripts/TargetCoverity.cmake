@@ -100,6 +100,7 @@ function(sbeAddCoverityTarget)
     add_custom_command(TARGET coverity
         COMMAND + ${CMAKE_COMMAND} --build . --target dependencies_clean --use-stderr
         COMMAND + ${CMAKE_COMMAND} --build . --target clean --use-stderr
+        COMMAND + ${coverityBuildStarter} ${CMAKE_COMMAND} --build . --target dependencies --use-stderr        
         COMMAND + ${coverityBuildStarter} ${CMAKE_COMMAND} --build . --use-stderr
         COMMENT "Building Coverity for ${PROJECT_NAME}...")    
     
